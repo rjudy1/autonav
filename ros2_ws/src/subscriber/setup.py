@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'rs2l_transform'
+package_name = 'subscriber'
 
 setup(
     name=package_name,
@@ -14,13 +14,13 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='autonav',
-    maintainer_email='chickies@todo.todo',
+    maintainer_email='rljudy4981@icloud.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'transform = rs2l_transform.transform:main'
+           'sub = subscriber.subscriber:main',
         ],
     },
 )
