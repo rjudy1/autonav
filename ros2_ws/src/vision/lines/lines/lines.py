@@ -108,7 +108,7 @@ def main():
 
     try: rclpy.spin(lines)
     except KeyboardInterrupt:
-        rclpy.logger.warn("Keyboard interrupt")
+        rclpy.get_logger().warning("Keyboard interrupt")
 
 
 if __name__ == "__main__":

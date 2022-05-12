@@ -10,7 +10,7 @@ class MinimalSubscriber(Node):
         super().__init__('minimal_subscriber')
         self.subscription = self.create_subscription(
             LaserScan,
-            '/scan',
+            '/mod_lidar',
             self.listener_callback,
             10)
         self.subscription  # prevent unused variable warning
