@@ -1,3 +1,9 @@
 autonav-master/
 .idea
 __pycache__/
+bridge_ws/*/
+!bridge_ws/src/
+ros2_ws/*/
+!ros2_ws/src/
+ros1_ws/*/
+!ros1_ws/src/*
