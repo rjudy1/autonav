@@ -13,8 +13,6 @@ import sys
 sys.path.insert(1, '/home/autonav/autonav/')
 sys.path.insert(1, '/home/autonav/autonav/ros2_ws/src/vision/lines/lines/')
 
-import sys
-
 import rclpy
 from rclpy.node import Node
 
@@ -38,7 +36,7 @@ class Lines(Node):
         self.ALIGNED = "ALIGNED"
         self.NOT_ALIGNED = "NOT_ALIGNED"
 
-        self.state = STATES.LINE_FOLLOWING
+        self.state = STATES.OBJECT_AVOIDANCE_FROM_LINE
         self.LINE_CODE = "LIN,"
 
         # Subscribe to the camera color image
@@ -75,7 +73,9 @@ class Lines(Node):
 
             distance = self.line_following.image_callback(image)
             self.get_logger().warning("LINE_DISTANCE: " + str(distance))
-            self.motor_pub.publish(String(self.LINE_CODE + str(distance)))
+            msg = String()
+            msg.data = self.LINE_CODE+str(distance)
+            self.motor_pub.publish(msg)
 
         # Line Detection
         elif self.state in self.line_detection_states:
@@ -84,11 +84,15 @@ class Lines(Node):
             self.get_logger().warning("Line Detection")
             if found_line:
                 self.get_logger().warning(self.FOUND_LINE)
-                self.event_pub.publish(String(self.FOUND_LINE))
+                msg = String()
+                msg.data = str(self.FOUND_LINE)
+                self.event_pub.publish(msg)
             if aligned:
                 self.get_logger().warning(self.ALIGNED)
                 # self.line_following.reset()
-                self.event_pub.publish(String(self.ALIGNED))
+                msg = String()
+                msg.data = self.ALIGNED
+                self.event_pub.publish(msg)
         else:
             closeWindows(self.line_following.window_handle)
             self.line_detection.reset()

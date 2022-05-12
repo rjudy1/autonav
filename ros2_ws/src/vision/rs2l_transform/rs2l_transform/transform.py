@@ -74,7 +74,7 @@ class TransformPublisher(Node):
 
         # Subscribe to the camera color image
         self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
-        self.lidar_sub = self.create_subscription(LaserScan, '\scan', self.lidar_callback, 10)
+        self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
 
         # line detection parameters
         self.history_idx = 0

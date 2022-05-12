@@ -47,7 +47,6 @@ class LineFollowing(Node):
         self.declare_parameter('/LineDist', 200)
         self.declare_parameter('/Debug', True)
 
-
         self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
         self.BUFF_SIZE = self.get_parameter('/LineBufferSize').value
         self.THRESH_MIN = self.get_parameter('/LineThreshMin').value
