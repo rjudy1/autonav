@@ -39,7 +39,7 @@ def cvDisplay(image, handle, handleArr):
 class TransformPublisher(Node):
     def __init__(self):
         super().__init__('minimal_publisher')
-        self.publisher_ = self.create_publisher(LaserScan, 'mlidar', 10)
+        self.lidar_pub = self.create_publisher(LaserScan, '\mod_lidar', 10)
         #        timer_period = 0.5  # seconds
         #        self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -83,6 +83,9 @@ class TransformPublisher(Node):
         self.found_line = False
         self.window_handle = []
 
+        self.lidar_trim_min = 1.57
+        self.lidar_trim_max = 4.71
+
 
     # Use cv_bridge() to convert the ROS image to OpenCV format
     def bridge_image(self, ros_image, format):
@@ -96,8 +99,32 @@ class TransformPublisher(Node):
         return ros_image
 
     # edit lidar here including pothole modifications ----------------------------------------------------------
+    # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     def lidar_callback(self, scan):
-        pass
+        #adjust range
+        scan.angle_max += abs(scan.angle_min)
+        scan.angle_min = 0.0
+
+        scan_range = scan.angle_max - scan.angle_min
+        trim_range = self.lidar_trim_max - self.lidar_trim_min
+        width = round(trim_range/scan_range * len(scan.ranges))
+
+        shift = self.lidar_trim_min - scan.angle_min
+        trim_base = round(shift/scan_range * len(scan.ranges))
+
+        if len(scan.intensities) > trim_base + width:
+            for i in range(trim_base, trim_base + width):
+                scan.ranges[i] = math.inf
+                scan.intensities[i] = math.inf
+        else:
+            for i in range(trim_base, trim_base + width):
+                scan.ranges[i] = math.inf
+
+        self.lidar_pub.publish(scan)
+        self.get_logger().info('Publishing LaserScan ' + str(scan.header.stamp) + ' transformed:\n' + 'Angle_min: ' + str(scan.angle_min)
+                                    + '\nAngle_max: ' + str(scan.angle_max))
+        
+
 
     def image_callback(self, image):
         # Save Dimensions
