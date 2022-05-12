@@ -1,0 +1,190 @@
+#!/usr/bin/env python
+
+################################
+# Cedarville AutoNav 2022 Competition Robot
+# Package: lines
+# File: line_following.py
+# Purpose: controls line detection
+# Author: Modified from 2020-21 autonav team code for ROS2
+# Date Modified: 12 May 2022
+################################
+
+import sys
+sys.path.insert(1, '/home/autonav/autonav/')
+sys.path.insert(1, '/home/autonav/autonav/ros2_ws/src/vision/lines/lines/')
+
+import cv2
+import math
+import numpy as np
+import rclpy
+from rclpy.node import Node
+from utils import *
+
+
+class LineFollowing(Node):
+    def __init__(self):
+        super().__init__('following')
+
+        # Class attributes
+        self.MAX_DIST = 7777
+        self.GOOD_DIST = 200
+        self.distance = self.MAX_DIST
+        self.max_white = -1
+        self.max_start = 800
+        self.no_line_count = 0
+        self.run = "go"
+        self.LINE_CODE = "LIN,"
+        self.window_handle = []
+
+        # Read ROS Params - Line Following
+        self.declare_parameter("/FollowingDirection", 1)
+        self.declare_parameter('/LineBufferSize', 5)
+        self.declare_parameter('/LineThreshMin', 250)
+        self.declare_parameter('/LineThreshMax', 255)
+        self.declare_parameter('/LineHeightStart', 470.0)
+        self.declare_parameter('/LineHeightStep', 50.0)
+        self.declare_parameter('/LineLostCount', 100)
+        self.declare_parameter('/LineDist', 200)
+        self.declare_parameter('/Debug', True)
+
+
+        self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
+        self.BUFF_SIZE = self.get_parameter('/LineBufferSize').value
+        self.THRESH_MIN = self.get_parameter('/LineThreshMin').value
+        self.MAX_PIXEL = self.get_parameter('/LineThreshMax').value
+        self.HEIGHT_START = self.get_parameter('/LineHeightStart').value
+        self.HEIGHT_STEP = self.get_parameter('/LineHeightStep').value
+        self.LINE_LOST_COUNT = self.get_parameter('/LineLostCount').value
+        self.LINE_FOLLOW_DIST = self.get_parameter('/LineDist').value
+        self.DEBUG_MODE = self.get_parameter('/Debug').value
+        self.moving = [self.get_parameter('/LineDist').value] * self.BUFF_SIZE
+
+    def filter_result(self):
+        # 5 point moving average filter
+        if self.distance != 7777:
+            print(self.moving)
+            self.moving = np.roll(self.moving, 1)
+            self.moving[0] = self.distance
+
+        filt_dist = sum(self.moving) / self.BUFF_SIZE
+        return (filt_dist)
+
+    def filter_image(self, image):
+        # HSV filtering
+        grey = hsv_filter(image)
+
+        # REMOVE, UNNECESSARY DUE TO NEW HSV FILTERING
+        # Threshold a single portion of the image and then place that portion on a blank image
+        ret, grey = cv2.threshold(grey, self.THRESH_MIN, self.MAX_PIXEL, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Perform a morphological opening operation on the image with a rectangular structuring element
+        element = cv2.getStructuringElement(cv2.MORPH_RECT,
+                                            (int((7.0 / 1280.0) * grey.shape[0]), int((20.0 / 720.0) * grey.shape[1])))
+        mask = cv2.morphologyEx(grey, cv2.MORPH_OPEN, element)
+
+        cvDisplay(mask, 'filter result', self.window_handle)
+        return mask
+
+    # returns the value in pixels that an assumed line is from the center of the image
+    def follow_line(self, mask, begin, end, h, y):
+        # Maximum values
+        confidence = 100
+        self.max_white = confidence
+
+        # Width of the regin of interest
+        # The divide and multiply allow this value to be used on any image size
+        # normalize in relation to a 1080 by 720 image, then put in reference to the current image dimension
+        w = int((self.HEIGHT_STEP / 720.0) * mask.shape[0])
+
+        # Find the square region with the highest white pixel count
+        for x in range(begin, end, 1):
+            white_count = cv2.countNonZero(mask[y:y + h, x:x + w])
+            if white_count > self.max_white:
+                self.max_white = white_count
+                self.max_start = x
+
+        # Obtain pixel distance
+        # check to see if the max pixel count is substantial
+        if self.max_white > confidence:
+            new_dist = (self.max_start - (mask.shape[1] / 2))
+            # if there is a jump in the detected line position, just go straight
+            self.no_line_count = 0
+            if abs(new_dist - self.distance) <= 7 * w or self.distance == self.MAX_DIST:
+                self.distance = new_dist
+            else:
+                self.distance = self.GOOD_DIST
+            self.distance = new_dist
+
+        else: # if inconclusive  line found in the image
+            # search horizontal boxes above our usual frame
+            self.no_line_count += 1
+
+        # report if we lost the line
+        # if not self.run or self.no_line_count == self.LINE_LOST_COUNT:
+        # self.distance = self.GOOD_DIST
+
+        # 5 point moving average filter
+        filt_dist = self.filter_result()
+
+        # return the resulting distance
+        return filt_dist
+
+    def reset(self):
+        self.distance = self.MAX_DIST
+        self.no_line_count = 0
+        # self.moving = array('i', [200] * self.BUFF_SIZE)
+
+    def printResult(self, mask, original_image, y, h, line_dist):
+
+        # Creates and overlays a green square on the image where we think the line is
+        # start pixels and width of square
+        w = int((self.HEIGHT_STEP / 720.0) * mask.shape[0])
+        self.max_start = line_dist + (mask.shape[1] / 2)
+
+        # Create overlay
+        pixels = np.array(
+            [[self.max_start, y], [self.max_start, y + h], [self.max_start + w, y + h], [self.max_start + w, y]],
+            dtype=np.int32)
+        overlay = cv2.fillConvexPoly(original_image, pixels, (43, self.MAX_PIXEL, 0))
+
+        # Apply Overlay
+        result = cv2.addWeighted(original_image, 1, overlay, 0.5, 0)
+
+        # Display results
+        cvDisplay(result, "result", self.window_handle)
+
+    # This function takes an image, and returns the value of the distance (in pixels) that the line is
+    # from the center of the image
+    def image_callback(self, original_image):
+
+        # Reference variables to help find portion of image
+        x = 0
+        y = int((self.HEIGHT_START / 720.0) * original_image.shape[0])
+        w = original_image.shape[1]
+        h = int((self.HEIGHT_STEP / 720.0) * original_image.shape[0])
+
+        # Mask out portion of the image
+        # Set region of interest based on left or right follow
+        if self.FOLLOWING_DIR == 1:
+            begin = int(0.5 * original_image.shape[1])
+            end = original_image.shape[1]
+        else:
+            begin = 0
+            end = int(0.5 * original_image.shape[1])
+
+        # region of interest image to help find specific portion of the image
+        section = np.zeros(original_image.shape, np.uint8)
+        section[y:y + h, begin:end] = original_image[y:y + h, begin:end]
+
+        # filter the line
+        mask = self.filter_image(original_image)
+
+        # find the line
+        line_dist = self.follow_line(mask, begin, end, h, y)
+
+        # print result for debug
+        if self.DEBUG_MODE:
+            self.printResult(mask, original_image, y, h, line_dist)
+            cvDisplay(section, "Region of interest", self.window_handle)
+
+        return abs(line_dist)
