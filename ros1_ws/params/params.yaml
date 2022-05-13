@@ -1,0 +1,194 @@
+# ********************************************* #
+# Cedarville University                         #
+# AutoNav Senior Design Team 2020-2021          #
+# ROS Parameters                                #
+# ********************************************* #
+
+#################### GLOBAL PARAMS ####################
+
+# Left or right following (left = -1, right = 1)
+FollowingDirection: -1
+
+# Debug (true or false)
+Debug: false
+
+# State to start in
+# Line_Following = 1
+# Object_Avoidance_From_Line = 2
+# Object_Avoidance_From_GPS = 3
+# GPS_Navigation = 4
+# Line_To_Object = 5
+# Object_To_Line = 6
+# GPS_To_Object = 7
+# Find_Line = 8
+# Line_Orientation = 9
+StartState: 1
+
+# Debug parameters for particular people
+
+# used nowhere
+JoshuaDebug: true
+
+# used in line following
+IsaiahDebug: false
+
+# used in publisher
+DanielDebug: false
+
+# used in line detection
+TrevorDebug: true
+
+#################### MAIN CONTROLLER PARAMS ####################
+
+# Rate for the callback of the timer in the main controller
+# 20 Hz
+TimerRate: 0.05
+
+#################### REALSENSE PUBLISHER PARAMS ####################
+
+# Display original unmodified camera images
+DisplayCameraImages: false
+
+#################### PID CONTROLLER PARAMS ####################
+
+# Default Speed of the robot
+DefaultSpeed: 35
+
+# Line PID controller coefficients
+LineCtrlKp: -0.05 # P
+LineCtrlKi: -0.000000001   # I
+LineCtrlKd: -10000.0   # D
+
+# Object PID controller coefficients
+ObjCtrlKp: -0.025  # P
+ObjCtrlKi: 0.0    # I
+ObjCtrlKd: -1000.0 # D
+
+# GPS PID controller coefficients
+GpsCtrlKp: 5.5    # P
+GpsCtrlKi: 0.0    # I
+GpsCtrlKd: 0.0    # D
+
+# Distance for Time of Flight sensor to follow
+SideObjectDist: 600
+
+# Margin for line following speed boost
+LineBoostMargin: 50.0
+
+# Margin for GPS following speed boost (10 degrees)
+GpsBoostMargin: 0.1745
+
+# Number of consecutive times the error must be in the acceptable range
+# before applying the speed boost
+BoostCountThreshhold: 100
+
+# The speed increase applied to the wheel speed when we have been traveling
+# straight for a while
+BoostIncrease: 25
+
+#################### OBJECT DETECTION PARAMS ####################
+
+# Percent of image.shape to crop off the depth camera image
+ObjectCropBottom: 0.40
+ObjectCropTop: 0.10
+ObjectCropSide: 0.30
+
+# Distance to object in meters at which to trigger output 1.75
+ObjectStopDistance: 1.85
+
+# Size of depth camera output buffer to stabilize output 
+ObjectBufferSize: 3
+# Percent of buffer that must be 1 to output TRUE or 0 to output FALSE
+ObjectBufferFill: 0.8
+
+#################### LINE DETECTION PARAMS ####################
+
+# Percent of image.shape to crop off the color camera image
+LineDetectCropTop: 0.10
+LineDetectCropBottom: 0.20
+LineDetectCropSide: 0.20
+
+# Maximum percentage of white fill accepted until image is discarded
+LineDetectMaxWhite: .50
+
+# Minimum line slope to trigger aligned
+LineDetectMinSlope: 0.9
+
+# Size and of line detection output buffer to stabilize output
+LineDetectBufferSize: 4
+# Percent of buffer that must be 1 to output TRUE or 0 to output FALSE
+LineDetectBufferFill: 0.5
+
+# Length of line to trigger output (percent of image height)
+LineDetectMinLineLength: 0.35
+
+# Distance from line to robot to trigger output (px) 150
+LineDetectLineDistance: 175
+
+#################### LINE FOLLOWING PARAMS ####################
+
+# Distance at which we are following the line (in pixels)
+LineDist: 200
+
+# Size of output buffer to stabilize line detection
+LineBufferSize: 5
+
+# Grayscale threshhold value to filter line image
+LineThreshMin: 250
+
+# Max value for setting binary line image
+LineThreshMax: 255
+
+# Pixel values for window searching for line
+LineHeightStart: 520.0
+LineHeightStep: 50.0
+
+# Number of frames before we are sure we lost the line
+LineLostCount: 100
+
+#################### GPS PARAMS ####################
+
+# GPS Waypoints
+#WaypointLat1: 39.746936
+#WaypointLon1: -83.813710
+# Road Waypoints
+#WaypointLat2: 39.746860
+#WaypointLon2: -83.813717
+#WaypointLat3: 39.746735
+#WaypointLon3: -83.813782
+#WaypointLat4: 39.746860
+#WaypointLon4: -83.813717
+# Grass Waypoints
+# WaypointLat2: 39.747070
+# WaypointLon2: -83.813865
+# WaypointLat3: 39.747246
+# WaypointLon3: -83.813710
+# WaypointLat4: 39.747330
+# WaypointLon4: -83.813906
+
+# GPS Road Test
+WaypointLat1: 39.7469886
+WaypointLon1: -83.8137287
+WaypointLat2: 39.746943
+WaypointLon2: -83.813715
+WaypointLat3: 39.746763
+WaypointLon3: -83.813752
+WaypointLat4: 39.746446
+WaypointLon4: -83.814145
+
+# how close we need to get to a waypoint to switch
+GPSFollowGoal: 1
+
+# how close to waypoint we need to change state
+LineToGPSTrans: 5
+
+# Angle to exit GPS-Object
+ExitAngle: 0.2
+
+# Angle to exit Line-Object
+ExitAngleLine: 45
+
+# CALIBRATION
+# Direction that shadows are in
+ShadowHeading: 5
+

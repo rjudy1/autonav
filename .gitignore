@@ -6,4 +6,5 @@ bridge_ws/*/
 ros2_ws/*/
 !ros2_ws/src/
 ros1_ws/*/
-!ros1_ws/src/*
+!ros1_ws/src/
+!ros1_ws/params/

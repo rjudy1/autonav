@@ -145,12 +145,12 @@ class TransformPublisher(Node):
 
         # Find Circles
         circles = cv2.HoughCircles(morph, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=50, maxRadius=150)
+        # clear circles if not found
+        self.circles = []  # replace previously viewed circles in array
 
         # Display Circles
         if circles is not None:
             circles = np.uint16(np.around(circles))
-
-            self.circles = []
             for i in circles[0, :]:
                 # draw the outer circle
                 cv2.circle(morph, (i[0], i[1]), i[2], (0, 255, 0), 2)
