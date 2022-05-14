@@ -20,6 +20,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from utils import *
 
+from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
 
@@ -34,6 +35,7 @@ class TransformPublisher(Node):
     def __init__(self):
         super().__init__('lidar_modifier')
         self.lidar_pub = self.create_publisher(LaserScan, '/mod_lidar', 10)
+        self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
         self.i = 0
 
         # Subscribe to the camera color image
@@ -49,6 +51,9 @@ class TransformPublisher(Node):
 
         self.lidar_trim_min = 1.57
         self.lidar_trim_max = 4.71
+
+        self.in_front_min = 15/180*math.pi
+        self.in_front_max = 2*math.pi - 15/180*math.pi
 
         # Read ROS Params
         self.declare_parameter("/PotholeBufferSize", 5)
@@ -129,8 +134,29 @@ class TransformPublisher(Node):
                     scan.intensities[i] = 47
 
         self.lidar_pub.publish(scan)
+        msg = String()
+        msg = "PATH_CLEAR"
+        # scan in the narrow range in front to check for obstacles
+        for i in range(len(scan.intensities)):
+            if scan.ranges[i] < 1.5 and (i*scan.angle_increment < self.in_front_min or i*scan.angle_increment > self.in_front_max):
+
+                msg.data = "OBJECT_SEEN"
+                self.history[self.history_idx] = 1 if 1.5 < self.DISTANCE_AT_WHICH_WE_STOP_FROM_THE_OBSTACLE else 0
+                self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
+                break
+
+
         # self.get_logger().info('Publishing LaserScan ' + str(scan.header.stamp) + ' transformed:\n' + 'Angle_min: ' + str(scan.angle_min)
         #                             + '\nAngle_max: ' + str(scan.angle_max))
+
+        if self.path_clear and np.count_nonzero(self.history) >= self.BUFF_FILL * self.BUFF_SIZE:
+            self.get_logger().info("OBJECT_SEEN")
+            self.lidar_str_pub.publish(msg)
+            self.path_clear = False
+        elif (self.state == STATES.LINE_TO_OBJECT or self.state == STATES.GPS_TO_OBJECT) and np.count_nonzero(self.history) <= (1 - self.BUFF_FILL) * self.BUFF_SIZE:
+            self.get_logger().info("PATH_CLEAR")
+            self.lidar_str_pub.publish(msg)
+            self.path_clear = True
 
     def image_callback(self, image):
         # Bridge Image
