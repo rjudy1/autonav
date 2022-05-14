@@ -1,3 +1,17 @@
-https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md#installing-the-packages
+# Setting up the robot to go
+## Bridge
+1. To launch the bridge navigate to the bridge_ws and make sure you have a roscore running in a different window.
+2. Source your ROS1 and ROS2 installs with `. /opt/ros/ros_distro/setup.bash`
+3. Set device to local host if necessary `export ROS_MASTER_URI=http://localhost:11311`
+4. Run the bridge with `ros2 run ros1_bridge dynamic_bridge`
 
-sudo usermod -a -G dialout $USER
+## ROS1 Nodes
+1. Again, ensure you have a roscore running on a terminal.
+2. Source the build with `. /devel/setup.bash` from ros1_ws
+3. Run `roslaunch main robot.main`
+
+## ROS2 Nodes
+1. Navigate to your ros2_ws
+2. Source ROS2 and your build with `. /opt/ros/ros2_distro/setup.bash && . /install/setup.bash`
+3. Run `ros2 launch robot_launch robot.launch.py`
+4. (Optional) if you want to see the laser scan, run `rviz2 ./install/rplidar_ros/share/rplidar_ros/rviz/rplidar.rviz` in another terminal

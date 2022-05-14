@@ -53,7 +53,7 @@ class GPS(AutoNavNode):
         # Publish to the Lights
         self.light_state = rospy.Publisher("light_state", String, queue_size = 10)
 
-        self.PORT = '/dev/ttyTHS1'
+        self.PORT = '/dev/ttyTHS1'  # CHANGE THIS
         self.ser = serial.Serial(self.PORT, baudrate=115200)
         self.dataout = pynmea2.NMEAStreamReader()
         self.ser.readline() # read one junk line to achieve line synchronization

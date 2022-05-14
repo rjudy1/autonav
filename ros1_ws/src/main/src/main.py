@@ -74,7 +74,7 @@ class MainRobot(AutoNavNode):
         # Subscribe to new event notifications from the gps node
         self.gps_sub = rospy.Subscriber("gps_events", String, self.gps_callback)
         # Subscribe to new event notifications from the depth camera
-        self.depth_sub = rospy.Subscriber("depth_events", String, self.depth_callback)
+        self.depth_sub = rospy.Subscriber("/mod_lidar", String, self.depth_callback)
 
         self.state = State.Line_Following
         rospy.loginfo("Initializing Main Robot Controller...")
