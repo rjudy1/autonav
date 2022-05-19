@@ -34,7 +34,6 @@ class Circle:
 class TransformPublisher(Node):
     def __init__(self):
         super().__init__('lidar_modifier')
-        self.lidar_pub = self.create_publisher(LaserScan, '/mod_lidar', 10)
         self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
         self.i = 0

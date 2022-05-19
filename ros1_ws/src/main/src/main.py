@@ -79,18 +79,6 @@ class MainRobot(AutoNavNode):
         self.state = State.Line_Following
         rospy.loginfo("Initializing Main Robot Controller...")
 
-        self.switch = {
-            State.Line_Following: 'line_following_state',
-            State.Object_Avoidance_From_Line: 'object_avoidance_from_line_state',
-            State.Object_Avoidance_From_GPS: 'object_avoidance_from_gps_state',
-            State.GPS_Navigation: 'gps_navigation_state',
-            State.Line_To_Object: 'line_to_object_state',
-            State.Object_To_Line: 'object_to_line_state',
-            State.GPS_To_Object: 'gps_to_object_state',
-            State.Find_Line: 'find_line_state',
-            State.Line_Orientation: 'line_orientation_state'
-        }
-
         self.transition_set = {State.Line_To_Object, State.GPS_To_Object}
 
         self.obj_seen = False
@@ -293,11 +281,16 @@ class MainRobot(AutoNavNode):
     # This function is essentially a big state machine handling transitions
     # between a number of different states in the system.
     def change_state(self):
-        curr_state = getattr(self, self.switch.get(self.state, ''), None)
-        if curr_state is None:
-            rospy.loginfo("ERROR: Invalid State")
-        else:
-            curr_state()
+        if self.state == State.Line_Following: self.line_following_state()
+        elif self.state == State.Object_Avoidance_From_Line: self.object_avoidance_from_line_state()
+        elif self.state == State.Object_Avoidance_From_GPS: self.object_avoidance_from_gps_state()
+        elif self.state == State.GPS_Navigation: self.gps_navigation_state()
+        elif self.state == State.Line_To_Object: self.line_to_object_state()
+        elif self.state == State.Object_To_Line: self.object_to_line_state()
+        elif self.state == State.GPS_To_Object: self.gps_to_object_state()
+        elif self.state == State.Find_Line: self.find_line_state()
+        elif self.state == State.Line_Orientation: self.line_orientation_state()
+        else: rospy.loginfo("Error: Invalid State")
 
     # End of State Machine
 
@@ -388,50 +381,50 @@ def main(args):
     # that chooses the state you want the robot to 
     # start in. If no state is chosen, the default state
     # will be selected.
-    if main.start_state == 2:  # Object Detection From Line Following State
+    if main.start_state == State.Object_Avoidance_From_Line:  # Object Detection From Line Following State
         main.state = State.Object_Avoidance_From_Line
         main.safe_publish(main.state_pub, main.OBJECT_AVOIDANCE_FROM_LINE)
         #         main.state_pub.publish(main.OBJECT_AVOIDANCE_FROM_LINE)
         main.safe_publish(main.wheel_pub, WHEELS_OBJECT_AVOIDANCE)
     #         main.wheel_pub.publish(WHEELS_OBJECT_AVOIDANCE)
-    elif main.start_state == 3:  # Object Detection From GPS Navigation State
+    elif main.start_state == State.Object_Avoidance_From_GPS:  # Object Detection From GPS Navigation State
         main.state = State.Object_Avoidance_From_GPS
         main.safe_publish(main.state_pub, main.OBJECT_AVOIDANCE_FROM_GPS)
         #         main.state_pub.publish(main.OBJECT_AVOIDANCE_FROM_GPS)
         main.safe_publish(main.wheel_pub, WHEELS_OBJECT_AVOIDANCE)
     #         main.wheel_pub.publish(WHEELS_OBJECT_AVOIDANCE)
-    elif main.start_state == 4:  # GPS Navigation State
+    elif main.start_state == State.GPS_Navigation:  # GPS Navigation State
         main.state = State.GPS_Navigation
         main.safe_publish(main.state_pub, main.GPS_NAVIGATION)
         #         main.state_pub.publish(main.GPS_NAVIGATION)
         main.safe_publish(main.wheel_pub, WHEELS_GPS_NAV)
     #         main.wheel_pub.publish(WHEELS_GPS_NAV)
     # Transition States
-    elif main.start_state == 5:  # Line to Object Transition State
+    elif main.start_state == State.Line_To_Object:  # Line to Object Transition State
         main.state = State.Line_To_Object
         main.safe_publish(main.state_pub, main.LINE_TO_OBJECT)
         #         main.state_pub.publish(main.LINE_TO_OBJECT)
         main.safe_publish(main.wheel_pub, WHEELS_TRANSITION)
     #         main.wheel_pub.publish(WHEELS_TRANSITION)
-    elif main.start_state == 6:  # Object to Line Transition State
+    elif main.start_state == State.Object_To_Line:  # Object to Line Transition State
         main.state = State.Object_To_Line
         main.safe_publish(main.state_pub, main.OBJECT_TO_LINE)
         #         main.state_pub.publish(main.OBJECT_TO_LINE)
         main.safe_publish(main.wheel_pub, WHEELS_TRANSITION)
     #         main.wheel_pub.publish(WHEELS_TRANSITION)
-    elif main.start_state == 7:  # GPS to Object Transition State
+    elif main.start_state == State.GPS_To_Object:  # GPS to Object Transition State
         main.state = State.GPS_To_Object
         main.safe_publish(main.state_pub, main.GPS_TO_OBJECT)
         #         main.state_pub.publish(main.GPS_TO_OBJECT)
         main.safe_publish(main.wheel_pub, WHEELS_TRANSITION)
     #         main.wheel_pub.publish(WHEELS_TRANSITION)
-    elif main.start_state == 8:  # Find Line Transition State
+    elif main.start_state == State.Find_Line:  # Find Line Transition State
         main.state = State.Find_Line
         main.safe_publish(main.state_pub, main.FIND_LINE)
         #         main.state_pub.publish(main.FIND_LINE)
         main.safe_publish(main.wheel_pub, WHEELS_TRANSITION)
     #         main.wheel_pub.publish(WHEELS_TRANSITION)
-    elif main.start_state == 9:  # Change to Line Orientation State
+    elif main.start_state == State.Line_Orientation:  # Change to Line Orientation State
         main.state = State.Line_Orientation
         main.safe_publish(main.state_pub, main.LINE_ORIENT)
         #         main.state_pub.publish(main.LINE_ORIENT)
