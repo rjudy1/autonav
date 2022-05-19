@@ -1,5 +1,5 @@
 <launch>
-    <rosparam file="/home/autonav/autonav_ws/params/params.yaml" />
+    <rosparam file="/home/autonav/autonav/ros1_ws/params/params.yaml" />
     <!--<include file="$(find realsense2_camera)/launch/rs_camera.launch" />-->
 <!--     <node pkg="rs_publisher" name="rs_publisher" type="publish.py" required="true"/> -->
 <!--     <node pkg="lights" name="lights_ctr" type="lights_node" required="true"/> -->

@@ -26,6 +26,8 @@ from line_detection import LineDetection
 from line_following import LineFollowing
 from std_msgs.msg import String
 
+import cv2
+
 class Lines(Node):
     def __init__(self):
         super().__init__('lines')
@@ -98,7 +100,8 @@ class Lines(Node):
             self.line_detection.reset()
 
     def state_callback(self, new_state):
-        self.get_logger().info("New State Received ({}): {}".format(self.node_name, new_state.data))
+        self.get_logger().info(f"New State Received {new_state.data}")
+
         self.state = new_state.data
 
 
@@ -108,6 +111,7 @@ def main():
 
     try: rclpy.spin(lines)
     except KeyboardInterrupt:
+        cv2.destroyAllWindows()
         print("Keyboard interrupt")
 
 

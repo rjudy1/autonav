@@ -34,6 +34,7 @@ class Circle:
 class TransformPublisher(Node):
     def __init__(self):
         super().__init__('lidar_modifier')
+        self.lidar_pub = self.create_publisher(LaserScan, '/laser_frame', 10)
         self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
         self.i = 0
@@ -64,15 +65,18 @@ class TransformPublisher(Node):
         self.circles = []
 
         # Subscribe to state updates for the robot
-        # self.state_sub = self.create_subscription(String, "state_topic", self.state_callback)
-
+        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
+        self.state = STATES.LINE_FOLLOWING
         # Initialize primary variables
         self.history = np.zeros((self.BUFF_SIZE,), dtype=bool)
         self.history_idx = 0
         self.path_clear = True
         self.window_handle = []
+        self.obstacle_detect_distance = 1.5
 
+        self.declare_parameter("/FollowingDirection", 1)
         self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
+
 
         self.get_logger().info("Waiting for image topics...")
 
@@ -91,6 +95,11 @@ class TransformPublisher(Node):
             return 0, False
         else:
             return math.sqrt((x - 190) * (x - 190) + (y + 182)(y + 182)) * 1.5 / 380 - .6096, True
+
+    def state_callback(self, new_state):
+        self.get_logger().info("New State Received ({}): {}".format(self.node_name, new_state.data))
+        self.state = new_state.data
+
 
     # edit lidar here including pothole modifications ----------------------------------------------------------
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
@@ -136,6 +145,7 @@ class TransformPublisher(Node):
                     scan.intensities[i] = 47
 
         self.lidar_pub.publish(scan)
+
         msg = String()
         msg.data = "PATH_CLEAR"
         # scan in the narrow range in front to check for obstacles
@@ -143,7 +153,7 @@ class TransformPublisher(Node):
             if scan.ranges[i] < 1.5 and (i*scan.angle_increment < self.in_front_min or i*scan.angle_increment > self.in_front_max):
 
                 msg.data = "OBJECT_SEEN"
-                self.history[self.history_idx] = 1 if 1.5 < self.DISTANCE_AT_WHICH_WE_STOP_FROM_THE_OBSTACLE else 0
+                self.history[self.history_idx] = 1 if 1.5 < self.obstacle_detect_distance else 0
                 self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
                 break
 
@@ -161,10 +171,10 @@ class TransformPublisher(Node):
             self.path_clear = True
 
         distance_msg = String()
-        if self.FOLLOWING_DIR == 1:
+        if self.FOLLOWING_DIR == 1 and scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
             distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi*13/8/scan.angle_increment)])
             self.get_logger().info(f"Following direction right? {self.FOLLOWING_DIR}: {distance_msg.data}")
-        else:
+        elif scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
             distance_msg.data = "OBJ," + str(scan.ranges[round(3*math.pi/8/scan.angle_increment)])
             self.get_logger().info(f"Following direction left? {self.FOLLOWING_DIR}: {distance_msg.data}")
 

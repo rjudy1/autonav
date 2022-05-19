@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # ********************************************* #
 # Cedarville University                         #
@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(1, '/home/autonav/autonav/ros1_ws/src/autonav_utils/')
 
-import cv2
+# import cv2
 import rospy
 import threading
 import time
@@ -444,7 +444,7 @@ def main(args):
         rospy.spin()
     except KeyboardInterrupt:
         print("Shutting down")
-        cv2.destroyAllWindows()
+
 
 
 if __name__ == "__main__":
