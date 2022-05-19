@@ -36,6 +36,7 @@ class TransformPublisher(Node):
         super().__init__('lidar_modifier')
         self.lidar_pub = self.create_publisher(LaserScan, '/mod_lidar', 10)
         self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
+        self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
         self.i = 0
 
         # Subscribe to the camera color image
@@ -71,6 +72,8 @@ class TransformPublisher(Node):
         self.history_idx = 0
         self.path_clear = True
         self.window_handle = []
+
+        self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
 
         self.get_logger().info("Waiting for image topics...")
 
@@ -135,7 +138,7 @@ class TransformPublisher(Node):
 
         self.lidar_pub.publish(scan)
         msg = String()
-        msg = "PATH_CLEAR"
+        msg.data = "PATH_CLEAR"
         # scan in the narrow range in front to check for obstacles
         for i in range(len(scan.intensities)):
             if scan.ranges[i] < 1.5 and (i*scan.angle_increment < self.in_front_min or i*scan.angle_increment > self.in_front_max):
@@ -157,6 +160,16 @@ class TransformPublisher(Node):
             self.get_logger().info("PATH_CLEAR")
             self.lidar_str_pub.publish(msg)
             self.path_clear = True
+
+        distance_msg = String()
+        if self.FOLLOWING_DIR == 1:
+            distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi*13/8/scan.angle_increment)])
+            self.get_logger().info(f"Following direction right? {self.FOLLOWING_DIR}: {distance_msg.data}")
+        else:
+            distance_msg.data = "OBJ," + str(scan.ranges[round(3*math.pi/8/scan.angle_increment)])
+            self.get_logger().info(f"Following direction left? {self.FOLLOWING_DIR}: {distance_msg.data}")
+
+        self.lidar_wheel_distance_pub.publish(distance_msg)
 
     def image_callback(self, image):
         # Bridge Image

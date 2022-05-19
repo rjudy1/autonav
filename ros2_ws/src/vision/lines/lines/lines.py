@@ -64,7 +64,7 @@ class Lines(Node):
 
     def image_callback(self, ros_image):
         image = bridge_image(ros_image, "bgr8")
-        self.get_logger().info("CURRENT STATE: {}".format(self.state))
+        # self.get_logger().info("CURRENT STATE: {}".format(self.state))
 
         # Line Followings
         if self.state == STATES.LINE_FOLLOWING:
@@ -81,7 +81,7 @@ class Lines(Node):
         elif self.state in self.line_detection_states:
             found_line, aligned = self.line_detection.image_callback(image, self.state)
             closeWindows(self.line_following.window_handle)
-            self.get_logger().warning("Line Detection")
+            # self.get_logger().warning("Line Detection")
             if found_line:
                 self.get_logger().warning(self.FOUND_LINE)
                 msg = String()
@@ -108,7 +108,7 @@ def main():
 
     try: rclpy.spin(lines)
     except KeyboardInterrupt:
-        rclpy.get_logger().warning("Keyboard interrupt")
+        print("Keyboard interrupt")
 
 
 if __name__ == "__main__":
