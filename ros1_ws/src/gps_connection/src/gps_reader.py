@@ -116,7 +116,7 @@ class GPS(AutoNavNode):
         rospy.loginfo(dist_meters)
         
         # if we are not currently navigating with GPS data
-        if self.state in self.LINE_MODE and False:
+        if self.state in self.LINE_MODE and False:  #currently completely disabled
             rospy.logerr("Line Follow")
             if dist_meters <= self.TRANS_DIST:
                 rospy.loginfo("Arrived")
@@ -132,7 +132,7 @@ class GPS(AutoNavNode):
                 self.safe_publish(self.light_state, "G_On")
                 self.waypoint_itr = (self.waypoint_itr + 1)
                 rospy.logerr("Switch points")
-                # if we have reached our last waypoint, swich state. 
+                # if we have reached our last waypoint, switch state. 
                 if self.waypoint_itr > len(self.target_loc):
                     self.safe_publish(self.gps_events, "WAYPOINT_FOUND")
                     self.waypoint_itr = 0
