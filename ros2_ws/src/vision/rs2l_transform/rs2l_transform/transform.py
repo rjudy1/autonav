@@ -50,8 +50,11 @@ class TransformPublisher(Node):
         self.found_line = False
         self.window_handle = []
 
-        self.lidar_trim_min = 1.57
-        self.lidar_trim_max = 4.71
+        self.declare_paremeter("/LIDAR_Trim_Min", 1.57)
+        self.declare_parameter("/LIDAR_Trim_Max", 4.71)
+
+        self.lidar_trim_min = self.get_parameter('/LIDAR_Trim_Min').value
+        self.lidar_trim_max = self.get_parameter('/LIDAR_Trim_Min').value
 
         self.in_front_min = 15/180*math.pi
         self.in_front_max = 2*math.pi - 15/180*math.pi
@@ -61,6 +64,8 @@ class TransformPublisher(Node):
         self.declare_parameter("/PotholeBufferFill", 0.8)
         self.BUFF_SIZE = self.get_parameter('/PotholeBufferSize').value
         self.BUFF_FILL = self.get_parameter('/PotholeBufferFill').value
+
+        self.declare_parameter('/Debug', False)
 
         self.circles = []
 
@@ -97,14 +102,14 @@ class TransformPublisher(Node):
             return math.sqrt((x - 190) * (x - 190) + (y + 182)(y + 182)) * 1.5 / 380 - .6096, True
 
     def state_callback(self, new_state):
-        self.get_logger().info("New State Received ({}): {}".format(self.node_name, new_state.data))
+        # self.get_logger().info("New State Received ({}): {}".format(self.node_name, new_state.data))
         self.state = new_state.data
 
 
     # edit lidar here including pothole modifications ----------------------------------------------------------
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     def lidar_callback(self, scan):
-        # adjust range
+         # adjust range
         scan.angle_max += abs(scan.angle_min)
         scan.angle_min = 0.0
 
@@ -112,16 +117,26 @@ class TransformPublisher(Node):
         trim_range = self.lidar_trim_max - self.lidar_trim_min
         width = round(trim_range / scan_range * len(scan.ranges))
 
+            # self.get_logger().warning(f"{}")
+
         shift = self.lidar_trim_min - scan.angle_min
         trim_base = round(shift / scan_range * len(scan.ranges))
+        self.get_logger().warning(f"\n{len(scan.ranges)}, {round(trim_base)}, {round(width)}")
 
         if len(scan.intensities) > trim_base + width:
             for i in range(trim_base, trim_base + width):
                 scan.ranges[i] = math.inf
                 scan.intensities[i] = 0.0
+
         else:
-            for i in range(trim_base, trim_base + width):
-                scan.ranges[i] = math.inf
+            try:
+                for i in range(trim_base, trim_base + width):
+                    scan.ranges[i] = math.inf
+            except Exception:
+
+                self.get_logger().info(f"ranges length: {len(scan.ranges)}")
+
+        self.get_logger().info(f"\nranges length: {len(scan.ranges)}")
 
         # insert pothole additions to lidar here
         for circle in self.circles:
@@ -171,21 +186,24 @@ class TransformPublisher(Node):
             self.path_clear = True
 
         distance_msg = String()
-        if self.FOLLOWING_DIR == 1 and scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
-            distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi*13/8/scan.angle_increment)])
-            self.get_logger().info(f"Following direction right? {self.FOLLOWING_DIR}: {distance_msg.data}")
-        elif scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
-            distance_msg.data = "OBJ," + str(scan.ranges[round(3*math.pi/8/scan.angle_increment)])
-            self.get_logger().info(f"Following direction left? {self.FOLLOWING_DIR}: {distance_msg.data}")
+        try:
+            if self.FOLLOWING_DIR == 1 and scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
+                    distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi*13/8/scan.angle_increment)])
+                    # self.get_logger().info(f"Following direction right? {self.FOLLOWING_DIR}: {distance_msg.data}")
+            elif scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
+                distance_msg.data = "OBJ," + str(scan.ranges[round(3*math.pi/8/scan.angle_increment)])
+                # self.get_logger().info(f"Following direction left? {self.FOLLOWING_DIR}: {distance_msg.data}")
+        except IndexError:
+            pass
+        #     self.get_logger().info(f"position in array {round(math.pi * 13 / 8 / scan.angle_increment)}")
+        #     self.get_logger().info(f"ranges {scan.ranges}")
 
         self.lidar_wheel_distance_pub.publish(distance_msg)
 
     def image_callback(self, image):
-        # Bridge Image
-        image = bridge_image(image, "bgr8")
-
-        # Apply Blur
-        # grey = cv2.medianBlur(image,3)
+        # slice edges
+        y, x = image.shape[0], image.shape[1]
+        image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
 
         # Apply HSV Filter
         gray = hsv_filter(image)
@@ -193,9 +211,10 @@ class TransformPublisher(Node):
 
         # Find Circles
         circles = cv2.HoughCircles(morph, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=50, maxRadius=150)
+        if circles is not None and self.DEBUG_MODE:
+            self.get_logger().warning(f"FOUND CIRCLES: {circles}")
         # clear circles if not found
-        self.circles = []  # replace previously viewed circles in array
-
+        self.circles = []  # replace previously viewed circles in history array
         # Display Circles
         if circles is not None:
             circles = np.uint16(np.around(circles))
@@ -204,10 +223,8 @@ class TransformPublisher(Node):
                 cv2.circle(morph, (i[0], i[1]), i[2], (0, 255, 0), 2)
                 # draw the center of the circle
                 cv2.circle(morph, (i[0], i[1]), 2, (0, 0, 255), 3)
+                cvDisplay(morph, 'Pothole Detection', self.window_handle)
                 self.circles.insert(0, Circle(i[0], i[1], i[2]))  # store all circles in the array
-
-        # Display Result
-        cvDisplay(morph, 'Pothole Detection', self.window_handle)
 
         if circles is not None: self.update_history(1)
         # self.determine_state()

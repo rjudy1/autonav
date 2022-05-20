@@ -52,7 +52,6 @@ class LineDetection(Node):
         self.line_history = [0] * self.BUFF_SIZE
         self.DEBUG_MODE = self.get_parameter('/Debug').value
 
-
     def image_callback(self, image, state):
         # Save Dimensions
         y, x = image.shape[0], image.shape[1]
@@ -77,7 +76,7 @@ class LineDetection(Node):
                     cv2.line(morph, (x1, y1), (x2, y2), (0, 255, 0), thickness=5)
                 cvDisplay(morph, 'Line Detection Opened Image', self.window_handle)
         else:
-            self.get_logger().warning("Line Detection Image Discarded")
+            self.get_logger().warning("Oversatured LineDetection Image")
             self.update_history(0)
 
         found_line = self.determine_state()
@@ -99,7 +98,7 @@ class LineDetection(Node):
             self.distance = self.get_distance(image.shape[1], image.shape[0], [x1, y1, x2, y2])
             self.get_logger().info("LINE SLOPE: {} | LINE DISTANCE: {}".format(self.slope, self.distance))
             return True, [x1, y1, x2, y2]
-        else: self.update_history(0)
+        else:  self.update_history(0)
         return False, [0, 0, 0, 0]
 
     def get_slope(self, x1, y1, x2, y2):

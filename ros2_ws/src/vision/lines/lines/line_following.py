@@ -38,25 +38,25 @@ class LineFollowing(Node):
 
         # Read ROS Params - Line Following
         self.declare_parameter("/FollowingDirection", 1)
-        self.declare_parameter('/LineBufferSize', 5)
-        self.declare_parameter('/LineThreshMin', 250)
-        self.declare_parameter('/LineThreshMax', 255)
-        self.declare_parameter('/LineHeightStart', 470.0)
-        self.declare_parameter('/LineHeightStep', 50.0)
-        self.declare_parameter('/LineLostCount', 100)
-        self.declare_parameter('/LineDist', 200)
+        # self.declare_parameter('/LineBufferSize', 5)
+        # self.declare_parameter('/LineThreshMin', 250)
+        # self.declare_parameter('/LineThreshMax', 255)
+        # self.declare_parameter('/LineHeightStart', 470.0)
+        # self.declare_parameter('/LineHeightStep', 50.0)
+        # self.declare_parameter('/LineLostCount', 100)
+        # self.declare_parameter('/LineDist', 200)
         self.declare_parameter('/Debug', True)
 
         self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
-        self.BUFF_SIZE = self.get_parameter('/LineBufferSize').value
-        self.THRESH_MIN = self.get_parameter('/LineThreshMin').value
-        self.MAX_PIXEL = self.get_parameter('/LineThreshMax').value
-        self.HEIGHT_START = self.get_parameter('/LineHeightStart').value
-        self.HEIGHT_STEP = self.get_parameter('/LineHeightStep').value
-        self.LINE_LOST_COUNT = self.get_parameter('/LineLostCount').value
-        self.LINE_FOLLOW_DIST = self.get_parameter('/LineDist').value
+        self.BUFF_SIZE = 5
+        self.THRESH_MIN = 250
+        self.MAX_PIXEL = 255  # linethreshmax
+        self.HEIGHT_START = 470.0
+        self.HEIGHT_STEP = 50.0
+        self.LINE_LOST_COUNT = 100
+        self.LINE_FOLLOW_DIST = 200  ## line dist
         self.DEBUG_MODE = self.get_parameter('/Debug').value
-        self.moving = [self.get_parameter('/LineDist').value] * self.BUFF_SIZE
+        self.moving = [200] * self.BUFF_SIZE
 
     def filter_result(self):
         # 5 point moving average filter
@@ -155,7 +155,6 @@ class LineFollowing(Node):
     # This function takes an image, and returns the value of the distance (in pixels) that the line is
     # from the center of the image
     def image_callback(self, original_image):
-
         # Reference variables to help find portion of image
         x = 0
         y = int((self.HEIGHT_START / 720.0) * original_image.shape[0])
