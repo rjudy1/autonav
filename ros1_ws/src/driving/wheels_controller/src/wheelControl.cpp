@@ -44,94 +44,64 @@ wheelControl::wheelControl(int& argc, char** argv, const std::string topic)
     double gpsKi = 0.0;
 
     //Get the PID terms from system parameters
-    if(ros::param::has("/LineCtrlKp"))
-    {
+    if(ros::param::has("/LineCtrlKp")) {
         ros::param::get("/LineCtrlKp", lineKp);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Line Ctrl Kp not found. Using default");
     }
 
-    if(ros::param::has("/LineCtrlKd"))
-    {
+    if(ros::param::has("/LineCtrlKd")) {
         ros::param::get("/LineCtrlKd", lineKd);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Line Ctrl Kd not found. Using default");
     }
 
-    if(ros::param::has("/LineCtrlKi"))
-    {
+    if(ros::param::has("/LineCtrlKi")) {
         ros::param::get("/LineCtrlKi", lineKi);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Line Ctrl Ki not found. Using default");
     }
 
-    if(ros::param::has("/ObjCtrlKp"))
-    {
+    if(ros::param::has("/ObjCtrlKp")) {
         ros::param::get("/ObjCtrlKp", objKp);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Obj Ctrl Kp not found. Using default");
     }
 
-    if(ros::param::has("/ObjCtrlKd"))
-    {
+    if(ros::param::has("/ObjCtrlKd")) {
         ros::param::get("/ObjCtrlKd", objKd);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Obj Ctrl Kd not found. Using default");
     }
 
-    if(ros::param::has("/ObjCtrlKi"))
-    {
+    if(ros::param::has("/ObjCtrlKi")) {
         ros::param::get("/ObjCtrlKi", objKi);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Obj Ctrl Ki not found. Using default");
     }
 
-    if(ros::param::has("/GpsCtrlKp"))
-    {
+    if(ros::param::has("/GpsCtrlKp")) {
         ros::param::get("/GpsCtrlKp", gpsKp);
-    }
-    else
-    {
+    } else {
         ROS_WARN("GPS Ctrl Kp not found. Using default");
     }
 
-    if(ros::param::has("/GpsCtrlKd"))
-    {
+    if(ros::param::has("/GpsCtrlKd")) {
         ros::param::get("/GpsCtrlKd", gpsKd);
-    }
-    else
-    {
+    } else {
         ROS_WARN("GPS Ctrl Kd not found. Using default");
     }
 
-    if(ros::param::has("/GpsCtrlKi"))
-    {
+    if(ros::param::has("/GpsCtrlKi")) {
         ros::param::get("/GpsCtrlKi", gpsKi);
-    }
-    else
-    {
+    } else {
         ROS_WARN("GPS Ctrl Ki not found. Using default");
     }
 
     //Get the default wheel speed
-    if(ros::param::has("/DefaultSpeed"))
-    {
+    if(ros::param::has("/DefaultSpeed")) {
         ros::param::get("/DefaultSpeed", this->defaultSpeed);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Default wheel speed not found. Defaulting to 15");
         this->defaultSpeed = 15;
     }
@@ -139,24 +109,18 @@ wheelControl::wheelControl(int& argc, char** argv, const std::string topic)
     //Get the speed boost increase
     //This value will be added to the wheel speed during a long
     //straight section of the course if the robot has not turned in a while
-    if(ros::param::has("/BoostIncrease"))
-    {
+    if(ros::param::has("/BoostIncrease")) {
         ros::param::get("/BoostIncrease", this->speedBoost);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Wheel boost speed not found. Defaulting to 15");
         this->speedBoost = 15;
     }
 
     //Set teh number of consecutive times the robot must be keeping to the line
     //to activate the boost
-    if(ros::param::has("/BoostCountThreshhold"))
-    {
+    if(ros::param::has("/BoostCountThreshhold")) {
         ros::param::get("/BoostCountThreshhold", this->boostCountThreshhold);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Boost count threshhold not found. Defaulting to 20");
         this->boostCountThreshhold = 20;
     }
@@ -176,82 +140,63 @@ wheelControl::wheelControl(int& argc, char** argv, const std::string topic)
     this->followingMode = FollowMode::eeNone;
     
     //Get the following polarity
-    if(ros::param::has("/FollowingDirection"))
-    {
+    if(ros::param::has("/FollowingDirection")) {
         int param = 0;
         ros::param::get("/FollowingDirection", param);
         this->followingPol = static_cast<FollowPolarity>(param);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Following Polarity not found. Defaulting to right");
-	this->followingPol = FollowPolarity::eeRight;
+	    this->followingPol = FollowPolarity::eeRight;
     }
 
     //Get the distance to follow the line from
-    if(ros::param::has("/LineDist"))
-    {
+    if(ros::param::has("/LineDist")) {
         ros::param::get("/LineDist", this->targetLineDist);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Target Line Distance not found. Defaulting to 125");
         this->targetLineDist = 125;
     }
 
     //Get the distance to follow targets from
-    if(ros::param::has("/SideObjectDist"))
-    {
+    if(ros::param::has("/SideObjectDist")) {
         ros::param::get("/SideObjectDist", this->targetObjDist);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Target Side Object Distance not found. Defaulting to 600");
         this->targetObjDist = 600;
     }
 
     //Margin of error needed in Line Following to increment the boostCount
-    if(ros::param::has("/LineBoostMargin"))
-    {
+    if(ros::param::has("/LineBoostMargin")) {
         ros::param::get("/LineBoostMargin", this->lineBoostMargin);
-    }
-    else
-    {
+    } else {
         ROS_WARN("Line Boost Margin not found. Defaulting to 30.0");
         this->lineBoostMargin = 30.0;
     }
 
     //Margin of error needed in GPS Following to increment the boostCount
-    if(ros::param::has("/GpsBoostMargin"))
-    {
+    if(ros::param::has("/GpsBoostMargin")) {
         ros::param::get("/GpsBoostMargin", this->gpsBoostMargin);
-    }
-    else
-    {
+    } else {
         ROS_WARN("GPS Boost Margin not found. Defaulting to 10 degrees");
         this->gpsBoostMargin = 0.1745; //10 degrees in radians
     }
 
 }
 
-wheelControl::~wheelControl()
-{
-}
+wheelControl::~wheelControl() {}
 
 //This function will start the actual control of the wheels
 //This is when the wheel Controller acually starts listening to the 
 //messages coming in
 //NOTE: This is a blocking function
-void wheelControl::startControl()
-{
+void wheelControl::startControl() {
     ros::spin();
 }
 
 //This function will receive a message and send a command down to the wheels
 //If the command sent is abouve STOP_CODE_THRESHOLD then a stop command 
 //will be send to the wheels to halt the robot.
-void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg)
-{
+void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg) {
     //Start the left and right speeds at the current values
     int leftSpeed = this->currLeftSpeed;
     int rightSpeed = this->currRightSpeed;
@@ -265,66 +210,49 @@ void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg)
     std::string message = msg->data.c_str();
     std::string sender = message.substr(0,3);
     //Check for a stop code or changing state
-    if(sender == SWITCH_TO_OBJECT_AVOIDANCE)
-    {
+    if(sender == SWITCH_TO_OBJECT_AVOIDANCE) {
         this->followingMode = FollowMode::eeObject;
         this->boostCount = 0;
         messageValid = true;
         ROS_DEBUG("Switched to Object Avoidance");
-    }
-    else if(sender == SWITCH_TO_LINE_FOLLOWING)
-    {
+    } else if(sender == SWITCH_TO_LINE_FOLLOWING) {
         this->followingMode = FollowMode::eeLine;
         this->boostCount = 0;
         messageValid = true;
         ROS_INFO("Switched to Line Following");
-    }
-    else if(sender == SWITCH_TO_GPS_NAV)
-    {
+    } else if(sender == SWITCH_TO_GPS_NAV) {
         this->followingMode = FollowMode::eeGps;
         this->boostCount = 0;
         messageValid = true;
         ROS_INFO("Switched to GPS Navigation");
-    }
-    else if(sender == SWITCH_TO_TRANSITION)
-    {
+    } else if(sender == SWITCH_TO_TRANSITION) {
         this->followingMode = FollowMode::eeTransition;
         this->boostCount = 0;
         messageValid = true;
         ROS_INFO("Switched to Transition State");
-    }
-    else if(sender == TRANSITION_SENDER) //transition state handled seperately
-    {
+    } else if(sender == TRANSITION_SENDER) {
+        //transition state handled seperately
         std::string cmds = message.substr(4);
         std::size_t pos = cmds.find(",");
         messageValid = true;
         ROS_INFO("Transition Received");
-        if(pos == std::string::npos)
-        {
+        if(pos == std::string::npos) {
             ROS_ERROR("ERROR: Misformatted string");
             return;
-        }
-        else
-        {
+        } else {
             leftSpeed = std::stoi(cmds.substr(0, pos));
             rightSpeed = std::stoi(cmds.substr(pos+1));
-        }
-        
-    }
-    else if(this->followingMode == FollowMode::eeLine && sender == LINE_SENDER)
-    {
+        }    
+    } else if(this->followingMode == FollowMode::eeLine && sender == LINE_SENDER) {
         double position = std::stod(message.substr(4));
         messageValid = true;
         //Use the PID controller to get a command for the wheels
-        if(position >= STOP_CODE)
-        {
+        if(position >= STOP_CODE) {
             leftSpeed = 0;
             rightSpeed = 0;
             stopOverride = true;
             this->boostCount = 0;
-        }
-        else
-        {
+        } else {
             messageValid = true;
 
             //Calculate the error
@@ -337,32 +265,27 @@ void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg)
             rightSpeed = this->defaultSpeed - delta;
 
             //Check if we should are in the acceptable zone for picking up speed.i
-            if(std::abs(positionError) <= this->lineBoostMargin)
-            {
+            if(std::abs(positionError) <= this->lineBoostMargin) {
                 this->boostCount++;
             }
-            else //if we are not in the acceptable range, we cannot speed up
-            {
+            else {
+                //if we are not in the acceptable range, we cannot speed up
                 this->boostCount = 0;
             }
 	        ROS_INFO("Wheel PID Line Controller");
         }
-    }
-    else if(this->followingMode == FollowMode::eeObject && sender == OBJ_SENDER)
-    {
+    } else if(this->followingMode == FollowMode::eeObject && sender == OBJ_SENDER) {
         messageValid = true;
 
         double position = std::stod(message.substr(4));
         //Use the PID controller to get a command for the wheels
-        if(position >= STOP_CODE)
-        {
+        if(position >= STOP_CODE) {
             leftSpeed = 0;
             rightSpeed = 0;
             stopOverride = true;
             this->boostCount = 0;
         }
-        else
-        {
+        else {
             //calculate the differential and apply it to the default speed
             double delta = this->pidCtrObj->control(this->targetObjDist - position); 
             delta = delta * (double)(this->followingPol);
@@ -372,21 +295,16 @@ void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg)
             //The boosting functionality is not used in object following
 	        ROS_INFO("Wheel PID Obj Controller");
         }
-    }
-    else if(this->followingMode == FollowMode::eeGps && sender == GPS_SENDER)
-    {
+    } else if(this->followingMode == FollowMode::eeGps && sender == GPS_SENDER) {
         messageValid = true;
         double position = std::stod(message.substr(4));
         //Use the PID controller to get a command for the wheels
-        if(position >= STOP_CODE)
-        {
+        if(position >= STOP_CODE) {
             leftSpeed = 0;
             rightSpeed = 0;
             stopOverride = true;
             this->boostCount = 0;
-        }
-        else
-        {
+        } else {
             //GPS sends the error already, so calculate the differential
             //and apply it to the wheels
             double delta = this->pidCtrGps->control(position); //GPS sends the error already
@@ -395,12 +313,11 @@ void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg)
             rightSpeed = this->defaultSpeed - delta;
 
             //Check if we can start picking up speed
-            if(std::abs(position) <= this->gpsBoostMargin)
-            {
+            if(std::abs(position) <= this->gpsBoostMargin) {
                 this->boostCount++;
             }
-            else //if we are not in the acceptable range, we cannot speed up
-            {
+            else {
+                //if we are not in the acceptable range, we cannot speed up
                 this->boostCount = 0;
             }
 	        ROS_INFO("Wheel PID GPS Controller");
@@ -414,35 +331,27 @@ void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg)
     //Check if the boost count has met the threshhold to apply the boost
     //The PID controllers should keep giving the same values so the boost
     //can simply add a constant value to both wheels
-    if(this->boostCount >= this->boostCountThreshhold && messageValid)
-    {
+    if(this->boostCount >= this->boostCountThreshhold && messageValid) {
         leftSpeed += this->speedBoost;
         rightSpeed += this->speedBoost;
     }
 
     //Send the command to the wheels
-    if((leftSpeed != currLeftSpeed) || (rightSpeed != currRightSpeed) && messageValid)
-    {
+    if((leftSpeed != currLeftSpeed) || (rightSpeed != currRightSpeed) && messageValid) {
         //If not a stop Override, make sure we only change by a maximum of 5
         if(!stopOverride)
         {
             //Check that the left speed isn't changing too fast
-            if(leftSpeed > this->currLeftSpeed + MAX_CHANGE)
-            {
+            if(leftSpeed > this->currLeftSpeed + MAX_CHANGE) {
                 leftSpeed = this->currLeftSpeed + MAX_CHANGE;
-            }
-            else if(leftSpeed < this->currLeftSpeed - MAX_CHANGE)
-            {
+            } else if(leftSpeed < this->currLeftSpeed - MAX_CHANGE) {
                 leftSpeed = this->currLeftSpeed - MAX_CHANGE;
             }
 
             //Check that the right speed isn't changing too fast
-            if(rightSpeed > this->currRightSpeed + MAX_CHANGE)
-            {
+            if(rightSpeed > this->currRightSpeed + MAX_CHANGE) {
                 rightSpeed = this->currRightSpeed + MAX_CHANGE;
-            }
-            else if(rightSpeed < this->currRightSpeed - MAX_CHANGE)
-            {
+            } else if(rightSpeed < this->currRightSpeed - MAX_CHANGE) {
                 rightSpeed = this->currRightSpeed - MAX_CHANGE;
             }
         }
@@ -456,8 +365,7 @@ void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg)
 }
 
 //This function will perform exit operations if the program is killed in mid-execution
-void wheelControl::signalCatch(int signum)
-{
+void wheelControl::signalCatch(int signum) {
     ROS_INFO("Shutting down Wheel Controller...");
     //send command to turn off the wheels
     instance->wheelDriver->CtrlWheels(0,0);
@@ -470,8 +378,7 @@ void wheelControl::signalCatch(int signum)
 }
 
 //Main for compilation and test
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     wheelControl* wheelsCtr = wheelsCtr->getInstance(argc, argv, WHEEL_TOPIC);
 
     ROS_INFO("Wheels now listening...");
