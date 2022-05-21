@@ -93,10 +93,10 @@ class LineDetection(Node):
         if lines is not None:
             self.update_history(1)
             x1, y1, x2, y2 = lines[0][0]
-            self.get_logger().warning(str(lines[0][0]))
+            # self.get_logger().warning(str(lines[0][0]))
             self.slope = self.get_slope(x1, y1, x2, y2)
             self.distance = self.get_distance(image.shape[1], image.shape[0], [x1, y1, x2, y2])
-            self.get_logger().info("LINE SLOPE: {} | LINE DISTANCE: {}".format(self.slope, self.distance))
+            # self.get_logger().info("LINE SLOPE: {} | LINE DISTANCE: {}".format(self.slope, self.distance))
             return True, [x1, y1, x2, y2]
         else:  self.update_history(0)
         return False, [0, 0, 0, 0]

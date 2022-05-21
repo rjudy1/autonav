@@ -11,6 +11,8 @@
 
 import sys
 
+import cv2
+
 sys.path.insert(1, '/home/autonav/autonav/')
 
 from dataclasses import dataclass
@@ -50,11 +52,8 @@ class TransformPublisher(Node):
         self.found_line = False
         self.window_handle = []
 
-        self.declare_paremeter("/LIDAR_Trim_Min", 1.57)
+        self.declare_parameter("/LIDAR_Trim_Min", 1.57)
         self.declare_parameter("/LIDAR_Trim_Max", 4.71)
-
-        self.lidar_trim_min = self.get_parameter('/LIDAR_Trim_Min').value
-        self.lidar_trim_max = self.get_parameter('/LIDAR_Trim_Min').value
 
         self.in_front_min = 15/180*math.pi
         self.in_front_max = 2*math.pi - 15/180*math.pi
@@ -79,9 +78,15 @@ class TransformPublisher(Node):
         self.window_handle = []
         self.obstacle_detect_distance = 1.5
 
+        self.declare_parameter('/LineDetectCropTop', 0.0)
+        self.declare_parameter('/LineDetectCropBottom', 0.2)
+        self.declare_parameter('/LineDetectCropSide', 0.2)
+
         self.declare_parameter("/FollowingDirection", 1)
         self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
-
+        self.CROP_TOP = self.get_parameter('/LineDetectCropTop').value
+        self.CROP_BOTTOM = self.get_parameter('/LineDetectCropBottom').value
+        self.CROP_SIDE = self.get_parameter('/LineDetectCropSide').value
 
         self.get_logger().info("Waiting for image topics...")
 
@@ -99,7 +104,7 @@ class TransformPublisher(Node):
         if radius < dist:
             return 0, False
         else:
-            return math.sqrt((x - 190) * (x - 190) + (y + 182)(y + 182)) * 1.5 / 380 - .6096, True
+            return math.sqrt((x - 190) * (x - 190) + (y + 182) * (y + 182)) * 1.5 / 380 - .6096, True
 
     def state_callback(self, new_state):
         # self.get_logger().info("New State Received ({}): {}".format(self.node_name, new_state.data))
@@ -109,17 +114,17 @@ class TransformPublisher(Node):
     # edit lidar here including pothole modifications ----------------------------------------------------------
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     def lidar_callback(self, scan):
-         # adjust range
+        # adjust range
         scan.angle_max += abs(scan.angle_min)
         scan.angle_min = 0.0
 
         scan_range = scan.angle_max - scan.angle_min
-        trim_range = self.lidar_trim_max - self.lidar_trim_min
+        trim_range = self.get_parameter('/LIDAR_Trim_Max').value - self.get_parameter('/LIDAR_Trim_Min').value
         width = round(trim_range / scan_range * len(scan.ranges))
 
             # self.get_logger().warning(f"{}")
 
-        shift = self.lidar_trim_min - scan.angle_min
+        shift = self.get_parameter('/LIDAR_Trim_Min').value - scan.angle_min
         trim_base = round(shift / scan_range * len(scan.ranges))
         self.get_logger().warning(f"\n{len(scan.ranges)}, {round(trim_base)}, {round(width)}")
 
@@ -140,12 +145,12 @@ class TransformPublisher(Node):
 
         # insert pothole additions to lidar here
         for circle in self.circles:
-            self.get_logger().info(circle)
+            # self.get_logger().info(circle)
             for i in range(len(scan.ranges) // 4):
                 dist, hit = self.check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
                                                  190 * (math.cos(i * scan.angle_increment) - 182) + 182 * (
                                                             math.sin(i * scan.angle_increment) + 190),
-                                                 circle.xcenter, circle.ycenter, circle.radius)[1]
+                                                 circle.xcenter, circle.ycenter, circle.radius)
                 if hit:
                     scan.ranges[i] = dist
                     scan.intensities[i] = 47
@@ -154,7 +159,7 @@ class TransformPublisher(Node):
                 dist, hit = self.check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
                                                  190 * (math.cos(i * scan.angle_increment) - 182) + 182 * (
                                                             math.sin(i * scan.angle_increment) + 190),
-                                                 circle.xcenter, circle.ycenter, circle.radius)[1]
+                                                 circle.xcenter, circle.ycenter, circle.radius)
                 if hit:
                     scan.ranges[i] = dist
                     scan.intensities[i] = 47
@@ -201,32 +206,45 @@ class TransformPublisher(Node):
         self.lidar_wheel_distance_pub.publish(distance_msg)
 
     def image_callback(self, image):
+        image = bridge_image(image, "bgr8")
         # slice edges
         y, x = image.shape[0], image.shape[1]
         image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
 
         # Apply HSV Filter
         gray = hsv_filter(image)
-        morph = cv2.morphologyEx(gray, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
+        morph = cv2.morphologyEx(gray, cv2.MORPH_OPEN,
+                                 cv2.getStructuringElement(cv2.MORPH_RECT, (5,5)))
 
-        # Find Circles
-        circles = cv2.HoughCircles(morph, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=50, maxRadius=150)
-        if circles is not None and self.DEBUG_MODE:
-            self.get_logger().warning(f"FOUND CIRCLES: {circles}")
-        # clear circles if not found
-        self.circles = []  # replace previously viewed circles in history array
-        # Display Circles
-        if circles is not None:
-            circles = np.uint16(np.around(circles))
-            for i in circles[0, :]:
-                # draw the outer circle
-                cv2.circle(morph, (i[0], i[1]), i[2], (0, 255, 0), 2)
-                # draw the center of the circle
-                cv2.circle(morph, (i[0], i[1]), 2, (0, 0, 255), 3)
-                cvDisplay(morph, 'Pothole Detection', self.window_handle)
-                self.circles.insert(0, Circle(i[0], i[1], i[2]))  # store all circles in the array
+        # find potholes
+        # look for certain type blobs - hone these with other obstacles
+        params = cv2.SimpleBlobDetector_Params()
+        params.filterByArea = True  # area of acceptable blob
+        params.minArea = 8000
+        params.maxArea = 30000
+        params.filterByCircularity = True  # square has circularity of like 78%
+        params.minCircularity = .75
+        params.maxCircularity = 1
+        params.filterByConvexity = True  # more convexity is closer to circle
+        params.minConvexity = .85
+        params.maxConvexity = 1
+        params.filterByInertia = True
+        params.minInertiaRatio = .45
+        params.maxInertiaRatio = 1
+        params.filterByColor = False
 
-        if circles is not None: self.update_history(1)
+        detector = cv2.SimpleBlobDetector_create(params)
+        keypoints = detector.detect(morph)
+
+        if len(keypoints) != 0:
+            blank = np.zeros((1, 1))
+            blobs = cv2.drawKeypoints(morph, keypoints, blank, (0, 255, 0),
+                                      cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+            cvDisplay(blobs, 'Potholes', self.window_handle)
+            for hole in keypoints:
+                self.circles.insert(0, Circle(hole.pt[0], hole.pt[1], hole.size//2))
+            self.update_history(1)
+
         # self.determine_state()
 
     def update_history(self, x):

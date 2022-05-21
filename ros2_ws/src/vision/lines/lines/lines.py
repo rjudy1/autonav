@@ -74,7 +74,7 @@ class Lines(Node):
             closeWindows(self.line_detection.window_handle)
 
             distance = self.line_following.image_callback(image)
-            self.get_logger().warning("LINE_DISTANCE: " + str(distance))
+            # self.get_logger().warning("LINE_DISTANCE: " + str(distance))
             msg = String()
             msg.data = self.LINE_CODE+str(distance)
             self.motor_pub.publish(msg)
@@ -85,12 +85,12 @@ class Lines(Node):
             closeWindows(self.line_following.window_handle)
             # self.get_logger().warning("Line Detection")
             if found_line:
-                self.get_logger().warning(self.FOUND_LINE)
+                # self.get_logger().warning(self.FOUND_LINE)
                 msg = String()
                 msg.data = str(self.FOUND_LINE)
                 self.event_pub.publish(msg)
             if aligned:
-                self.get_logger().warning(self.ALIGNED)
+                # self.get_logger().warning(self.ALIGNED)
                 # self.line_following.reset()
                 msg = String()
                 msg.data = self.ALIGNED
@@ -100,7 +100,7 @@ class Lines(Node):
             self.line_detection.reset()
 
     def state_callback(self, new_state):
-        self.get_logger().info(f"New State Received {new_state.data}")
+        # self.get_logger().info(f"New State Received {new_state.data}")
 
         self.state = new_state.data
 
