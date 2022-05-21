@@ -7,7 +7,7 @@ def generate_launch_description():
     following_dir = 1  # right = 1, left = 0
     debug = True
 
-    crop_top = 0
+    crop_top = 0.0
     crop_bottom = .2
     crop_side = .2
 
@@ -18,7 +18,10 @@ def generate_launch_description():
     # launch lidar node
     lidar_node = Node(
         package="rplidar_ros",
-        executable="rplidarNode"
+        executable="rplidarNode",
+        parameters=[
+            {'serial_port': '/dev/ttyUSB0'},
+        ]
     )
 
     # launch line following node
@@ -26,11 +29,11 @@ def generate_launch_description():
         package="lines",
         executable="lines",
         parameters=[
-            {'/LineDetectCropTop', crop_top},
-            {'/LineDetectCropBottom', crop_bottom},
-            {'/LineDetectCropSide', crop_side},
-            {"/FollowingDirection", following_dir},
-            {'/Debug', debug},
+            {'/LineDetectCropTop': crop_top},
+            {'/LineDetectCropBottom': crop_bottom},
+            {'/LineDetectCropSide': crop_side},
+            {"/FollowingDirection": following_dir},
+            {'/Debug': debug},
         ]
     )
 
@@ -39,12 +42,12 @@ def generate_launch_description():
         package="rs2l_transform",
         executable="transform",
         parameters=[
-            {'/LIDAR_Trim_Min', 1.57},  # radians
-            {'/LIDAR_Trim_Max', 4.71},  # radians
-            {'/PotholeDetectCropTop', crop_top},
-            {'/PotholeDetectCropBottom', crop_bottom},
-            {'/PotholeDetectCropSide', crop_side},
-            {"/Debug", debug}
+            {'/LIDAR_Trim_Min': 1.57},  # radians
+            {'/LIDAR_Trim_Max': 4.71},  # radians
+            {'/PotholeDetectCropTop': crop_top},
+            {'/PotholeDetectCropBottom': crop_bottom},
+            {'/PotholeDetectCropSide': crop_side},
+            {"/Debug": debug},
         ]
     )
 
