@@ -6,7 +6,7 @@
 # File: line_following.py
 # Purpose: controls line detection
 # Author: Modified from 2020-21 autonav team code for ROS2
-# Date Modified: 12 May 2022
+# Date Modified: 20 May 2022
 ################################
 
 import sys
@@ -72,9 +72,9 @@ class LineFollowing(Node):
         # HSV filtering
         grey = hsv_filter(image)
 
-        # REMOVE, UNNECESSARY DUE TO NEW HSV FILTERING
-        # Threshold a single portion of the image and then place that portion on a blank image
-        ret, grey = cv2.threshold(grey, self.THRESH_MIN, self.MAX_PIXEL, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # # REMOVE, UNNECESSARY DUE TO NEW HSV FILTERING
+        # # Threshold a single portion of the image and then place that portion on a blank image
+        # ret, grey = cv2.threshold(grey, self.THRESH_MIN, self.MAX_PIXEL, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         # Perform a morphological opening operation on the image with a rectangular structuring element
         element = cv2.getStructuringElement(cv2.MORPH_RECT,
@@ -114,7 +114,7 @@ class LineFollowing(Node):
                 self.distance = self.GOOD_DIST
             self.distance = new_dist
 
-        else: # if inconclusive  line found in the image
+        else:  # if inconclusive  line found in the image
             # search horizontal boxes above our usual frame
             self.no_line_count += 1
 
@@ -183,6 +183,6 @@ class LineFollowing(Node):
         # print result for debug
         if self.DEBUG_MODE:
             self.printResult(mask, original_image, y, h, line_dist)
-            cvDisplay(section, "Region of interest", self.window_handle)
+            # cvDisplay(section, "Region of interest", self.window_handle)
 
         return abs(line_dist)

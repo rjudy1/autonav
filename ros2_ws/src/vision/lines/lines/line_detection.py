@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python11
 
 ################################
 # Cedarville AutoNav 2022 Competition Robot
@@ -76,7 +76,7 @@ class LineDetection(Node):
                     cv2.line(morph, (x1, y1), (x2, y2), (0, 255, 0), thickness=5)
                 cvDisplay(morph, 'Line Detection Opened Image', self.window_handle)
         else:
-            self.get_logger().warning("Oversatured LineDetection Image")
+            self.get_logger().warning("Oversaturated LineDetection Image")
             self.update_history(0)
 
         found_line = self.determine_state()
@@ -93,7 +93,6 @@ class LineDetection(Node):
         if lines is not None:
             self.update_history(1)
             x1, y1, x2, y2 = lines[0][0]
-            # self.get_logger().warning(str(lines[0][0]))
             self.slope = self.get_slope(x1, y1, x2, y2)
             self.distance = self.get_distance(image.shape[1], image.shape[0], [x1, y1, x2, y2])
             # self.get_logger().info("LINE SLOPE: {} | LINE DISTANCE: {}".format(self.slope, self.distance))

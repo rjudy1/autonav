@@ -5,15 +5,23 @@ from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
 class MinimalSubscriber(Node):
-
     def __init__(self):
         super().__init__('minimal_subscriber')
         self.subscription = self.create_subscription(
-            LaserScan,
+            String,
+            'state_topic',
+            self.listener_callback,
+            10)
+        self.subscription = self.create_subscription(
+            String,
+            'wheel_distance',
+            self.listener_callback,
+            10)
+        self.subscription = self.create_subscription(
+            String,
             '/mod_lidar',
             self.listener_callback,
             10)
-        self.subscription  # prevent unused variable warning
 
     def listener_callback(self, msg):
         self.get_logger().info(f'I heard: {msg}')

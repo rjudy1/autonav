@@ -3,15 +3,13 @@
 # Package: rs2l_transform
 # File: transform.py
 # Purpose: detect potholes and remove back 180 of lidar sweep
-# Date Modified: 11 May 2022
+# Date Modified: 21 May 2022
 # To run: ros2 run rs2l_transform transform
 ################################
 
 # !/usr/bin/env python
 
 import sys
-
-import cv2
 
 sys.path.insert(1, '/home/autonav/autonav/')
 
@@ -33,191 +31,162 @@ class Circle:
     radius: float
 
 
+# given ax+bx+c=0 and center and radius of a circle, determine if they intersect and returns distance in meters from edge
+def check_collision(a, b, c, x, y, radius):
+    # Finding the distance of line from center
+    dist = ((abs(a * x + b * y + c)) / math.sqrt(a * a + b * b))
+
+    # return the distance from the circle edge (approximate) and whether it touches
+    if radius < dist:
+        return 0, False
+    else:
+        return math.sqrt((x - 190) * (x - 190) + (y - 452) * (y - 452)) / 150 - 0.3, True
+
+
 class TransformPublisher(Node):
     def __init__(self):
         super().__init__('lidar_modifier')
         self.lidar_pub = self.create_publisher(LaserScan, '/laser_frame', 10)
         self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
-        self.i = 0
 
-        # Subscribe to the camera color image
+        # Subscribe to the camera color image and unaltered laser scan
         self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
         self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
-
-        # line detection parameters
-        self.history_idx = 0
-        self.slope = None
-        self.aligned = False
-        self.found_line = False
-        self.window_handle = []
-
-        self.declare_parameter("/LIDAR_Trim_Min", 1.57)
-        self.declare_parameter("/LIDAR_Trim_Max", 4.71)
-
-        self.in_front_min = 15/180*math.pi
-        self.in_front_max = 2*math.pi - 15/180*math.pi
-
-        # Read ROS Params
-        self.declare_parameter("/PotholeBufferSize", 5)
-        self.declare_parameter("/PotholeBufferFill", 0.8)
-        self.BUFF_SIZE = self.get_parameter('/PotholeBufferSize').value
-        self.BUFF_FILL = self.get_parameter('/PotholeBufferFill').value
-
-        self.declare_parameter('/Debug', False)
-
-        self.circles = []
 
         # Subscribe to state updates for the robot
         self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
         self.state = STATES.LINE_FOLLOWING
-        # Initialize primary variables
-        self.history = np.zeros((self.BUFF_SIZE,), dtype=bool)
-        self.history_idx = 0
-        self.path_clear = True
-        self.window_handle = []
-        self.obstacle_detect_distance = 1.5
 
+        # lidar parameters
+        self.declare_parameter("/LIDARTrimMin", 1.57)
+        self.declare_parameter("/LIDARTrimMax", 4.71)
+        self.declare_parameter("/ObstacleFOV", math.pi/6)
+        self.declare_parameter("/ObstacleDetectDistance", 1.5) # meters
+        self.declare_parameter("/FollowingDirection", 1)
+
+        # camera parameters
         self.declare_parameter('/LineDetectCropTop', 0.0)
         self.declare_parameter('/LineDetectCropBottom', 0.2)
         self.declare_parameter('/LineDetectCropSide', 0.2)
+        self.declare_parameter("/PotholeBufferSize", 5)
 
-        self.declare_parameter("/FollowingDirection", 1)
-        self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
-        self.CROP_TOP = self.get_parameter('/LineDetectCropTop').value
-        self.CROP_BOTTOM = self.get_parameter('/LineDetectCropBottom').value
-        self.CROP_SIDE = self.get_parameter('/LineDetectCropSide').value
+        self.declare_parameter('/Debug', False)
 
-        self.get_logger().info("Waiting for image topics...")
+        self.BUFF_SIZE = self.get_parameter('/PotholeBufferSize').value
 
-    # given ax+bx+c=0 and center and radius of a circle, determine if they intersect
-    def check_collision(self, a, b, c, x, y, radius):
+        # camera/obstacle detection
+        self.circles = []  # recent circle history
+        self.window_handle = []
+        self.history = np.zeros((self.BUFF_SIZE,), dtype=bool)
+        self.history_idx = 0
+        self.path_clear = True
 
-        # Finding the distance of line
-        # from center.
-        dist = ((abs(a * x + b * y + c)) /
-                math.sqrt(a * a + b * b))
-
-        # Checking if the distance is less
-        # than, greater than or equal to radius.
-        # return the distance from the circle edge (approximate) and whether it touches
-        if radius < dist:
-            return 0, False
-        else:
-            return math.sqrt((x - 190) * (x - 190) + (y + 182) * (y + 182)) * 1.5 / 380 - .6096, True
+        self.get_logger().info("Waiting for image/lidar topics...")
 
     def state_callback(self, new_state):
-        # self.get_logger().info("New State Received ({}): {}".format(self.node_name, new_state.data))
+        self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = new_state.data
 
+    def get_c(self, i, scan):
+        return -(190 * (452-math.cos(i * scan.angle_increment)) - 452 * (190-math.sin(i * scan.angle_increment)))
 
-    # edit lidar here including pothole modifications ----------------------------------------------------------
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
+    # second portion adds potholes based on image data
+    # third portion replaces obstacle in front and time of flight sensors
     def lidar_callback(self, scan):
-        # adjust range
+        # adjust range to only include data in front of scanner
         scan.angle_max += abs(scan.angle_min)
         scan.angle_min = 0.0
 
         scan_range = scan.angle_max - scan.angle_min
-        trim_range = self.get_parameter('/LIDAR_Trim_Max').value - self.get_parameter('/LIDAR_Trim_Min').value
+        trim_range = self.get_parameter('/LIDARTrimMax').value - self.get_parameter('/LIDARTrimMin').value
         width = round(trim_range / scan_range * len(scan.ranges))
 
-            # self.get_logger().warning(f"{}")
-
-        shift = self.get_parameter('/LIDAR_Trim_Min').value - scan.angle_min
+        shift = self.get_parameter('/LIDARTrimMin').value - scan.angle_min
         trim_base = round(shift / scan_range * len(scan.ranges))
-        self.get_logger().warning(f"\n{len(scan.ranges)}, {round(trim_base)}, {round(width)}")
 
-        if len(scan.intensities) > trim_base + width:
-            for i in range(trim_base, trim_base + width):
-                scan.ranges[i] = math.inf
-                scan.intensities[i] = 0.0
-
-        else:
-            try:
+        try:
+            if len(scan.intensities) > trim_base + width:
                 for i in range(trim_base, trim_base + width):
                     scan.ranges[i] = math.inf
-            except Exception:
+                    scan.intensities[i] = 0.0
+            else:
+                for i in range(trim_base, trim_base + width):
+                    scan.ranges[i] = math.inf
+        except Exception:
+            self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}")
 
-                self.get_logger().info(f"ranges length: {len(scan.ranges)}")
-
-        self.get_logger().info(f"\nranges length: {len(scan.ranges)}")
-
-        # insert pothole additions to lidar here
+        # insert pothole additions to lidar here - can compensate with constants for the camera angle
         for circle in self.circles:
-            # self.get_logger().info(circle)
-            for i in range(len(scan.ranges) // 4):
-                dist, hit = self.check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
-                                                 190 * (math.cos(i * scan.angle_increment) - 182) + 182 * (
-                                                            math.sin(i * scan.angle_increment) + 190),
-                                                 circle.xcenter, circle.ycenter, circle.radius)
-                if hit:
-                    scan.ranges[i] = dist
-                    scan.intensities[i] = 47
-
-            for i in range(3 * len(scan.ranges) // 4, len(scan.ranges)):
-                dist, hit = self.check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
-                                                 190 * (math.cos(i * scan.angle_increment) - 182) + 182 * (
-                                                            math.sin(i * scan.angle_increment) + 190),
-                                                 circle.xcenter, circle.ycenter, circle.radius)
-                if hit:
-                    scan.ranges[i] = dist
-                    scan.intensities[i] = 47
+            # front part of lidar scan 0 to pi/2 radians
+            for i in range(len(scan.ranges)):
+                if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
+                    dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
+                                                self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
+                    if dist < scan.ranges[i] and hit:
+                        scan.ranges[i] = dist
+                        scan.intensities[i] = 47
 
         self.lidar_pub.publish(scan)
 
+        # scan in the range in front of robot to check for obstacles
         msg = String()
-        msg.data = "PATH_CLEAR"
-        # scan in the narrow range in front to check for obstacles
         for i in range(len(scan.intensities)):
-            if scan.ranges[i] < 1.5 and (i*scan.angle_increment < self.in_front_min or i*scan.angle_increment > self.in_front_max):
-
-                msg.data = "OBJECT_SEEN"
-                self.history[self.history_idx] = 1 if 1.5 < self.obstacle_detect_distance else 0
+            if i * scan.angle_increment < self.get_parameter('/ObstacleFOV').value/2 \
+                    or i * scan.angle_increment > 2*math.pi-self.get_parameter('/ObstacleFOV').value / 2:
+                msg.data = "OBJECT_SEEN" if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] \
+                    else "PATH_CLEAR"
+                self.history[self.history_idx] = 1 if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] \
+                    else 0
                 self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
-                break
+                if msg.data == "OBJECT_SEEN": break
 
-
-        # self.get_logger().info('Publishing LaserScan ' + str(scan.header.stamp) + ' transformed:\n' + 'Angle_min: ' + str(scan.angle_min)
-        #                             + '\nAngle_max: ' + str(scan.angle_max))
-
-        if self.path_clear and np.count_nonzero(self.history) >= self.BUFF_FILL * self.BUFF_SIZE:
+        if self.path_clear and np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
             self.get_logger().info("OBJECT_SEEN")
             self.lidar_str_pub.publish(msg)
             self.path_clear = False
-        elif (self.state == STATES.LINE_TO_OBJECT or self.state == STATES.GPS_TO_OBJECT) and np.count_nonzero(self.history) <= (1 - self.BUFF_FILL) * self.BUFF_SIZE:
+        elif (self.state == STATES.LINE_TO_OBJECT or self.state == STATES.GPS_TO_OBJECT) \
+                and np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE:
             self.get_logger().info("PATH_CLEAR")
             self.lidar_str_pub.publish(msg)
             self.path_clear = True
 
+        # publish the wheel distance from the obstacle based on following direction
         distance_msg = String()
         try:
-            if self.FOLLOWING_DIR == 1 and scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
-                    distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi*13/8/scan.angle_increment)])
-                    # self.get_logger().info(f"Following direction right? {self.FOLLOWING_DIR}: {distance_msg.data}")
-            elif scan.ranges[round(math.pi*13/8/scan.angle_increment)] != math.inf:
-                distance_msg.data = "OBJ," + str(scan.ranges[round(3*math.pi/8/scan.angle_increment)])
-                # self.get_logger().info(f"Following direction left? {self.FOLLOWING_DIR}: {distance_msg.data}")
-        except IndexError:
-            pass
-        #     self.get_logger().info(f"position in array {round(math.pi * 13 / 8 / scan.angle_increment)}")
-        #     self.get_logger().info(f"ranges {scan.ranges}")
+            if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT \
+                    and scan.ranges[round(math.pi * .375 / scan.angle_increment)] != math.inf:
+                distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * .375 / scan.angle_increment)])
+                self.lidar_wheel_distance_pub.publish(distance_msg)
+                if self.get_parameter('/Debug').value:
+                    self.get_logger().info(
+                        f"Following direction: {self.get_parameter('/FollowingDirection').value}: {distance_msg.data}")
 
-        self.lidar_wheel_distance_pub.publish(distance_msg)
+            elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT \
+                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] != math.inf:
+                distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * 1.625 / scan.angle_increment)])
+                self.lidar_wheel_distance_pub.publish(distance_msg)
+                if self.get_parameter('/Debug').value:
+                    self.get_logger().info(
+                        f"Following direction: {self.get_parameter('/FollowingDirection').value}: {distance_msg.data}")
+        except Exception:
+            self.get_logger().warning(f"Following direction {self.get_parameter('/FollowingDirection').value}: {distance_msg.data} m")
 
+    # receives camera image and parses potholes into history
     def image_callback(self, image):
         image = bridge_image(image, "bgr8")
         # slice edges
         y, x = image.shape[0], image.shape[1]
-        image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
+        image = image[int(y * self.get_parameter('/LineDetectCropTop').value):-int(y * self.get_parameter('/LineDetectCropBottom').value),
+                int(x * self.get_parameter('/LineDetectCropSide').value):-int(x * self.get_parameter('/LineDetectCropSide').value)]
 
         # Apply HSV Filter
         gray = hsv_filter(image)
         morph = cv2.morphologyEx(gray, cv2.MORPH_OPEN,
-                                 cv2.getStructuringElement(cv2.MORPH_RECT, (5,5)))
+                                 cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
 
-        # find potholes
-        # look for certain type blobs - hone these with other obstacles
+        # look for certain type blobs aka potholes - hone these with other obstacles
         params = cv2.SimpleBlobDetector_Params()
         params.filterByArea = True  # area of acceptable blob
         params.minArea = 8000
@@ -234,18 +203,15 @@ class TransformPublisher(Node):
         params.filterByColor = False
 
         detector = cv2.SimpleBlobDetector_create(params)
-        keypoints = detector.detect(morph)
+        keypoints = detector.detect(morph)  # find the blobs meeting the parameters
+        self.circles = []
+        for hole in keypoints:
+            self.circles.insert(0, Circle(hole.pt[0], hole.pt[1], hole.size//2))
 
-        if len(keypoints) != 0:
-            blank = np.zeros((1, 1))
-            blobs = cv2.drawKeypoints(morph, keypoints, blank, (0, 255, 0),
+        if self.get_parameter('/Debug'):
+            blobs = cv2.drawKeypoints(morph, keypoints, np.zeros((1, 1)), (0, 255, 0),
                                       cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
             cvDisplay(blobs, 'Potholes', self.window_handle)
-            for hole in keypoints:
-                self.circles.insert(0, Circle(hole.pt[0], hole.pt[1], hole.size//2))
-            self.update_history(1)
-
-        # self.determine_state()
 
     def update_history(self, x):
         self.history[self.history_idx] = x
@@ -263,9 +229,7 @@ def main(args=None):
 
     rclpy.spin(transform)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
+    # Destroy the node explicitly (optional)
     transform.destroy_node()
     rclpy.shutdown()
 

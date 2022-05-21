@@ -23,11 +23,22 @@ class STATES:
     FIND_LINE = "FIND_LINE"
     LINE_ORIENT = "LINE_ORIENT"
 
-def hsv_filter(image):
+
+class DIRECTION:
+    LEFT = 0
+    RIGHT = 1
+
+
+def hsv_filter(image, use_white=True):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    lower = np.array([0, 65, 100])
-    upper = np.array([179, 255, 255])
+    if not use_white:
+        lower = np.array([0, 65, 100])
+        upper = np.array([179, 255, 255])
+    else:  # for white line following
+        lower = np.array([0, 0, 170])
+        upper = np.array([179, 70, 255])
     return cv2.inRange(hsv, lower, upper)
+
 
 # Use cv_bridge() to convert the ROS image to OpenCV format
 def bridge_image(ros_image, format):
