@@ -49,7 +49,7 @@ class Wheels:
 
 class WheelControl(Node):
     def __init__(self):
-        super.__init__('wheels_controller')
+        super().__init__('wheels_controller')
         self.wheel_sub = self.create_subscriber(String, "wheel_distance", self.wheel_callback, 10)
         self.unitChange = 1000 #assuming passed in meters, need mm
 
