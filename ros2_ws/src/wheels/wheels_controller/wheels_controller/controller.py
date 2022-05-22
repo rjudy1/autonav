@@ -12,6 +12,7 @@ import rclpy
 from rclpy.node import Node
 import serial
 from std_msgs.msg import String
+import time
 import sys
 sys.path.insert(1, '/home/autonav/autonav/')
 from utils import *
@@ -47,6 +48,45 @@ class Wheels:
             cmd = cmd | CCW
         return cmd
 
+class PIDController:
+    def __init__(self, kp, ki, kd, max, min):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.max_val = max
+        self.min_val = min
+        self.last_time = time.time_ns()
+        self.prev_error = 0.0
+        self.prev_integral_errors = [0.0 for i in range(10)]
+
+    def control(self, curr_error):
+        curr_time = time.time_ns()
+        iteration_time = (curr_time - self.last_time) * 1000 # microseconds
+
+        prev_int_error = 0.0
+        for error in self.prev_integral_errors:
+            prev_int_error += error
+
+        integral_term = prev_int_error + curr_error*iteration_time
+        derivative_term = (curr_error - self.prev_error)/iteration_time
+
+        output = self.kp*curr_error + self.ki*integral_term + self.kd*derivative_term
+
+        self.prev_error = curr_error
+
+        self.prev_integral_errors.pop(0)
+        self.prev_integral_errors.append(curr_error)
+        
+        self.last_time = curr_time
+
+        if output > self.max_val:
+            output = self.max_val
+        elif output < self.min_val:
+            output = self.min_val
+
+        return output
+
+
 class WheelControl(Node):
     def __init__(self):
         super().__init__('wheels_controller')
@@ -76,9 +116,9 @@ class WheelControl(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        # self.pid_line = PIDController()  # for lie following
-        # self.pid_obj = PIDController()   # for object avoidance
-        # self.pid_gps = PIDController()   # for during gps navigation
+        self.pid_line = PIDController(-0.05, 0.0, 0.0, 15, -15)  # for lie following
+        self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
+        self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
         self.driver = Wheels()
         self.following_mode = FollowMode.eeNone
@@ -134,13 +174,12 @@ class WheelControl(Node):
                 self.boost_count = 0
             else:
                 position_error = self.target_line_dist - position
-                # C++ does this stuff
-                # // Calculate the differential and apply it
+                # Calculate the differential and apply it
                 # to the default speed double
-                # delta = this->pidCtrLine->control(positionError);
-                # delta = delta * (double)(this->followingPol);
-                # leftSpeed = this->defaultSpeed + delta;
-                # rightSpeed = this->defaultSpeed - delta;
+                delta = self.pid_line.control(position_error)
+                delta = delta * self.following_direction
+                left_speed = self.default_speed + delta
+                right_speed = self.default_speed - delta
                 #
                 # // Check if we should in the acceptable zone for picking up speed.i
                 if abs(position_error) <= self.line_boost_margin:
@@ -157,10 +196,10 @@ class WheelControl(Node):
             else:
                 pass
                 # c++ does this to calculate differntial and apply to default speed
-                # double delta = this->pidCtrObj->control(this->targetObjDist - position);
-                # delta = delta * (double)(this->followingPol);
-                # leftSpeed = this->defaultSpeed + delta;
-                # rightSpeed = this->defaultSpeed - delta;
+                delta = self.pid_obj.control(self.target_obj_dist - position)
+                delta = delta * self.following_direction
+                left_speed = self.default_speed + delta
+                right_speed = self.default_speed - delta;
         elif self.following_mode == FollowMode.eeGps and msg[:3] == GPS_SENDER:
             position = float(msg[4:])
             if position >= STOP_CODE:
@@ -170,11 +209,11 @@ class WheelControl(Node):
                 self.boost_count = 0
             else:
                 # more differential stuff
-                # double delta = this->pidCtrGps->control(position);
+                delta = self.pid_gps.control(position)
                 # GPS sends the error already
-                # delta = delta * (double)(this->followingPol);
-                # leftSpeed = this->defaultSpeed + delta;
-                # rightSpeed = this->defaultSpeed - delta;
+                delta = delta * self.following_direction
+                left_speed = self.default_speed + delta
+                right_speed = self.default_speed - delta
                 if abs(position) <= self.gps_boost_margin:
                     self.boost_count += 1
                 else:
@@ -191,8 +230,14 @@ class WheelControl(Node):
         # send speed command to wheels
         if message_valid and (left_speed != self.curr_left_speed or self.curr_right_speed != right_speed):
             if not stop_override:
-                left_speed = self.curr_left_speed + self.MAX_CHANGE * int(left_speed > self.curr_left_speed + self.MAX_CHANGE)
-                right_speed = self.curr_right_speed + self.MAX_CHANGE * int(right_speed > self.curr_right_speed + self.MAX_CHANGE)
+                if left_speed > self.curr_left_speed + self.MAX_CHANGE:
+                    left_speed = self.curr_left_speed + self.MAX_CHANGE
+                elif left_speed < self.curr_left_speed - self.MAX_CHANGE:
+                    left_speed = self.curr_left_speed - self.MAX_CHANGE
+                if right_speed > self.curr_right_speed + self.MAX_CHANGE:
+                    right_speed = self.curr_right_speed + self.MAX_CHANGE
+                elif right_speed < self.curr_right_speed - self.MAX_CHANGE:
+                    right_speed = self.curr_right_speed - self.MAX_CHANGE
 
             self.driver.control_wheels(left_speed, right_speed)
 
