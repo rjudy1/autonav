@@ -10,20 +10,20 @@
 ################################
 
 import sys
-sys.path.insert(1, '/home/autonav/autonav/')
+sys.path.insert(1, '/home/autonav/autonav')
 
 import cmath
 from dataclasses import dataclass
 from geopy import distance
-import pynmea2
+import pynmea2  #broke
 import serial
-from threading import Thread
 import time
 from utils import *
 
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from custom_msgs.msg import HeadingStatus
 
 @dataclass
 class SensorMsg:
@@ -82,6 +82,8 @@ class GPS(Node):
         self.ser.readline()  # read one junk line to achieve line synchronization
 
         self.pub = self.create_publisher(String, 'wheel_distance', 10)
+        self.heading_pub = self.create_publisher(HeadingStatus, 'gps_heading', 10)
+
         self.LINE_MODE = {STATE.LINE_FOLLOWING, STATE.OBJECT_AVOIDANCE_FROM_LINE, STATE.OBJECT_TO_LINE,
                           STATE.LINE_TO_OBJECT}
 
@@ -158,9 +160,15 @@ class GPS(Node):
         # Check if we are at the waypoint
         self.check_waypoint(loc)
 
-        # calculate our current heading and the heading we need to have
+        # calculate our current heading and the heading we need to have and publish these
         curr_heading = self.calc_heading(self.past_loc, loc)
         target_heading = self.calc_heading(loc, self.target_loc[self.waypoint_itr])
+        self.get_logger().info(f"heading: {curr_heading}")
+        heading_msg = HeadingStatus()
+        heading_msg.current_heading = curr_heading
+        heading_msg.target_heading = target_heading
+        self.curr_heading_pub.publish(heading_msg)
+
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(target_heading, curr_heading)
         filtered_error_angle = self.filter_angle(error_angle)
@@ -178,12 +186,6 @@ class GPS(Node):
 
         # save off the location
         self.past_loc = loc
-
-        # publish
-        msg = String()
-        msg.data = GPS_SENDER + ',' + str(filtered_error_angle)
-        self.gps_event_pub.publish(msg)
-        self.get_logger().info("%s,%s,%s,%s\n" % (curr_heading, target_heading, error_angle, filtered_error_angle))
 
     # this function will read from the gps a single nmea sentence
     # and return a lat, long complex pair

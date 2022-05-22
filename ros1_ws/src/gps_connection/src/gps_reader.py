@@ -46,7 +46,6 @@ class GPS(AutoNavNode):
 
         self.waypoint_itr = 0
 
-        
         # Publish new events that may change the overall state of the robot
         self.event_pub = rospy.Publisher("gps_events", String, queue_size=10)
 

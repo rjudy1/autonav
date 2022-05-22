@@ -18,8 +18,8 @@ def generate_launch_description():
     # create launch description with initial camera launch file
     # disgusting but not quite sure how to make local path
     ld = LaunchDescription(
-        [IncludeLaunchDescription(PythonLaunchDescriptionSource(
-        '/home/autonav/autonav/ros2_ws/src/vision/realsense-ros/realsense2_camera/launch/rs_launch.py'))]
+        # [IncludeLaunchDescription(PythonLaunchDescriptionSource(
+        # '/home/autonav/autonav/ros2_ws/src/vision/realsense-ros/realsense2_camera/launch/rs_launch.py'))]
     )
 
     # launch lidar node
@@ -75,7 +75,7 @@ def generate_launch_description():
             {'/ExitAngle':      0.2},   # radians
             {'GPSFollowGoal':   1.0},
             {'/LineToGPSTrans': 5.0},
-            {'/Port':           '/dev/ttyACM0'},
+            {'/Port':           '/dev/ttyACM1'},
         ]
     )
 
@@ -90,8 +90,17 @@ def generate_launch_description():
         ]
     )
 
+    fusion_node = Node(
+        package="heading",
+        executable="fusion",
+        parameters=[
+            {'/InitialHeading':     0.0},
+            {'/EncoderWeight':      1.0},
+        ]
+    )
+
     motor_node = Node(
-        package="wheels",
+        package="wheels_controller",
         executable="controller",
         parameters=[
             {'/FollowingDirection':     following_dir},
@@ -116,16 +125,17 @@ def generate_launch_description():
         ]
     )
 
-    ld.add_action(lidar_node)
-    ld.add_action(lines_node)
-    ld.add_action(transform_node)
+    # ld.add_action(lidar_node)
+    # ld.add_action(lines_node)
+    # ld.add_action(transform_node)
     ld.add_action(gps_node)
     ld.add_action(encoder_node)
+    ld.add_action(fusion_node)
     ld.add_action(motor_node)
     ld.add_action(fsm_node)
 
     # set debug
-    if True:
+    if False:
         sub_node = Node(
             package="subscriber",
             executable="sub"

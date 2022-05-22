@@ -90,7 +90,7 @@ class PIDController:
 class WheelControl(Node):
     def __init__(self):
         super().__init__('wheels_controller')
-        self.wheel_sub = self.create_subscriber(String, "wheel_distance", self.wheel_callback, 10)
+        self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
         self.unitChange = 1000 #assuming passed in meters, need mm
 
         # start in a stopped state
@@ -125,7 +125,6 @@ class WheelControl(Node):
 
         self.MAX_CHANGE = 5
 
-
     def __del__(self):
         pass
 
@@ -133,6 +132,7 @@ class WheelControl(Node):
         pass
 
     def wheel_callback(self, msg):
+        msg = msg.data
         left_speed = self.curr_left_speed
         right_speed = self.curr_right_speed
 

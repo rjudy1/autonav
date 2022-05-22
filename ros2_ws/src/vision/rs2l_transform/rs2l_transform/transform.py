@@ -227,11 +227,12 @@ def main(args=None):
 
     transform = TransformPublisher()
 
-    rclpy.spin(transform)
-
-    # Destroy the node explicitly (optional)
-    transform.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(transform)
+    except Exception as e:
+        # Destroy the node explicitly (optional)
+        transform.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -7,9 +7,9 @@
 # To run: ros2 run rs2l_transform transform
 ################################
 
+from custom_msgs.msg import EncoderData
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
 import serial
 from time import sleep
 
@@ -30,12 +30,14 @@ class Encoder(Node):
         self.serialPort.flushOutput()
 
         #  publish for right and left encoder distances
-        self.leftEncoder = self.create_publisher(Float32, 'left_dist', 10)
-        self.rightEncoder = self.create_publisher(Float32, 'right_dist', 10)
+        self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
         self.rate = self.get_parameter('/TeensyUpdateDelay').value
 
         self.serialPort.write('R,1,**'.encode('utf-8'))
         self.timer = self.create_timer(self.rate, self.timer_callback)
+
+        self.past_left_ticks = 0
+        self.past_right_ticks = 0
 
     def timer_callback(self):
         try:
@@ -43,19 +45,25 @@ class Encoder(Node):
             read = self.serialPort.readline().decode('utf-8')
             data = read.split(',')
             if data[0] == 'E' and len(data) == 4 and data[3] == '**\r\n':
-                leftTicks = int(data[1])
-                rightTicks = int(data[2])
-                leftDist = leftTicks / ticks_per_meter
-                rightDist = rightTicks / ticks_per_meter
-                if self.get_parameter('/Debug'):
-                    self.get_logger().info(leftDist)
-                    self.get_logger().info(rightDist)
+                # find ticks since last change
+                left_ticks = int(data[1]) - self.past_left_ticks
+                right_ticks = int(data[2]) - self.past_right_ticks
 
-                msg = Float32()
-                msg.data = leftDist
-                self.leftEncoder.publish(msg)
-                msg.data = rightDist
-                self.rightEncoder.publish(msg)
+                # update history
+                self.past_left_ticks = int(data[1])
+                self.past_right_ticks = int(data[2])
+
+                left_dist = left_ticks / ticks_per_meter
+                right_dist = right_ticks / ticks_per_meter
+
+                if self.get_parameter('/Debug'):
+                    self.get_logger().info(left_dist)
+                    self.get_logger().info(right_dist)
+
+                msg = EncoderData()
+                msg.left = left_dist
+                msg.right = right_dist
+                self.encoder_pub.publish(msg)
             else:
                 self.serialPort.flushInput()
             sleep(self.rate)

@@ -72,7 +72,7 @@ class MainRobot(Node):
 
     # Line Following State
     def line_following_state(self):
-        self.get_logger().info("Line Following State")
+        # self.get_logger().info("Line Following State")
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
             self.waypoint_found = False
             self.state = STATE.GPS_NAVIGATION
@@ -95,7 +95,7 @@ class MainRobot(Node):
 
     # Object Avoidance From Line Following State
     def object_avoidance_from_line_state(self):
-        self.get_logger().info("Object Avoidance From Line Following State")
+        # self.get_logger().info("Object Avoidance From Line Following State")
         # Check for another object in front of the robot
         if self.obj_seen:
             self.obj_seen = False
@@ -118,7 +118,7 @@ class MainRobot(Node):
 
     # Object Avoidance From GPS Navigation State
     def object_avoidance_from_gps_state(self):
-        self.get_loggger().info("Object Avoidance From GPS State")
+        # self.get_loggger().info("Object Avoidance From GPS State")
 
         # Check for another object in front of the robot
         if self.obj_seen:
@@ -142,7 +142,7 @@ class MainRobot(Node):
 
     # GPS Navigation State
     def gps_navigation_state(self):
-        self.get_logger().info("GPS Navigation State")
+        # self.get_logger().info("GPS Navigation State")
 
         # First look for a potential obstacle
         if self.obj_seen:
@@ -173,7 +173,7 @@ class MainRobot(Node):
 
     # Line Following to Object Avoidance Transition State
     def line_to_object_state(self):
-        self.get_logger().info("Line to Object Transition State")
+        # self.get_logger().info("Line to Object Transition State")
         # Just keep turning until the object is not in front of us
         self.wheel_msg.data = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
             TURN_SPEED + self.follow_dir * TURN_SPEED)
@@ -191,7 +191,7 @@ class MainRobot(Node):
 
     # Object Avoidance to Line Following Transition State
     def object_to_line_state(self):
-        self.get_logger().info("Object to Line Transition State")
+        # self.get_logger().info("Object to Line Transition State")
 
         # Gradual Turn
         self.wheel_msg.data = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * SLIGHT_TURN) + "," + str(
@@ -214,7 +214,7 @@ class MainRobot(Node):
 
     # GPS Navigation to Object Avoidance Transition State
     def gps_to_object_state(self):
-        self.get_logger().info("GPS to Object Transition State")
+        # self.get_logger().info("GPS to Object Transition State")
 
         # Just keep turning until the object is not in front of us
         self.wheel_msg.data = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
@@ -232,7 +232,7 @@ class MainRobot(Node):
 
     # Transition State to find the line after GPS Navigation
     def find_line_state(self):
-        self.get_logger().info("Find Line Transition State")
+        # self.get_logger().info("Find Line Transition State")
         # Just keep going until we find the line
         self.wheel_msg.data = TRANSITION_CODE + str(0) + "," + str(0)
         self.wheel_pub.publish(self.wheel_msg)
@@ -249,7 +249,7 @@ class MainRobot(Node):
 
     # Transition State to Orient to the line direction
     def line_orientation_state(self):
-        self.get_logger().info("Line Orientation Transition State")
+        # self.get_logger().info("Line Orientation Transition State")
 
         # Just keep turning until we are parrallel with the line
         self.wheel_msg.data = TRANSITION_CODE + str(0) + "," + str(0)
@@ -269,7 +269,7 @@ class MainRobot(Node):
     # This function is essentially a big state machine handling transitions
     # between a number of different states in the system.
     def change_state(self):
-        self.get_logger().info(f"state {self.state}")
+        # self.get_logger().info(f"state {self.state}")
         if self.state == STATE.LINE_FOLLOWING:  self.line_following_state()
         elif self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:  self.object_avoidance_from_line_state()
         elif self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:  self.object_avoidance_from_gps_state()
@@ -324,7 +324,7 @@ class MainRobot(Node):
 
     # Callback for information from the depth camera
     def lidar_callback(self, lidar_event):
-        self.get_logger().info("Message from Depth Camera")
+        self.get_logger().info("Message from LIDAR")
 
         # Get the lock before proceeding
         self.lock.acquire()
@@ -352,7 +352,7 @@ class MainRobot(Node):
             self.lock.release()
 
 
-def main():
+def main(args=None):
     rclpy.init()
     main = MainRobot()
     time.sleep(3)
@@ -361,7 +361,6 @@ def main():
 
     try:
         # Start the Robot
-        main.change_state()
         main.lock.release()
         rclpy.spin(main)
     except KeyboardInterrupt:
