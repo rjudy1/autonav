@@ -38,7 +38,7 @@ class Lines(Node):
         self.ALIGNED = "ALIGNED"
         self.NOT_ALIGNED = "NOT_ALIGNED"
 
-        self.state = STATES.OBJECT_AVOIDANCE_FROM_LINE
+        self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
         self.LINE_CODE = "LIN,"
 
         # Subscribe to the camera color image
@@ -58,7 +58,7 @@ class Lines(Node):
         self.line_following = LineFollowing()
 
         # Line Detection States Set
-        self.line_detection_states = {STATES.OBJECT_AVOIDANCE_FROM_LINE, STATES.OBJECT_TO_LINE, STATES.FIND_LINE, STATES.LINE_ORIENT}
+        self.line_detection_states = {STATE.OBJECT_AVOIDANCE_FROM_LINE, STATE.OBJECT_TO_LINE, STATE.FIND_LINE, STATE.LINE_ORIENT}
 
         # Set ROS Params
 
@@ -69,9 +69,9 @@ class Lines(Node):
         # self.get_logger().info("CURRENT STATE: {}".format(self.state))
 
         # Line Followings
-        if self.state == STATES.LINE_FOLLOWING:
+        if self.state == STATE.LINE_FOLLOWING:
             self.line_detection.reset()
-            closeWindows(self.line_detection.window_handle)
+            close_windows(self.line_detection.window_handle)
 
             distance = self.line_following.image_callback(image)
             # self.get_logger().warning("LINE_DISTANCE: " + str(distance))
@@ -82,7 +82,7 @@ class Lines(Node):
         # Line Detection
         elif self.state in self.line_detection_states:
             found_line, aligned = self.line_detection.image_callback(image, self.state)
-            closeWindows(self.line_following.window_handle)
+            close_windows(self.line_following.window_handle)
             # self.get_logger().warning("Line Detection")
             if found_line:
                 # self.get_logger().warning(self.FOUND_LINE)
@@ -96,7 +96,7 @@ class Lines(Node):
                 msg.data = self.ALIGNED
                 self.event_pub.publish(msg)
         else:
-            closeWindows(self.line_following.window_handle)
+            close_windows(self.line_following.window_handle)
             self.line_detection.reset()
 
     def state_callback(self, new_state):

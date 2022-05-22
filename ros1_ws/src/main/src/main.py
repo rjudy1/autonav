@@ -9,45 +9,15 @@
 import sys
 
 sys.path.insert(1, '/home/autonav/autonav/ros1_ws/src/autonav_utils/')
+sys.path.insert(1, '/home/autonav/autonav')
 
 # import cv2
 import rospy
 import threading
 import time
 from autonav_node import AutoNavNode
-from enum import Enum
 from std_msgs.msg import String
-
-# Messages that change the wheel controller's state
-WHEELS_TRANSITION = "STR"
-WHEELS_OBJECT_AVOIDANCE = "SOA"
-WHEELS_LINE_FOLLOWING = "SLF"
-WHEELS_GPS_NAV = "SGN"
-STOP_CODE = "STO"
-TRANSITION_CODE = "TRA,"
-TURN_SPEED = 14
-SLIGHT_TURN = 10
-
-# Messages that indicate a change of state is needed
-PATH_CLEAR = "PATH_CLEAR"
-OBJECT_SEEN = "OBJECT_SEEN"
-WAYPOINT_FOUND = "WAYPOINT_FOUND"
-WAYPOINT_STRAIGHT = "WAYPOINT_STRAIGHT"
-FOUND_LINE = "FOUND_LINE"
-ALIGNED = "ALIGNED"
-
-
-# States for the FSM
-class State(Enum):
-    Line_Following = 1
-    Object_Avoidance_From_Line = 2
-    Object_Avoidance_From_GPS = 3
-    GPS_Navigation = 4
-    Line_To_Object = 5
-    Object_To_Line = 6
-    GPS_To_Object = 7
-    Find_Line = 8
-    Line_Orientation = 9
+from utils import *
 
 
 class MainRobot(AutoNavNode):

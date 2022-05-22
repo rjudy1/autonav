@@ -12,16 +12,16 @@ class MinimalSubscriber(Node):
             'state_topic',
             self.listener_callback,
             10)
-        self.subscription = self.create_subscription(
-            String,
-            'wheel_distance',
-            self.listener_callback,
-            10)
-        self.subscription = self.create_subscription(
-            String,
-            '/mod_lidar',
-            self.listener_callback,
-            10)
+        # self.subscription = self.create_subscription(
+        #     String,
+        #     'wheel_distance',
+        #     self.listener_callback,
+        #     10)
+        # self.subscription = self.create_subscription(
+        #     String,
+        #     '/mod_lidar',
+        #     self.listener_callback,
+        #     10)
 
     def listener_callback(self, msg):
         self.get_logger().info(f'I heard: {msg}')

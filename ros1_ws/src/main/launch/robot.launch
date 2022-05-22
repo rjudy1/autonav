@@ -1,13 +1,7 @@
 <launch>
     <rosparam file="/home/autonav/autonav/ros1_ws/params/params.yaml" />
-    <!--<include file="$(find realsense2_camera)/launch/rs_camera.launch" />-->
-<!--     <node pkg="rs_publisher" name="rs_publisher" type="publish.py" required="true"/> -->
 <!--     <node pkg="lights" name="lights_ctr" type="lights_node" required="true"/> -->
-<!--     <node pkg="lines" name="line_detection_and_following" type="lines.py" required="true"/> -->
-<!--     <node pkg="tof_sensor" name="tof_sensor" type="tof_sensor_node" required="true"/> -->
 <!--     <node pkg="gps_connection" name="gps_following" type="gps_reader.py" required="true"/> -->
-<!--     <node pkg="depth" name="object_detection" type="ob_detection.py" required="true"/> -->
     <node pkg="wheels_controller" name="wheel_controller" type="wheels_controller_node" required="true"/>
-    <node pkg="main" name="main_robot" type="main.py" required="true"/>
-    <!-- <node pkg="system" name="system_robot" type="system.py" required="false"/> -->
+<!--     <node pkg="main" name="main_robot" type="main.py" required="true"/> -->
 </launch>

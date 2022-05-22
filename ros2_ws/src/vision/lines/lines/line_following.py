@@ -81,7 +81,7 @@ class LineFollowing(Node):
                                             (int((7.0 / 1280.0) * grey.shape[0]), int((20.0 / 720.0) * grey.shape[1])))
         mask = cv2.morphologyEx(grey, cv2.MORPH_OPEN, element)
 
-        cvDisplay(mask, 'filter result', self.window_handle)
+        cv_display(mask, 'filter result', self.window_handle)
         return mask
 
     # returns the value in pixels that an assumed line is from the center of the image
@@ -150,7 +150,7 @@ class LineFollowing(Node):
         result = cv2.addWeighted(original_image, 1, overlay, 0.5, 0)
 
         # Display results
-        cvDisplay(result, "result", self.window_handle)
+        cv_display(result, "result", self.window_handle)
 
     # This function takes an image, and returns the value of the distance (in pixels) that the line is
     # from the center of the image

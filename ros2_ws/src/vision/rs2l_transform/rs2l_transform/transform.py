@@ -56,13 +56,13 @@ class TransformPublisher(Node):
 
         # Subscribe to state updates for the robot
         self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
-        self.state = STATES.LINE_FOLLOWING
+        self.state = STATE.LINE_FOLLOWING
 
         # lidar parameters
         self.declare_parameter("/LIDARTrimMin", 1.57)
         self.declare_parameter("/LIDARTrimMax", 4.71)
         self.declare_parameter("/ObstacleFOV", math.pi/6)
-        self.declare_parameter("/ObstacleDetectDistance", 1.5) # meters
+        self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters
         self.declare_parameter("/FollowingDirection", 1)
 
         # camera parameters
@@ -86,7 +86,7 @@ class TransformPublisher(Node):
 
     def state_callback(self, new_state):
         self.get_logger().info("New State Received: {}".format(new_state.data))
-        self.state = new_state.data
+        self.state = int(new_state.data)
 
     def get_c(self, i, scan):
         return -(190 * (452-math.cos(i * scan.angle_increment)) - 452 * (190-math.sin(i * scan.angle_increment)))
@@ -137,16 +137,16 @@ class TransformPublisher(Node):
                     or i * scan.angle_increment > 2*math.pi-self.get_parameter('/ObstacleFOV').value / 2:
                 msg.data = "OBJECT_SEEN" if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] \
                     else "PATH_CLEAR"
-                self.history[self.history_idx] = 1 if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] \
-                    else 0
+                self.history[self.history_idx] = \
+                    1 if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] else 0
                 self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
-                if msg.data == "OBJECT_SEEN": break
+                if msg.data == "OBJECT_SEEN":  break
 
         if self.path_clear and np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
             self.get_logger().info("OBJECT_SEEN")
             self.lidar_str_pub.publish(msg)
             self.path_clear = False
-        elif (self.state == STATES.LINE_TO_OBJECT or self.state == STATES.GPS_TO_OBJECT) \
+        elif (self.state == STATE.LINE_TO_OBJECT or self.state == STATE.GPS_TO_OBJECT) \
                 and np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE:
             self.get_logger().info("PATH_CLEAR")
             self.lidar_str_pub.publish(msg)
@@ -161,7 +161,7 @@ class TransformPublisher(Node):
                 self.lidar_wheel_distance_pub.publish(distance_msg)
                 if self.get_parameter('/Debug').value:
                     self.get_logger().info(
-                        f"Following direction: {self.get_parameter('/FollowingDirection').value}: {distance_msg.data}")
+                        f"Direction: {self.get_parameter('/FollowingDirection').value} : {distance_msg.data}")
 
             elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT \
                     and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] != math.inf:
@@ -211,7 +211,7 @@ class TransformPublisher(Node):
         if self.get_parameter('/Debug'):
             blobs = cv2.drawKeypoints(morph, keypoints, np.zeros((1, 1)), (0, 255, 0),
                                       cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-            cvDisplay(blobs, 'Potholes', self.window_handle)
+            cv_display(blobs, 'Potholes', self.window_handle)
 
     def update_history(self, x):
         self.history[self.history_idx] = x

@@ -6,10 +6,9 @@ import math
 import os
 import sys
 sys.path.insert(1, '/home/autonav/autonav/')
-from utils import DIRECTION
+from utils import *
 
 def generate_launch_description():
-    print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     following_dir = DIRECTION.RIGHT
     crop_top = 0.0
     crop_bottom = .2
@@ -17,8 +16,10 @@ def generate_launch_description():
 
     # create launch description with initial camera launch file
     # disgusting but not quite sure how to make local path
-    ld = LaunchDescription([IncludeLaunchDescription(PythonLaunchDescriptionSource(
-        '/home/autonav/autonav/ros2_ws/src/vision/realsense-ros/realsense2_camera/launch/rs_launch.py'))])
+    ld = LaunchDescription(
+        # [IncludeLaunchDescription(PythonLaunchDescriptionSource(
+        # '/home/autonav/autonav/ros2_ws/src/vision/realsense-ros/realsense2_camera/launch/rs_launch.py'))]
+    )
 
     # launch lidar node
     lidar_node = Node(
@@ -38,7 +39,7 @@ def generate_launch_description():
             {'/LineDetectCropBottom': crop_bottom},
             {'/LineDetectCropSide': crop_side},
             {"/FollowingDirection": following_dir},
-            {'/Debug': True},
+            {'/Debug': False},
         ]
     )
 
@@ -54,13 +55,37 @@ def generate_launch_description():
             {'/PotholeDetectCropBottom': crop_bottom},
             {'/PotholeDetectCropSide': crop_side},
             {'/PotholeBufferSize': 5},
-            {"/Debug": True},
+            {"/Debug": False},
+        ]
+    )
+
+    fsm_node = Node(
+        package="master_fsm",
+        executable="fsm",
+        parameters=[
+            {'/DefaultSpeed': 15},
+            {'/FollowingDirection': following_dir},
+            {'/TimerRate': .05},
+            {'/StartState': STATE.LINE_FOLLOWING},
+        ]
+    )
+
+    encoder_node = Node(
+        package="encoders",
+        executable="encoder_pub",
+        parameters=[
+            {'/TeensyEncodersPort': '/dev/ttyACM0'},
+            {'/TeensyBaudrate': 115200},
+            {'/TeensyUpdateDelay': .01},
+            {'/Debug': True},
         ]
     )
 
     ld.add_action(lidar_node)
     ld.add_action(lines_node)
     ld.add_action(transform_node)
+    ld.add_action(fsm_node)
+    ld.add_action(encoder_node)
 
     # set debug
     if True:

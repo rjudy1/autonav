@@ -1,5 +1,5 @@
 //Joshua Kortje
-//Main Wheel Control Implimentation
+//Main Wheel Control Implementation
 //October 2020
 
 #include "wheelControl.h"
@@ -13,7 +13,7 @@ wheelControl* wheelControl::getInstance(int argc, char** argv, const std::string
     //Check if there is already an instance
     if(instance == nullptr)
     {
-        //Intialize the ros node before we instantiate the class
+        // Initialize the ros node before we instantiate the class
         ros::init(argc, argv, "wheelController");
     
         instance = new wheelControl(argc, argv, topic);
@@ -326,7 +326,7 @@ void wheelControl::receiveMsg(const std_msgs::String::ConstPtr& msg) {
 
     //TODO debug use only
     ROS_INFO_STREAM("Calculated values: left->" << leftSpeed << " right->" << rightSpeed);
-    ROS_WARN_STREAM("Boost Count: " << this->boostCount);
+//    ROS_WARN_STREAM("Boost Count: " << this->boostCount);
 
     //Check if the boost count has met the threshhold to apply the boost
     //The PID controllers should keep giving the same values so the boost

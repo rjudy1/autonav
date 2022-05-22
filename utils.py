@@ -9,24 +9,42 @@
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
-import rclpy
 
 
-class STATES:
-    LINE_FOLLOWING = "LINE_FOLLOWING_STATE"
-    OBJECT_AVOIDANCE_FROM_LINE = "OBJECT_AVOIDANCE_FROM_LINE_STATE"
-    OBJECT_AVOIDANCE_FROM_GPS = "OBJECT_AVOIDANCE_FROM_GPS_STATE"
-    GPS_NAVIGATION = "GPS_NAVIGATION_STATE"
-    LINE_TO_OBJECT = "LINE_TO_OBJECT_STATE"
-    OBJECT_TO_LINE = "OBJECT_TO_LINE"
-    GPS_TO_OBJECT = "GPS_TO_OBJECT"
-    FIND_LINE = "FIND_LINE"
-    LINE_ORIENT = "LINE_ORIENT"
+class STATE:
+    LINE_FOLLOWING = 0
+    OBJECT_AVOIDANCE_FROM_LINE = 1
+    OBJECT_AVOIDANCE_FROM_GPS = 2
+    GPS_NAVIGATION = 3
+    LINE_TO_OBJECT = 4
+    OBJECT_TO_LINE = 5
+    GPS_TO_OBJECT = 6
+    FIND_LINE = 7
+    LINE_ORIENT = 8
 
 
 class DIRECTION:
     LEFT = 0
     RIGHT = 1
+
+
+# Messages that indicate a change of state is needed
+PATH_CLEAR = "PATH_CLEAR"
+OBJECT_SEEN = "OBJECT_SEEN"
+WAYPOINT_FOUND = "WAYPOINT_FOUND"
+WAYPOINT_STRAIGHT = "WAYPOINT_STRAIGHT"
+FOUND_LINE = "FOUND_LINE"
+ALIGNED = "ALIGNED"
+
+# Messages that change the wheel controller's state
+WHEELS_TRANSITION = "STR"
+WHEELS_OBJECT_AVOIDANCE = "SOA"
+WHEELS_LINE_FOLLOWING = "SLF"
+WHEELS_GPS_NAV = "SGN"
+STOP_CODE = "STO"
+TRANSITION_CODE = "TRA,"
+TURN_SPEED = 14
+SLIGHT_TURN = 10
 
 
 def hsv_filter(image, use_white=True):
@@ -64,7 +82,7 @@ def cleanup():
 
 
 # Function used to display images in a way that allows them to be closed when not used.
-def closeWindows(handleArr):
+def close_windows(handleArr):
     if len(handleArr) > 0:
         for handle in handleArr:
             cv2.destroyWindow(handle)
@@ -72,7 +90,7 @@ def closeWindows(handleArr):
 
 
 # Closes unwanted windows
-def cvDisplay(image, handle, handleArr):
+def cv_display(image, handle, handleArr):
     cv2.imshow(handle, image)
     cv2.waitKey(2)
     if handle not in handleArr:

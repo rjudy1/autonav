@@ -59,7 +59,7 @@ class LineDetection(Node):
         # Slice Edges
         image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
 
-        cvDisplay(image, 'Line Detection Color Image', self.window_handle)
+        cv_display(image, 'Line Detection Color Image', self.window_handle)
 
         # Remove Shadows
         image = hsv_filter(image)
@@ -74,7 +74,7 @@ class LineDetection(Node):
                     x1, y1, x2, y2 = coords
                     morph = cv2.cvtColor(morph, cv2.COLOR_GRAY2RGB)
                     cv2.line(morph, (x1, y1), (x2, y2), (0, 255, 0), thickness=5)
-                cvDisplay(morph, 'Line Detection Opened Image', self.window_handle)
+                cv_display(morph, 'Line Detection Opened Image', self.window_handle)
         else:
             self.get_logger().warning("Oversaturated LineDetection Image")
             self.update_history(0)
