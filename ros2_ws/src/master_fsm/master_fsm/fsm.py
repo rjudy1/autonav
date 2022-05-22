@@ -175,7 +175,7 @@ class MainRobot(Node):
     def line_to_object_state(self):
         self.get_logger().info("Line to Object Transition State")
         # Just keep turning until the object is not in front of us
-        self.wheel_msg = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
+        self.wheel_msg.data = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
             TURN_SPEED + self.follow_dir * TURN_SPEED)
         self.wheel_pub.publish(self.wheel_msg)
 

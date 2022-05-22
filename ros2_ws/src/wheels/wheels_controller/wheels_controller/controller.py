@@ -42,31 +42,32 @@ class Wheels:
 
     def convert_to_hex_cmd(self, speed):
         # get magnitude of speed and direction
-        cmd = abs(speed)
+        cmd = hex(abs(speed))
         if speed < 0:
-            cmd |= CCW
+            cmd = cmd | CCW
         return cmd
 
 class WheelControl(Node):
     def __init__(self):
         super.__init__('wheels_controller')
-        self.wheel_sub = self.create_subscriber(String, "wheel_distance", wheel_callback, 10)
+        self.wheel_sub = self.create_subscriber(String, "wheel_distance", self.wheel_callback, 10)
+        self.unitChange = 1000 #assuming passed in meters, need mm
 
         # start in a stopped state
         self.curr_right_speed = 0
         self.curr_left_speed = 0
         self.boost_count = 0
 
-        self.declare_parameter('/FollowingDirection')
-        self.declare_parameter('/LineDist')
-        self.declare_parameter('/SideObjectDist')
-        self.declare_parameter('/DefaultSpeed',15)
-        self.declare_parameter('/BoostIncrease',1)
-        self.declare_parameter('/BoostCountThreshold',20)
-        self.declare_parameter('/LineBoostMargin',30.0)
-        self.declare_parameter('/GPSBoostMargin',.1745)
+        self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
+        self.declare_parameter('/LineDist', 0.175)
+        self.declare_parameter('/SideObjectDist', 0.6)
+        self.declare_parameter('/DefaultSpeed', 15)
+        self.declare_parameter('/BoostIncrease', 1)
+        self.declare_parameter('/BoostCountThreshold', 20)
+        self.declare_parameter('/LineBoostMargin', 30.0)
+        self.declare_parameter('/GPSBoostMargin', 0.1745)
 
-        self.following_direction = self.get_parameter('/FollowingDirection')
+        self.following_direction = self.get_parameter('/FollowingDirection').value
         self.target_line_dist = self.get_parameter('/LineDist').value
         self.target_obj_dist = self.get_parameter('/SideObjectDist').value
         self.default_speed = self.get_parameter('/DefaultSpeed').value
@@ -88,13 +89,10 @@ class WheelControl(Node):
     def __del__(self):
         pass
 
-    def start_control(self):
-        pass
-
     def signal_catch(self, signum):
         pass
 
-    def wheel_calllback(self, msg):
+    def wheel_callback(self, msg):
         left_speed = self.curr_left_speed
         right_speed = self.curr_right_speed
 
@@ -125,8 +123,8 @@ class WheelControl(Node):
             if len(cmds) != 2:
                 self.get_logger().warning("ERROR: MISFORMATTED MESSAGE")
             else:
-                left_speed = int(cmds[0])
-                right_speed = int(cmds[0])
+                left_speed = int(float(cmds[0])*self.unitChange)
+                right_speed = int(float(cmds[1])*self.unitChange)
         elif self.following_mode==FollowMode.eeLine and msg[:3]==LIN_SENDER:
             position = float(msg[4:])
             if position >= STOP_CODE:
@@ -157,6 +155,7 @@ class WheelControl(Node):
                 stop_override = True
                 self.boost_count = 0
             else:
+                pass
                 # c++ does this to calculate differntial and apply to default speed
                 # double delta = this->pidCtrObj->control(this->targetObjDist - position);
                 # delta = delta * (double)(this->followingPol);
