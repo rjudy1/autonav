@@ -43,8 +43,8 @@ def generate_launch_description():
     params2 = duplicate_params(rs_launch.configurable_parameters, '2')
     return LaunchDescription(
         rs_launch.declare_configurable_parameters(local_parameters) +
-        rs_launch.declare_configurable_parameters(params1) +
-        rs_launch.declare_configurable_parameters(params2) +
+        rs_launch.declare_configurable_parameters(params1) + 
+        rs_launch.declare_configurable_parameters(params2) + 
         [
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/rs_launch.py']),

@@ -37,7 +37,7 @@ class pidController
             outputFile << std::to_string(Kp) << "," << std::to_string(Kd) << ","
                 << std::to_string(Ki) << "\n";
         }
-        //initilize the first time to when the PID controller starts up.
+        //initialize the first time to when the PID controller starts up.
         //this should give a sufficiently large value to not take the 
         //first value into account at first
         lastTime = std::chrono::steady_clock::now();

@@ -28,6 +28,14 @@ class DIRECTION:
     RIGHT = 1
 
 
+class FollowMode:
+    eeNone = 0
+    eeLine = 1
+    eeObject = 2
+    eeGps = 3
+    eeTransition = 4
+
+
 # Messages that indicate a change of state is needed
 PATH_CLEAR = "PATH_CLEAR"
 OBJECT_SEEN = "OBJECT_SEEN"
@@ -42,9 +50,13 @@ WHEELS_OBJECT_AVOIDANCE = "SOA"
 WHEELS_LINE_FOLLOWING = "SLF"
 WHEELS_GPS_NAV = "SGN"
 STOP_CODE = "STO"
-TRANSITION_CODE = "TRA,"
+TRANSITION_CODE = "TRA"
+LIN_SENDER = "LIN"
+OBJECT_SENDER = "OBJ"
+GPS_SENDER = "GPS"
 TURN_SPEED = 14
 SLIGHT_TURN = 10
+STOP_CODE = 7777
 
 
 def hsv_filter(image, use_white=True):

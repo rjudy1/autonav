@@ -21,7 +21,7 @@ local_parameters = [{'name': 'camera_name1', 'default': 'D400', 'description': '
 
 def generate_launch_description():
     return LaunchDescription(
-        rs_launch.declare_configurable_parameters(local_parameters) +
+        rs_launch.declare_configurable_parameters(local_parameters) + 
         [
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/rs_multi_camera_launch.py']),

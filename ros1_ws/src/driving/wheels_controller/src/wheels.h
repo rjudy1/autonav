@@ -2,7 +2,7 @@
 //Sept. 2 2020
 
 
-//Description: This file defins a set of functions that can be used to control the wheels of the robot. 
+//Description: This file defines a set of functions that can be used to control the wheels of the robot.
 
 
 #include <iostream>
