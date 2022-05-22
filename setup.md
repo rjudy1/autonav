@@ -16,3 +16,6 @@
 3. Run `ros2 launch robot_launch robot.launch.py`
 4. (Optional) if you want to see the laser scan, run `ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 world laser_frame` and
 `rviz2 ./install/rplidar_ros/share/rplidar_ros/rviz/rplidar.rviz` in another terminal
+
+## Changing Parameters while Running
+`ros2 param set /turtlesim background_r 150`

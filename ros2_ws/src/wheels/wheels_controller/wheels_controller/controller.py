@@ -49,7 +49,7 @@ class Wheels:
 
 class WheelControl(Node):
     def __init__(self):
-        super.__init__('wheels_controller')
+        super().__init__('wheels_controller')
         self.wheel_sub = self.create_subscriber(String, "wheel_distance", wheel_callback, 10)
 
         # start in a stopped state
@@ -157,6 +157,7 @@ class WheelControl(Node):
                 stop_override = True
                 self.boost_count = 0
             else:
+                pass
                 # c++ does this to calculate differntial and apply to default speed
                 # double delta = this->pidCtrObj->control(this->targetObjDist - position);
                 # delta = delta * (double)(this->followingPol);
