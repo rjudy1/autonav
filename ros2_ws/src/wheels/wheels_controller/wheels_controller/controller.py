@@ -82,6 +82,8 @@ class WheelControl(Node):
         self.driver = Wheels()
         self.following_mode = FollowMode.eeNone
 
+        self.MAX_CHANGE = 5
+
 
     def __del__(self):
         pass
@@ -97,40 +99,101 @@ class WheelControl(Node):
         right_speed = self.curr_right_speed
 
         stop_override = False
-        message_valid = False
+        message_valid = True
 
         self.get_logger().info(f"received msg {msg}")
 
         # put all this code in place
         if msg[:3] == WHEELS_OBJECT_AVOIDANCE:
             self.following_mode = FollowMode.eeObject
-            self.boostCount = 0
+            self.boost_count = 0
             self.get_logger().info("SWITCHED TO OBJECT AVOIDANCE")
         elif msg[:3] == WHEELS_LINE_FOLLOWING:
-            pass
+            self.following_mode = FollowMode.eeGps
+            self.boost_count = 0
+            self.get_logger().info("SWITCHED TO LINE FOLLOWING")
         elif msg[:3] == WHEELS_GPS_NAV:
-            pass
+            self.following_mode = FollowMode.eeGps
+            self.boost_count = 0
+            self.get_logger().info("SWITCHED TO GPS NAVIGATION")
         elif msg[:3] == WHEELS_TRANSITION:
-            pass
+            self.following_mode = FollowMode.eeTransition
+            self.boost_count = 0
+            self.get_logger().info("SWITCHED TO TRANSITION STATE")
         elif msg[:3] == TRANSITION_CODE:
-            pass
+            cmds = msg[4:].split(',')
+            if len(cmds) != 2:
+                self.get_logger().warning("ERROR: MISFORMATTED MESSAGE")
+            else:
+                left_speed = int(cmds[0])
+                right_speed = int(cmds[0])
         elif self.following_mode==FollowMode.eeLine and msg[:3]==LIN_SENDER:
-            pass
-        elif self.following_mode == FollowMode.eeObject && msg[:3]==OBJECT_SENDER:
-            pass
+            position = float(msg[4:])
+            if position >= STOP_CODE:
+                left_speed = 0
+                right_speed = 0
+                stop_override = True
+                self.boost_count = 0
+            else:
+                position_error = self.target_line_dist - position
+                # C++ does this stuff
+                # // Calculate the differential and apply it
+                # to the default speed double
+                # delta = this->pidCtrLine->control(positionError);
+                # delta = delta * (double)(this->followingPol);
+                # leftSpeed = this->defaultSpeed + delta;
+                # rightSpeed = this->defaultSpeed - delta;
+                #
+                # // Check if we should in the acceptable zone for picking up speed.i
+                if abs(position_error) <= self.line_boost_margin:
+                    self.boost_count += 1
+                else:
+                    self.boost_count = 0
+        elif self.following_mode == FollowMode.eeObject and msg[:3]==OBJECT_SENDER:
+            position = float(msg[4:])
+            if position >= STOP_CODE:
+                left_speed = 0
+                right_speed = 0
+                stop_override = True
+                self.boost_count = 0
+            else:
+                # c++ does this to calculate differntial and apply to default speed
+                # double delta = this->pidCtrObj->control(this->targetObjDist - position);
+                # delta = delta * (double)(this->followingPol);
+                # leftSpeed = this->defaultSpeed + delta;
+                # rightSpeed = this->defaultSpeed - delta;
         elif self.following_mode == FollowMode.eeGps and msg[:3] == GPS_SENDER:
-            pass
+            position = float(msg[4:])
+            if position >= STOP_CODE:
+                left_speed = 0
+                right_speed = 0
+                stop_override = True
+                self.boost_count = 0
+            else:
+                # more differential stuff
+                # double delta = this->pidCtrGps->control(position);
+                # GPS sends the error already
+                # delta = delta * (double)(this->followingPol);
+                # leftSpeed = this->defaultSpeed + delta;
+                # rightSpeed = this->defaultSpeed - delta;
+                if abs(position) <= self.gps_boost_margin:
+                    self.boost_count += 1
+                else:
+                    self.boost_count = 0
+
+        else:
+            message_valid = False
 
         self.get_logger().info(f"Calculated left and right: {left_speed} and {right_speed}")
         if self.boost_count > self.boost_count_threshold and message_valid:
             left_speed += self.speed_boost
             right_speed += self.speed_boost
 
-        if left_speed != self.curr_left_speed or self.curr_right_speed != right_speed:
+        # send speed command to wheels
+        if message_valid and (left_speed != self.curr_left_speed or self.curr_right_speed != right_speed):
             if not stop_override:
-                MAX_CHANGE = abs(MAX_CHANGE) if left_speed > self.curr_left_speed + MAX_CHANGE else 0-MAX_CHANGE
-                left_speed = self.curr_left_speed + MAX_CHANGE
-                right_speed = self.curr_right_speed + MAX_CHANGE
+                left_speed = self.curr_left_speed + self.MAX_CHANGE * int(left_speed > self.curr_left_speed + self.MAX_CHANGE)
+                right_speed = self.curr_right_speed + self.MAX_CHANGE * int(right_speed > self.curr_right_speed + self.MAX_CHANGE)
 
             self.driver.control_wheels(left_speed, right_speed)
 
