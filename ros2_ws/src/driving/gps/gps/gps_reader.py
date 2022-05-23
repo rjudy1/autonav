@@ -9,16 +9,13 @@
 # Adapted from Joshua Kortje 2021 competition GPS code
 ################################
 
-import sys
-sys.path.insert(1, '/home/autonav/autonav')
-
 import cmath
 from dataclasses import dataclass
 from geopy import distance
 import pynmea2  #broke
 import serial
 import time
-from utils import *
+from utils.utils import *
 
 import rclpy
 from rclpy.node import Node

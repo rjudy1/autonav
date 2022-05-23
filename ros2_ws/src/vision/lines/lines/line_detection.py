@@ -8,16 +8,12 @@
 # Author: Modified from 2020-21 autonav team code for ROS2
 # Date Modified: 12 May 2022
 ################################
-import sys
-sys.path.insert(1, '/home/autonav/autonav/')
 
 import cv2
 import math
 import numpy as np
-import rclpy
 from rclpy.node import Node
-from utils import *
-
+from utils.utils import *
 
 class LineDetection(Node):
     def __init__(self):

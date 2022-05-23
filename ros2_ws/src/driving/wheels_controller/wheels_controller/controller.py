@@ -14,9 +14,8 @@ from rclpy.node import Node
 import serial
 from std_msgs.msg import String
 import time
-import sys
-sys.path.insert(1, '/home/autonav/autonav/')
-from utils import *
+from utils.utils import *
+
 
 RIGHT_WHEEL = 0x80
 BAUD_RATE = 19200
@@ -33,12 +32,12 @@ class Wheels:
 
     def control_wheels(self, left_speed, right_speed):
         # control right wheel
-        right_cmd = self.convert_to_hex_cmd(-1*right_speed) | RIGHT_WHEEL
-        self.serialPort.write(chr(right_cmd))
+        right_cmd = self.convert_to_hex_cmd(right_speed) | RIGHT_WHEEL
+        self.serialPort.write(right_cmd.to_bytes(1, 'big'))
 
         # control left wheel
         left_cmd = self.convert_to_hex_cmd(left_speed)
-        self.serialPort.write(chr(left_cmd))
+        self.serialPort.write(left_cmd.to_bytes(1, 'big'))
 
         self.serialPort.flush()
 
@@ -47,7 +46,6 @@ class Wheels:
         cmd = abs(speed) & 0xFF
         if speed < 0:
             cmd = (cmd | CCW)
-        print(f"HERRRRRRRRRRRRRRRRRRRRRRRREEEEEEE: {cmd}, {bytes(cmd)}")
         return cmd
 
 
@@ -125,13 +123,13 @@ class WheelControl(Node):
         self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
-        # self.driver = Wheels(port=self.get_parameter('/Port').value)
+        self.driver = Wheels(port=self.get_parameter('/Port').value)
         self.following_mode = FollowMode.eeLine
 
         self.MAX_CHANGE = 5
 
     def __del__(self):
-        pass
+        self.driver.control_wheels(0,0)
 
     def wheel_callback(self, msg):
         msg = msg.data
@@ -241,12 +239,8 @@ class WheelControl(Node):
                     right_speed = self.curr_right_speed + self.MAX_CHANGE
                 elif right_speed < self.curr_right_speed - self.MAX_CHANGE:
                     right_speed = self.curr_right_speed - self.MAX_CHANGE
-            self.get_logger().info(f"SETTING WHEEL SPEED TO {left_speed} and {right_speed}")
-        # self.driver.control_wheels(20, 20)
-        speed_msg = SpeedCmd()
-        speed_msg.left_speed = 20
-        speed_msg.right_speed = 25
-        self.speed_cmd_pub.publish(speed_msg)
+            # self.get_logger().info(f"SETTING WHEEL SPEED TO {left_speed} and {right_speed}")
+            self.driver.control_wheels(left_speed, right_speed)
 
         self.curr_left_speed = left_speed
         self.curr_right_speed = right_speed
@@ -254,14 +248,14 @@ class WheelControl(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
     wheels = WheelControl()
 
-    rclpy.spin(wheels)
-
-    # Destroy the node explicitly (optional)
-    wheels.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(wheels)
+    except Exception as e:
+        # Destroy the node explicitly (optional)
+        wheels.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':

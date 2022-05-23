@@ -10,7 +10,6 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 
-
 class STATE:
     LINE_FOLLOWING = 0
     OBJECT_AVOIDANCE_FROM_LINE = 1
@@ -56,7 +55,7 @@ OBJECT_SENDER = "OBJ"
 GPS_SENDER = "GPS"
 TURN_SPEED = 14
 SLIGHT_TURN = 10
-STOP_CODE = 7777
+
 
 
 def hsv_filter(image, use_white=True):

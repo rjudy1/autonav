@@ -9,16 +9,12 @@
 
 # !/usr/bin/env python
 
-import sys
-
-sys.path.insert(1, '/home/autonav/autonav/')
-
 from dataclasses import dataclass
 import math
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from utils import *
+from utils.utils import *
 
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
@@ -64,6 +60,7 @@ class TransformPublisher(Node):
         self.declare_parameter("/ObstacleFOV", math.pi/6)
         self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters
         self.declare_parameter("/FollowingDirection", 1)
+        self.declare_parameter("/ObjectDistance", 4.0)
 
         # camera parameters
         self.declare_parameter('/LineDetectCropTop', 0.0)

@@ -22,7 +22,7 @@ class Encoder(Node):
         self.declare_parameter('/TeensyEncodersPort', '/dev/ttyACM0')
         self.declare_parameter('/TeensyBaudrate', 115200)
         self.declare_parameter('/TeensyUpdateDelay', .10)
-        self.declare_parameter('/Debug', True)
+        self.declare_parameter('/Debug', False)
 
         self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
                                         self.get_parameter('/TeensyBaudrate').value)
@@ -38,6 +38,9 @@ class Encoder(Node):
 
         self.past_left_ticks = 0
         self.past_right_ticks = 0
+
+    def __del__(self):
+        self.close()
 
     def timer_callback(self):
         try:
@@ -56,9 +59,9 @@ class Encoder(Node):
                 left_dist = left_ticks / ticks_per_meter
                 right_dist = right_ticks / ticks_per_meter
 
-                if self.get_parameter('/Debug'):
-                    self.get_logger().info(left_dist)
-                    self.get_logger().info(right_dist)
+                if self.get_parameter('/Debug').value:
+                    self.get_logger().info(f'left_dist {left_dist}')
+                    self.get_logger().info(f'right_dist {right_dist}')
 
                 msg = EncoderData()
                 msg.left = left_dist
@@ -83,8 +86,8 @@ class Encoder(Node):
 
 def main(args=None):
     rclpy.init()
+    encoder_pub = Encoder()
     try:
-        encoder_pub = Encoder()
         rclpy.spin(encoder_pub)
     except KeyboardInterrupt:
         encoder_pub.close()

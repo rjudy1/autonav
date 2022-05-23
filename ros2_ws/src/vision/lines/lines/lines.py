@@ -9,21 +9,15 @@
 
 # !/usr/bin/env python
 
-import sys
-sys.path.insert(1, '/home/autonav/autonav/')
-sys.path.insert(1, '/home/autonav/autonav/ros2_ws/src/vision/lines/lines/')
-
 import rclpy
 from rclpy.node import Node
 
-from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-from utils import *
+from utils.utils import *
 
-
-from line_detection import LineDetection
-from line_following import LineFollowing
+from .line_detection import LineDetection
+from .line_following import LineFollowing
 from std_msgs.msg import String
 
 import cv2

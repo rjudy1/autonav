@@ -9,17 +9,10 @@
 # Date Modified: 20 May 2022
 ################################
 
-import sys
-sys.path.insert(1, '/home/autonav/autonav/')
-sys.path.insert(1, '/home/autonav/autonav/ros2_ws/src/vision/lines/lines/')
-
 import cv2
-import math
 import numpy as np
-import rclpy
 from rclpy.node import Node
-from utils import *
-
+from utils.utils import *
 
 class LineFollowing(Node):
     def __init__(self):

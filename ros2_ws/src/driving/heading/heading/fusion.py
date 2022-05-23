@@ -9,13 +9,9 @@
 
 # !/usr/bin/env python
 
-import sys
-
-sys.path.insert(1, '/home/autonav/autonav/')
-
 import rclpy
 from rclpy.node import Node
-from utils import *
+from utils.utils import *
 
 from custom_msgs.msg import EncoderData
 from custom_msgs.msg import HeadingStatus
@@ -28,6 +24,7 @@ class Fusion(Node):
 
         self.declare_parameter("/InitialHeading", 0.000)
         self.declare_parameter('/EncoderWeight', .5)
+        self.declare_parameter('/Debug', False)
 
         self.state = STATE.LINE_FOLLOWING
         self.curr_heading = self.get_parameter('/InitialHeading')
@@ -47,6 +44,8 @@ class Fusion(Node):
     def enc_callback(self, enc_msg):
         # 64 cm gap between wheel centers
         self.encoder_curr_heading += (enc_msg.right - enc_msg.left) / .32
+        if self.get_parameter('/Debug').value:
+            self.get_logger().info(f'encoder report: {enc_msg}, {self.encoder_curr_heading}')
 
     def gps_callback(self, gps_msg):
         self.target_heading = gps_msg.target_heading
@@ -72,6 +71,9 @@ class Fusion(Node):
         msg = String()
         msg.data = GPS_SENDER + ',' + str(filtered_error_angle)
         self.wheel_pub.publish(msg)
+
+        if self.get_parameter('/Debug').value:
+            self.get_logger().info(f'encoder report: {gps_msg}, {self.curr_heading}')
 
 
 def main(args=None):

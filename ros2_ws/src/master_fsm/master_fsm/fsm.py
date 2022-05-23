@@ -9,16 +9,13 @@
 ################################
 import sys
 
-sys.path.insert(1, '/home/autonav/autonav')
-
 import rclpy
 from rclpy.node import Node
 import threading
 import time
-from utils import *
+from utils.utils import *
 
 from std_msgs.msg import String
-
 
 class MainRobot(Node):
     def __init__(self):
