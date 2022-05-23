@@ -12,6 +12,7 @@
 import cmath
 from dataclasses import dataclass
 from geopy import distance
+import numpy as np
 import pynmea2  #broke
 import serial
 import time
@@ -68,31 +69,32 @@ class GPS(Node):
         self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
         self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
 
-        self.waypoint_itr = 0
-
         # Publish new events that may change the overall state of the robot
         self.gps_event_pub = self.create_publisher(String, "gps_events", 10)
-
-        self.ser = serial.Serial(self.get_parameter('/Port').value, baudrate=115200)
-        # self.dataout = pynmea2.NMEAStreamReader()
-
-        self.ser.readline()  # read one junk line to achieve line synchronization
-
         self.pub = self.create_publisher(String, 'wheel_distance', 10)
         self.heading_pub = self.create_publisher(HeadingStatus, 'gps_heading', 10)
 
+        # Subscribe to state updates for the robot
+        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
+        self.state = STATE.LINE_FOLLOWING
+
+        # process GPS data at 2 Hz
+        self.timer = self.create_timer(.5, self.process_gps_data)
+
+        self.ser = serial.Serial(self.get_parameter('/Port').value, baudrate=115200)
+        self.ser.readline()  # read one junk line to achieve line synchronization
+
+        # useful constants
         self.LINE_MODE = {STATE.LINE_FOLLOWING, STATE.OBJECT_AVOIDANCE_FROM_LINE, STATE.OBJECT_TO_LINE,
                           STATE.LINE_TO_OBJECT}
 
-        # Subscribe to state updates for the robot
-        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
-
+        # position in gps rounds
+        self.waypoint_itr = 0
         self.past_loc = self.take_reading()
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
         self.done = False
-        self.timer = self.create_timer(.5, self.process_gps_data)
         self.get_logger().info("GPS Node configured")
 
     # a 5 point moving average filter
@@ -111,7 +113,7 @@ class GPS(Node):
     # this function calculates the heading in radians from 2 points
     def calc_heading(self, past, curr):
         trajectory = curr - past
-        return cmath.phase(trajectory)  # in radians [-pi, pi]
+        return cmath.phase(trajectory)  # in radians [-pi, pi]  # this might be a problem
 
     # return true if we can switch back from obstacle avoidance to GPS nav
     def is_object_clear(self, error_angle):
@@ -123,7 +125,7 @@ class GPS(Node):
         target_point = (self.target_loc[self.waypoint_itr].real, self.target_loc[self.waypoint_itr].imag)
         current_point = (curr.real, curr.imag)
         dist_meters = distance.distance(current_point, target_point).m
-        self.get_logger().info(f"{dist_meters}")
+        self.get_logger().info(f"distance from waypoint: {dist_meters}")
 
         # if we are not currently navigating with GPS data
         if self.state in self.LINE_MODE and False:  # currently completely disabled
@@ -164,7 +166,7 @@ class GPS(Node):
         heading_msg = HeadingStatus()
         heading_msg.current_heading = curr_heading
         heading_msg.target_heading = target_heading
-        self.curr_heading_pub.publish(heading_msg)
+        self.heading_pub.publish(heading_msg)
 
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(target_heading, curr_heading)
@@ -231,7 +233,7 @@ def main(args=None):
     gps = GPS()
     try:
         rclpy.spin(gps)
-    except Exception:
+    except KeyboardInterrupt:
         gps.destroy_node()
         rclpy.shutdown()
 

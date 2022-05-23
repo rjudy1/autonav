@@ -82,7 +82,7 @@ def main(args=None):
 
     try:
         rclpy.spin(fuser)
-    except Exception as e:
+    except KeyboardInterrupt:
         # Destroy the node explicitly (optional)
         fuser.destroy_node()
         rclpy.shutdown()

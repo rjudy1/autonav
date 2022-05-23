@@ -226,7 +226,7 @@ def main(args=None):
 
     try:
         rclpy.spin(transform)
-    except Exception as e:
+    except KeyboardInterrupt:
         # Destroy the node explicitly (optional)
         transform.destroy_node()
         rclpy.shutdown()

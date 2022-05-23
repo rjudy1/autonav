@@ -252,7 +252,7 @@ def main(args=None):
 
     try:
         rclpy.spin(wheels)
-    except Exception as e:
+    except KeyboardInterrupt:
         # Destroy the node explicitly (optional)
         wheels.destroy_node()
         rclpy.shutdown()
