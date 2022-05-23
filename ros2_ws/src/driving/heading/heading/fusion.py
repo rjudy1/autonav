@@ -18,7 +18,7 @@ from rclpy.node import Node
 from utils import *
 
 from custom_msgs.msg import EncoderData
-from custom_msgs.msg import HeadingData
+from custom_msgs.msg import HeadingStatus
 from std_msgs.msg import String
 
 
@@ -35,7 +35,7 @@ class Fusion(Node):
         self.encoder_curr_heading = self.get_parameter('/InitialHeading')
 
         self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.enc_callback, 10)
-        self.gps_heading_sub = self.create_subscription(HeadingData, "gps_heading", self.gps_callback, 10)
+        self.gps_heading_sub = self.create_subscription(HeadingStatus, "gps_heading", self.gps_callback, 10)
         self.wheel_pub = self.create_publisher(String, "wheel_distance", 10)
         self.event_pub = self.create_publisher(String, "gps_events", 10)
 

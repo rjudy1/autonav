@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(custom_msgs)
+project(speed_commander)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -22,11 +22,15 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-find_package(rosidl_default_generators REQUIRED)
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/HeadingStatus.msg"
-  "msg/EncoderData.msg"
-  "msg/SpeedCmd.msg"
-)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(custom_msgs REQUIRED)                      # CHANGE
+
+add_executable(commander src/speed_publisher.cpp)
+ament_target_dependencies(commander rclcpp custom_msgs)    # CHANGE
+
+install(TARGETS
+  commander
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

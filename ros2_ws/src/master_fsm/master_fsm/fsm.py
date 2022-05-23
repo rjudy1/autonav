@@ -61,7 +61,7 @@ class MainRobot(Node):
         self.waypoint_found = False
         self.waypoint_straight = False
         self.path_clear = False
-        self.follow_dir = self.get_parameter('/FollowingDirection')
+        self.follow_dir = self.get_parameter('/FollowingDirection').value
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
@@ -175,7 +175,7 @@ class MainRobot(Node):
     def line_to_object_state(self):
         # self.get_logger().info("Line to Object Transition State")
         # Just keep turning until the object is not in front of us
-        self.wheel_msg.data = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
+        self.wheel_msg.data = TRANSITION_CODE + ',' + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
             TURN_SPEED + self.follow_dir * TURN_SPEED)
         self.wheel_pub.publish(self.wheel_msg)
 
@@ -194,7 +194,7 @@ class MainRobot(Node):
         # self.get_logger().info("Object to Line Transition State")
 
         # Gradual Turn
-        self.wheel_msg.data = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * SLIGHT_TURN) + "," + str(
+        self.wheel_msg.data = TRANSITION_CODE + ','  + str(TURN_SPEED - self.follow_dir * SLIGHT_TURN) + "," + str(
             TURN_SPEED + self.follow_dir * SLIGHT_TURN)
         self.wheel_pub.publish(self.wheel_msg)
 
@@ -217,7 +217,7 @@ class MainRobot(Node):
         # self.get_logger().info("GPS to Object Transition State")
 
         # Just keep turning until the object is not in front of us
-        self.wheel_msg.data = TRANSITION_CODE + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
+        self.wheel_msg.data = TRANSITION_CODE + ',' + str(TURN_SPEED - self.follow_dir * TURN_SPEED) + "," + str(
             TURN_SPEED + self.follow_dir * TURN_SPEED)
         self.wheel_pub.publish(self.wheel_msg)
         if self.path_clear:
@@ -234,7 +234,7 @@ class MainRobot(Node):
     def find_line_state(self):
         # self.get_logger().info("Find Line Transition State")
         # Just keep going until we find the line
-        self.wheel_msg.data = TRANSITION_CODE + str(0) + "," + str(0)
+        self.wheel_msg.data = TRANSITION_CODE + ',' + str(0) + "," + str(0)
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.found_line:
@@ -252,7 +252,7 @@ class MainRobot(Node):
         # self.get_logger().info("Line Orientation Transition State")
 
         # Just keep turning until we are parrallel with the line
-        self.wheel_msg.data = TRANSITION_CODE + str(0) + "," + str(0)
+        self.wheel_msg.data = TRANSITION_CODE + ',' + str(0) + "," + str(0)
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.aligned:

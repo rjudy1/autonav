@@ -8,6 +8,7 @@
 
 # !/usr/bin/env python
 
+from custom_msgs.msg import SpeedCmd
 import rclpy
 from rclpy.node import Node
 import serial
@@ -33,20 +34,22 @@ class Wheels:
     def control_wheels(self, left_speed, right_speed):
         # control right wheel
         right_cmd = self.convert_to_hex_cmd(-1*right_speed) | RIGHT_WHEEL
-        self.serialPort.write(right_cmd)
+        self.serialPort.write(chr(right_cmd))
 
         # control left wheel
         left_cmd = self.convert_to_hex_cmd(left_speed)
-        self.serialPort.write(left_cmd)
+        self.serialPort.write(chr(left_cmd))
 
         self.serialPort.flush()
 
     def convert_to_hex_cmd(self, speed):
         # get magnitude of speed and direction
-        cmd = hex(abs(speed))
+        cmd = abs(speed) & 0xFF
         if speed < 0:
-            cmd = cmd | CCW
+            cmd = (cmd | CCW)
+        print(f"HERRRRRRRRRRRRRRRRRRRRRRRREEEEEEE: {cmd}, {bytes(cmd)}")
         return cmd
+
 
 class PIDController:
     def __init__(self, kp, ki, kd, max, min):
@@ -91,7 +94,8 @@ class WheelControl(Node):
     def __init__(self):
         super().__init__('wheels_controller')
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
-        self.unitChange = 1000 #assuming passed in meters, need mm
+        self.speed_cmd_pub = self.create_publisher(SpeedCmd, 'speed_cmds', 10)
+        self.unitChange = 1000  # assuming passed in meters, need mm
 
         # start in a stopped state
         self.curr_right_speed = 0
@@ -106,6 +110,7 @@ class WheelControl(Node):
         self.declare_parameter('/BoostCountThreshold', 20)
         self.declare_parameter('/LineBoostMargin', 30.0)
         self.declare_parameter('/GPSBoostMargin', 0.1745)
+        self.declare_parameter('/Port', '/dev/ttyUSB0')
 
         self.following_direction = self.get_parameter('/FollowingDirection').value
         self.target_line_dist = self.get_parameter('/LineDist').value
@@ -120,15 +125,12 @@ class WheelControl(Node):
         self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
-        self.driver = Wheels()
-        self.following_mode = FollowMode.eeNone
+        # self.driver = Wheels(port=self.get_parameter('/Port').value)
+        self.following_mode = FollowMode.eeLine
 
         self.MAX_CHANGE = 5
 
     def __del__(self):
-        pass
-
-    def signal_catch(self, signum):
         pass
 
     def wheel_callback(self, msg):
@@ -160,6 +162,7 @@ class WheelControl(Node):
             self.get_logger().info("SWITCHED TO TRANSITION STATE")
         elif msg[:3] == TRANSITION_CODE:
             cmds = msg[4:].split(',')
+            self.get_logger().warning(f"HELLOOOOO: {cmds}")
             if len(cmds) != 2:
                 self.get_logger().warning("ERROR: MISFORMATTED MESSAGE")
             else:
@@ -222,7 +225,7 @@ class WheelControl(Node):
         else:
             message_valid = False
 
-        self.get_logger().info(f"Calculated left and right: {left_speed} and {right_speed}")
+        self.get_logger().info(f"Calculated left and right speeds: {left_speed} and {right_speed}")
         if self.boost_count > self.boost_count_threshold and message_valid:
             left_speed += self.speed_boost
             right_speed += self.speed_boost
@@ -238,8 +241,12 @@ class WheelControl(Node):
                     right_speed = self.curr_right_speed + self.MAX_CHANGE
                 elif right_speed < self.curr_right_speed - self.MAX_CHANGE:
                     right_speed = self.curr_right_speed - self.MAX_CHANGE
-
-            self.driver.control_wheels(left_speed, right_speed)
+            self.get_logger().info(f"SETTING WHEEL SPEED TO {left_speed} and {right_speed}")
+        # self.driver.control_wheels(20, 20)
+        speed_msg = SpeedCmd()
+        speed_msg.left_speed = 20
+        speed_msg.right_speed = 25
+        self.speed_cmd_pub.publish(speed_msg)
 
         self.curr_left_speed = left_speed
         self.curr_right_speed = right_speed
