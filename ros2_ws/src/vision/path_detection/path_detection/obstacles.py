@@ -1,10 +1,10 @@
 ################################
 # AutoNav 2022 Competition Robot
 # Package: rs2l_transform
-# File: transform.py
+# File: obstacles.py
 # Purpose: detect potholes and remove back 180 of lidar sweep
-# Date Modified: 21 May 2022
-# To run: ros2 run rs2l_transform transform
+# Date Modified: 24 May 2022
+# To run: ros2 run path_detection obstacles
 ################################
 
 # !/usr/bin/env python

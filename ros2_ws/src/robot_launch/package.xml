@@ -11,13 +11,10 @@
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-  <exec_depend>lines</exec_depend>
-  <exec_depend>rs2l_tranform</exec_depend>
+  <exec_depend>path_detection</exec_depend>
   <exec_depend>master_fsm</exec_depend>
   <exec_depend>wheels_controller</exec_depend>
-  <exec_depend>encoders</exec_depend>
   <exec_depend>heading</exec_depend>
-  <exec_depend>gps</exec_depend>
   <exec_depend>rplidar_ros</exec_depend>
   <exec_depend>utils</exec_depend>
   <exec_depend>realsense2_camera</exec_depend>

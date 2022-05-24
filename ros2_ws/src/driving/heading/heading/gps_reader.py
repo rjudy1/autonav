@@ -71,7 +71,6 @@ class GPS(Node):
 
         # Publish new events that may change the overall state of the robot
         self.gps_event_pub = self.create_publisher(String, "gps_events", 10)
-        self.pub = self.create_publisher(String, 'wheel_distance', 10)
         self.heading_pub = self.create_publisher(HeadingStatus, 'gps_heading', 10)
 
         # Subscribe to state updates for the robot

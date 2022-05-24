@@ -33,21 +33,22 @@ def generate_launch_description():
 
     # launch line following node
     lines_node = Node(
-        package="lines",
+        package="path_detection",
         executable="lines",
         parameters=[
             {'/LineDetectCropTop': crop_top},  # fraction to remove
             {'/LineDetectCropBottom': crop_bottom},
             {'/LineDetectCropSide': crop_side},
             {"/FollowingDirection": following_dir},
+            {'/UseYellow': False},
             {'/Debug': False},
         ]
     )
 
     # launch rs2l_transform node
-    transform_node = Node(
-        package="rs2l_transform",
-        executable="transform",
+    obstacles_node = Node(
+        package="path_detection",
+        executable="obstacles",
         parameters=[
             {'/LIDARTrimMin': 1.57},  # radians
             {'/LIDARTrimMax': 4.71},  # radians
@@ -62,7 +63,7 @@ def generate_launch_description():
     )
 
     gps_node = Node(
-        package="gps",
+        package="heading",
         executable="gps_publisher",
         parameters=[
             {'/WaypointLat1': 0.0},
@@ -81,7 +82,7 @@ def generate_launch_description():
     )
 
     encoder_node = Node(
-        package="encoders",
+        package="heading",
         executable="encoder_pub",
         parameters=[
             {'/TeensyEncodersPort': '/dev/ttyACM0'},
@@ -131,7 +132,7 @@ def generate_launch_description():
     # vision
     ld.add_action(lidar_node)
     ld.add_action(lines_node)
-    ld.add_action(transform_node)
+    ld.add_action(obstacles_node)
 
     # heading
     ld.add_action(gps_node)

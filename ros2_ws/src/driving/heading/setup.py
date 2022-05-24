@@ -20,7 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "fusion=heading.fusion:main"
+            "fusion=heading.fusion:main",
+            "encoder_pub=encoders.encoder:main",
+            "gps_publisher=gps.gps_reader:main"
         ],
     },
 )
