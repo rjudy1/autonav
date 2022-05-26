@@ -71,11 +71,10 @@ class MainRobot(Node):
 
     # Line Following State
     def line_following_state(self):
-        # self.get_logger().info("Line Following State")
-        if False: #self.waypoint_found:  # reached gps waypoint - switch to gps navigation
+        if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
             self.waypoint_found = False
             self.state = STATE.GPS_NAVIGATION
-            self.state_msg.data = str(STATE.GPS_NAVIGATION)
+            self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
 
             self.gps_navigation_state()
@@ -84,7 +83,7 @@ class MainRobot(Node):
             # GPS waypoint we want the robot to record that first.
             self.obj_seen = False
             self.state = STATE.LINE_TO_OBJECT
-            self.state_msg.data = str(STATE.LINE_TO_OBJECT)
+            self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
 
             self.wheel_msg.data = CODE.WHEELS_TRANSITION
@@ -98,7 +97,7 @@ class MainRobot(Node):
         # Check for another object in front of the robot
         if self.obj_seen:
             self.obj_seen = False
-            self.state_msg.data = str(STATE.LINE_TO_OBJECT)
+            self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_TO_OBJECT
 
@@ -107,7 +106,7 @@ class MainRobot(Node):
             self.line_to_object_state()  # enter the transition state
         elif self.found_line:  # Otherwise see if we found the line.
             self.found_line = False
-            self.state_msg.data = str(STATE.OBJECT_TO_LINE)
+            self.state_msg.data = STATE.OBJECT_TO_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_TO_LINE
 
@@ -122,7 +121,7 @@ class MainRobot(Node):
         # Check for another object in front of the robot
         if self.obj_seen:
             self.obj_seen = False
-            self.state_msg.data = str(STATE.GPS_TO_OBJECT)
+            self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
 
@@ -131,7 +130,7 @@ class MainRobot(Node):
             self.gps_to_object_state()  # enter the transition state
         elif self.waypoint_straight:  # Otherwise see if have a clear path to the waypoint
             self.waypoint_straight = False
-            self.state_msg.data = str(STATE.GPS_NAVIGATION)
+            self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_NAVIGATION
 
@@ -146,7 +145,7 @@ class MainRobot(Node):
         # First look for a potential obstacle
         if self.obj_seen:
             self.obj_seen = False
-            self.state_msg.data = str(STATE.GPS_TO_OBJECT)
+            self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
 
@@ -156,7 +155,7 @@ class MainRobot(Node):
         # After looking for an obstacle, see if we have arrived
         elif self.waypoint_found:
             self.waypoint_found = False
-            self.state_msg.data = str(STATE.FIND_LINE)
+            self.state_msg.data = STATE.FIND_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.FIND_LINE
 
@@ -180,7 +179,7 @@ class MainRobot(Node):
 
         if self.path_clear:
             self.path_clear = False
-            self.state_msg.data = str(STATE.OBJECT_AVOIDANCE_FROM_LINE)
+            self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
 
@@ -203,7 +202,7 @@ class MainRobot(Node):
         # Just keep turning until we are parallel with the line
         if self.aligned:
             self.aligned = False
-            self.state_msg.data = str(STATE.LINE_FOLLOWING)
+            self.state_msg.data = STATE.LINE_FOLLOWING
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_FOLLOWING
 
@@ -221,7 +220,7 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
         if self.path_clear:
             self.path_clear = False
-            self.state_msg.data = str(STATE.OBJECT_AVOIDANCE_FROM_GPS)
+            self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
 
@@ -238,7 +237,7 @@ class MainRobot(Node):
 
         if self.found_line:
             self.found_line = False
-            self.state_msg.data = str(STATE.LINE_ORIENT)
+            self.state_msg.data = STATE.LINE_ORIENT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_ORIENT
 
@@ -256,7 +255,7 @@ class MainRobot(Node):
 
         if self.aligned:
             self.aligned = False
-            self.state_msg.data = str(STATE.LINE_FOLLOWING)
+            self.state_msg.data = STATE.LINE_FOLLOWING
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_FOLLOWING
 

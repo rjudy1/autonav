@@ -89,7 +89,7 @@ def generate_launch_description():
             {'/ExitAngle': 0.2},  # radians
             {'/GPSFollowGoal': 1.0},
             {'/LineToGPSTrans': 5.0},
-            {'/Port': '/dev/ttyACM1'},
+            {'/Port': '/dev/ttyACM0'},
         ]
     )
     # publishes turning
@@ -97,7 +97,7 @@ def generate_launch_description():
         package="heading",
         executable="encoder_pub",
         parameters=[
-            {'/TeensyEncodersPort': '/dev/ttyACM0'},
+            {'/TeensyEncodersPort': '/dev/ttyACM1'},
             {'/TeensyBaudrate': 115200},
             {'/TeensyUpdateDelay': .01},
             {'/Debug': False},

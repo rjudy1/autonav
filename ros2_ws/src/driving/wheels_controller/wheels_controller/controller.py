@@ -11,7 +11,7 @@
 from custom_msgs.msg import SpeedCmd
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32
+from std_msgs.msg import String
 from utils.utils import *
 
 from .pid_controller import PIDController
@@ -21,8 +21,7 @@ from .motor_driver import Wheels
 class WheelControl(Node):
     def __init__(self):
         super().__init__('wheels_controller')
-        self.wheel_sub = self.create_subscription(Int32, "wheel_distance", self.wheel_callback, 10)
-        self.speed_cmd_pub = self.create_publisher(SpeedCmd, 'speed_cmds', 10)
+        self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
         self.unitChange = 1  # assuming passed in meters, need mm
 
         # start in a stopped state
@@ -58,12 +57,13 @@ class WheelControl(Node):
         self.STOP_LIMIT = 7777
 
         self.MAX_CHANGE = 14
+        self.get_logger().info("Launching motors")
 
     def __del__(self):
         self.driver.control_wheels(0,0)
 
     def wheel_callback(self, msg):
-        # self.get_logger().info(f"state: {self.following_mode}, {msg}")
+        self.get_logger().info(f"state: {self.following_mode}, {msg}")
         msg = msg.data
         left_speed = self.curr_left_speed
         right_speed = self.curr_right_speed
@@ -121,6 +121,7 @@ class WheelControl(Node):
                 else:
                     self.boost_count = 0
         elif self.following_mode == FollowMode.eeObject and msg[:3]==CODE.OBJECT_SENDER:
+            self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
             if position >= self.STOP_LIMIT:
                 left_speed = 0
@@ -163,7 +164,7 @@ class WheelControl(Node):
             right_speed += self.speed_boost
 
         # send speed command to wheels
-        self.get_logger().info(f"left: {left_speed}. curleft: {self.curr_left_speed}; right: {right_speed}. curRight: {self.curr_right_speed}")
+        # self.get_logger().info(f"left: {left_speed}. curleft: {self.curr_left_speed}; right: {right_speed}. curRight: {self.curr_right_speed}")
         if message_valid and (left_speed != self.curr_left_speed or self.curr_right_speed != right_speed):
             self.get_logger().info(f"ready to send {left_speed} and {right_speed} and stop is {stop_override}")
             if not stop_override:
