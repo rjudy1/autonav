@@ -30,7 +30,7 @@ class LineFollowing(Node):
         self.window_handle = []
 
         # Read ROS Params - Line Following
-        self.declare_parameter("/FollowingDirection", 1)
+        self.declare_parameter("/FollowingDirection", DIRECTION.LEFT)
         # self.declare_parameter('/LineBufferSize', 5)
         # self.declare_parameter('/LineThreshMin', 250)
         # self.declare_parameter('/LineThreshMax', 255)
@@ -39,6 +39,7 @@ class LineFollowing(Node):
         # self.declare_parameter('/LineLostCount', 100)
         # self.declare_parameter('/LineDist', 200)
         self.declare_parameter('/Debug', True)
+        self.declare_parameter('/UseYellow', True)
 
         self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
         self.BUFF_SIZE = 5
@@ -63,7 +64,7 @@ class LineFollowing(Node):
 
     def filter_image(self, image):
         # HSV filtering
-        grey = hsv_filter(image)
+        grey = hsv_filter(image, use_white=not self.get_parameter('/UseYellow').value)
 
         # # REMOVE, UNNECESSARY DUE TO NEW HSV FILTERING
         # # Threshold a single portion of the image and then place that portion on a blank image
@@ -127,7 +128,6 @@ class LineFollowing(Node):
         # self.moving = array('i', [200] * self.BUFF_SIZE)
 
     def printResult(self, mask, original_image, y, h, line_dist):
-
         # Creates and overlays a green square on the image where we think the line is
         # start pixels and width of square
         w = int((self.HEIGHT_STEP / 720.0) * mask.shape[0])

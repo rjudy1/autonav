@@ -20,6 +20,7 @@ from utils.utils import *
 
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Int32
 from std_msgs.msg import String
 from custom_msgs.msg import HeadingStatus
 
@@ -49,8 +50,6 @@ class GPS(Node):
         self.declare_parameter('/LineToGPSTrans', 5.0)
         self.declare_parameter('/Port', '/dev/ttyACM0')
 
-        self.WAYPOINT_STRAIGHT = "WAYPOINT_STRAIGHT"
-
         self.WP_LAT1 = self.get_parameter('/WaypointLat1').value
         self.WP_LON1 = self.get_parameter('/WaypointLon1').value
         self.WP_LAT2 = self.get_parameter('/WaypointLat2').value
@@ -74,7 +73,7 @@ class GPS(Node):
         self.heading_pub = self.create_publisher(HeadingStatus, 'gps_heading', 10)
 
         # Subscribe to state updates for the robot
-        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
+        self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
         self.state = STATE.LINE_FOLLOWING
 
         # process GPS data at 2 Hz
@@ -131,7 +130,7 @@ class GPS(Node):
             self.get_logger().warning("Line Follow state")
             if dist_meters <= self.TRANS_DIST:
                 msg = String()
-                msg.data = WAYPOINT_FOUND
+                msg.data = STATUS.WAYPOINT_FOUND
                 self.gps_event_pub.publish(msg)
                 self.get_logger().info("Line to GPS")
 
@@ -146,7 +145,7 @@ class GPS(Node):
                 # if we have reached our last waypoint, switch state.
                 if self.waypoint_itr > len(self.target_loc):
                     msg = String()
-                    msg.data = WAYPOINT_FOUND
+                    msg.data = STATUS.WAYPOINT_FOUND
                     self.gps_event_pub.publish(msg)
                     self.waypoint_itr = 0
                     self.get_logger().warning("End GPS")
@@ -177,9 +176,9 @@ class GPS(Node):
         # check state, if in object avoid and GPS, then check error_angle for release
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
             if self.is_object_clear(filtered_error_angle):
-                self.get_logger().info(self.WAYPOINT_STRAIGHT)
+                self.get_logger().info(STATUS.WAYPOINT_STRAIGHT)
                 msg = String()
-                msg.data = WAYPOINT_STRAIGHT
+                msg.data = STATUS.WAYPOINT_STRAIGHT
                 self.gps_event_pub.publish(msg)
 
         # save off the location
@@ -213,7 +212,7 @@ class GPS(Node):
 
     def state_callback(self, new_state):
         self.get_logger().info("New State Received: {}".format(new_state.data))
-        self.state = int(new_state.data)
+        self.state = new_state.data
 
     def __del__(self):
         self.get_logger().info("Deleting GPS Node")

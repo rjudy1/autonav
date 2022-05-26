@@ -2,13 +2,13 @@
 # AutoNav 2022 Competition Robot
 # File: utils.py
 # Purpose: store the different states used in the state machine
-# Author: Rachael Judy
-# Date Modified: 12 May 2022
+# Date Modified: 24 May 2022
 ################################
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
+
 
 class STATE:
     LINE_FOLLOWING = 0
@@ -36,26 +36,26 @@ class FollowMode:
 
 
 # Messages that indicate a change of state is needed
-PATH_CLEAR = "PATH_CLEAR"
-OBJECT_SEEN = "OBJECT_SEEN"
-WAYPOINT_FOUND = "WAYPOINT_FOUND"
-WAYPOINT_STRAIGHT = "WAYPOINT_STRAIGHT"
-FOUND_LINE = "FOUND_LINE"
-ALIGNED = "ALIGNED"
+class STATUS:
+    PATH_CLEAR = "PATH_CLEAR"
+    OBJECT_SEEN = "OBJECT_SEEN"
+    WAYPOINT_FOUND = "WAYPOINT_FOUND"
+    WAYPOINT_STRAIGHT = "WAYPOINT_STRAIGHT"
+    FOUND_LINE = "FOUND_LINE"
+    ALIGNED = "ALIGNED"
+
 
 # Messages that change the wheel controller's state
-WHEELS_TRANSITION = "STR"
-WHEELS_OBJECT_AVOIDANCE = "SOA"
-WHEELS_LINE_FOLLOWING = "SLF"
-WHEELS_GPS_NAV = "SGN"
-STOP_CODE = "STO"
-TRANSITION_CODE = "TRA"
-LIN_SENDER = "LIN"
-OBJECT_SENDER = "OBJ"
-GPS_SENDER = "GPS"
-TURN_SPEED = 14
-SLIGHT_TURN = 10
-
+class CODE:
+    WHEELS_TRANSITION = "STR"
+    WHEELS_OBJECT_AVOIDANCE = "SOA"
+    WHEELS_LINE_FOLLOWING = "SLF"
+    WHEELS_GPS_NAV = "SGN"
+    STOP_CODE = "STO"
+    TRANSITION_CODE = "TRA"
+    LIN_SENDER = "LIN"
+    OBJECT_SENDER = "OBJ"
+    GPS_SENDER = "GPS"
 
 
 def hsv_filter(image, use_white=True):

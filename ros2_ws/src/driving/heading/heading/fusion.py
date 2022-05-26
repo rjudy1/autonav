@@ -69,7 +69,7 @@ class Fusion(Node):
 
         # publish
         msg = String()
-        msg.data = GPS_SENDER + ',' + str(filtered_error_angle)
+        msg.data = CODE.GPS_SENDER + ',' + str(filtered_error_angle)
         self.wheel_pub.publish(msg)
 
         if self.get_parameter('/Debug').value:

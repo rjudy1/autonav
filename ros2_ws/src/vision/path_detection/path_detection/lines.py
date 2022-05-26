@@ -18,6 +18,7 @@ from utils.utils import *
 
 from .line_detection import LineDetection
 from .line_following import LineFollowing
+from std_msgs.msg import Int32
 from std_msgs.msg import String
 
 import cv2
@@ -26,13 +27,7 @@ class Lines(Node):
     def __init__(self):
         super().__init__('lines')
 
-        # States
-        self.FOUND_LINE = "FOUND_LINE"
-        self.LOST_LINE = "LOST_LINE"
-        self.ALIGNED = "ALIGNED"
-        self.NOT_ALIGNED = "NOT_ALIGNED"
-
-        self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
+        self.state = STATE.LINE_FOLLOWING
         self.LINE_CODE = "LIN,"
 
         # Subscribe to the camera color image
@@ -45,7 +40,7 @@ class Lines(Node):
         self.motor_pub = self.create_publisher(String, "wheel_distance", 10)
 
         # Subscribe to state updates for the robot
-        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
+        self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
 
         # Initialize Classes
         self.line_detection = LineDetection()
@@ -60,7 +55,6 @@ class Lines(Node):
 
     def image_callback(self, ros_image):
         image = bridge_image(ros_image, "bgr8")
-        # self.get_logger().info("CURRENT STATE: {}".format(self.state))
 
         # Line Followings
         if self.state == STATE.LINE_FOLLOWING:
@@ -81,16 +75,17 @@ class Lines(Node):
             if found_line:
                 # self.get_logger().warning(self.FOUND_LINE)
                 msg = String()
-                msg.data = str(self.FOUND_LINE)
+                msg.data = str(STATUS.FOUND_LINE)
                 self.event_pub.publish(msg)
             if aligned:
                 # self.get_logger().warning(self.ALIGNED)
                 # self.line_following.reset()
                 msg = String()
-                msg.data = self.ALIGNED
+                msg.data = STATUS.ALIGNED
                 self.event_pub.publish(msg)
         else:
             close_windows(self.line_following.window_handle)
+            self.get_logger().info("In bad state spot")
             self.line_detection.reset()
 
     def state_callback(self, new_state):

@@ -1,7 +1,6 @@
 # Cedarville University AutoNav Competition Robot 2022
 This repository contains the code used for the Cedarville AutoNav 2022 robot. The robot is run through ROS2 nodes and takes a behavioral approach through a state machine.
 
-
 ## Quick Start
 1. Navigate to `cd ros2_ws` and build with `colcon build`
 2. Source ROS2 and your build with `. /opt/ros/ros2_distro/setup.bash && . /install/setup.bash`
@@ -89,3 +88,8 @@ The RealSense camera is run through a provided package. It reports on the `/came
 ### RPLidar
 The RPLIDAR also is controlled through a provided package. It spins and publishes the LIDAR scans. You may have to set the port with the parameters:
 - `serial_port` which is by default `/dev/ttyUSB0`
+
+
+## Helpful Tools/Tips
+- If wanting to use ROS1 versions of packages or rosbags see the helpful ros1 to ros2 bridge at [https://github.com/ros2/ros1_bridge](RosBridge)
+- To change parameters while running see `ros2 param set <node> <parameter> <parameter_value>

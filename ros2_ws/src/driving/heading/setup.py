@@ -21,8 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             "fusion=heading.fusion:main",
-            "encoder_pub=encoders.encoder:main",
-            "gps_publisher=gps.gps_reader:main"
+            "encoder_pub=heading.encoder:main",
+            "gps_publisher=heading.gps_reader:main"
         ],
     },
 )

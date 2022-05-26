@@ -6,7 +6,7 @@
 # File: line_detection.py
 # Purpose: controls line detection
 # Author: Modified from 2020-21 autonav team code for ROS2
-# Date Modified: 12 May 2022
+# Date Modified: 24 May 2022
 ################################
 
 import cv2
@@ -35,6 +35,8 @@ class LineDetection(Node):
         self.declare_parameter('/LineDetectMinLineLength', 0.35)
         self.declare_parameter('/LineDetectLineDistance', 150)
         self.declare_parameter('/Debug', True)
+        self.declare_parameter('/UseYellow', True)
+
 
         self.BUFF_SIZE = self.get_parameter('/LineDetectBufferSize').value
         self.BUFF_FILL = self.get_parameter('/LineDetectBufferFill').value
@@ -46,7 +48,8 @@ class LineDetection(Node):
         self.MIN_LINE_LENGTH = self.get_parameter('/LineDetectMinLineLength').value
         self.LINE_DISTANCE = self.get_parameter('/LineDetectLineDistance').value
         self.line_history = [0] * self.BUFF_SIZE
-        self.DEBUG_MODE = self.get_parameter('/Debug').value
+
+        self.distance = 0
 
     def image_callback(self, image, state):
         # Save Dimensions
@@ -58,14 +61,14 @@ class LineDetection(Node):
         cv_display(image, 'Line Detection Color Image', self.window_handle)
 
         # Remove Shadows
-        image = hsv_filter(image)
+        image = hsv_filter(image, use_white=not self.get_parameter('/UseYellow').value)
 
         # Discard Oversaturated Images
         if np.count_nonzero(image) < image.shape[0]*image.shape[1]*self.MAX_WHITE:
             # Open Image
             morph = cv2.morphologyEx(image, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)))
             line, coords = self.determine_line(morph, state)
-            if self.DEBUG_MODE:
+            if self.get_parameter('/Debug').value:
                 if line:
                     x1, y1, x2, y2 = coords
                     morph = cv2.cvtColor(morph, cv2.COLOR_GRAY2RGB)
@@ -94,6 +97,7 @@ class LineDetection(Node):
             # self.get_logger().info("LINE SLOPE: {} | LINE DISTANCE: {}".format(self.slope, self.distance))
             return True, [x1, y1, x2, y2]
         else:  self.update_history(0)
+
         return False, [0, 0, 0, 0]
 
     def get_slope(self, x1, y1, x2, y2):
@@ -109,7 +113,8 @@ class LineDetection(Node):
         return min([dist_left, dist_right, dist_center])
 
     def determine_state(self):
-        if not self.found_line and (self.line_history.count(1) >= self.BUFF_FILL * self.BUFF_SIZE) and (self.distance <= self.LINE_DISTANCE):
+        if not self.found_line and (self.line_history.count(1) >= self.BUFF_FILL * self.BUFF_SIZE) \
+                and (self.distance <= self.LINE_DISTANCE):
             self.found_line = True
             return True
         return False

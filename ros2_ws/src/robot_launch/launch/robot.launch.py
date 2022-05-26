@@ -9,11 +9,23 @@ from utils.utils import *
 
 
 def generate_launch_description():
-    following_dir = DIRECTION.RIGHT
+    following_dir = DIRECTION.LEFT
     crop_top = 0.0
     crop_bottom = .2
     crop_side = .2
 
+    fsm_node = Node(
+        package="master_fsm",
+        executable="fsm",
+        parameters=[
+            {'/DefaultSpeed': 10},
+            {'/FollowingDirection': following_dir},
+            {'/TimerRate': .05},
+            {'/StartState': STATE.LINE_FOLLOWING},
+        ]
+    )
+
+    # VISION
     # create launch description with initial camera launch file
     # disgusting but not quite sure how to make local path
     ld = LaunchDescription(
@@ -21,7 +33,6 @@ def generate_launch_description():
             os.path.join(get_package_share_directory('realsense2_camera'), 'launch', 'rs_launch.py'))
         )]
     )
-
     # launch lidar node
     lidar_node = Node(
         package="rplidar_ros",
@@ -30,7 +41,6 @@ def generate_launch_description():
             {'serial_port': '/dev/ttyUSB0'},
         ]
     )
-
     # launch line following node
     lines_node = Node(
         package="path_detection",
@@ -41,11 +51,10 @@ def generate_launch_description():
             {'/LineDetectCropSide': crop_side},
             {"/FollowingDirection": following_dir},
             {'/UseYellow': False},
-            {'/Debug': False},
+            {'/Debug': True},
         ]
     )
-
-    # launch rs2l_transform node
+    # launch obstacle detection
     obstacles_node = Node(
         package="path_detection",
         executable="obstacles",
@@ -58,10 +67,13 @@ def generate_launch_description():
             {'/PotholeDetectCropSide': crop_side},
             {'/PotholeBufferSize': 5},
             {'/ObstacleDetectDistance': 3.0},  # meters
-            {"/Debug": False},
+            {'/FollowingDirection': following_dir},
+            {"/Debug": True},
         ]
     )
 
+    # HEADING
+    # publishes gps
     gps_node = Node(
         package="heading",
         executable="gps_publisher",
@@ -80,7 +92,7 @@ def generate_launch_description():
             {'/Port': '/dev/ttyACM1'},
         ]
     )
-
+    # publishes turning
     encoder_node = Node(
         package="heading",
         executable="encoder_pub",
@@ -91,7 +103,7 @@ def generate_launch_description():
             {'/Debug': False},
         ]
     )
-
+    # merges heading data
     fusion_node = Node(
         package="heading",
         executable="fusion",
@@ -102,14 +114,15 @@ def generate_launch_description():
         ]
     )
 
+    # MOTOR CONTROL
     motor_node = Node(
         package="wheels_controller",
         executable="controller",
         parameters=[
             {'/FollowingDirection': following_dir},
-            {'/LineDist': 0.5},
+            {'/LineDist': 0.25},
             {'/SideObjectDist': 0.5},
-            {'/DefaultSpeed': 25},
+            {'/DefaultSpeed': 30},
             {'/BoostIncrease': 2},
             {'/BoostCountThreshold': 20},
             {'/LineBoostMargin': 30.0},
@@ -118,26 +131,15 @@ def generate_launch_description():
         ]
     )
 
-    fsm_node = Node(
-        package="master_fsm",
-        executable="fsm",
-        parameters=[
-            {'/DefaultSpeed': 15},
-            {'/FollowingDirection': following_dir},
-            {'/TimerRate': .05},
-            {'/StartState': STATE.LINE_FOLLOWING},
-        ]
-    )
-
     # vision
-    ld.add_action(lidar_node)
+    # ld.add_action(lidar_node)
     ld.add_action(lines_node)
-    ld.add_action(obstacles_node)
+    # ld.add_action(obstacles_node)
 
     # heading
-    ld.add_action(gps_node)
-    ld.add_action(encoder_node)
-    ld.add_action(fusion_node)
+    # ld.add_action(gps_node)
+    # ld.add_action(encoder_node)
+    # ld.add_action(fusion_node)
 
     # motors
     ld.add_action(motor_node)

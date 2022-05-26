@@ -15,7 +15,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from utils.utils import *
-
+from std_msgs.msg import Int32
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
@@ -51,7 +51,7 @@ class TransformPublisher(Node):
         self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
 
         # Subscribe to state updates for the robot
-        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
+        self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
         self.state = STATE.LINE_FOLLOWING
 
         # lidar parameters
@@ -83,7 +83,7 @@ class TransformPublisher(Node):
 
     def state_callback(self, new_state):
         self.get_logger().info("New State Received: {}".format(new_state.data))
-        self.state = int(new_state.data)
+        self.state = new_state.data
 
     def get_c(self, i, scan):
         return -(190 * (452-math.cos(i * scan.angle_increment)) - 452 * (190-math.sin(i * scan.angle_increment)))
@@ -153,22 +153,26 @@ class TransformPublisher(Node):
         distance_msg = String()
         try:
             if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT \
-                    and scan.ranges[round(math.pi * .375 / scan.angle_increment)] != math.inf:
+                and scan.ranges[round(math.pi * .375 / scan.angle_increment)] is not None \
+                and scan.ranges[round(math.pi * .375 / scan.angle_increment)] < 5.0:
                 distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * .375 / scan.angle_increment)])
                 self.lidar_wheel_distance_pub.publish(distance_msg)
                 if self.get_parameter('/Debug').value:
-                    self.get_logger().info(
-                        f"Direction: {self.get_parameter('/FollowingDirection').value} : {distance_msg.data}")
+                    # self.get_logger().info(
+                    #     f"Direction: {self.get_parameter('/FollowingDirection').value} : {distance_msg.data}")
+                    pass
 
             elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT \
-                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] != math.inf:
+                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] is not None \
+                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] < 5:
                 distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * 1.625 / scan.angle_increment)])
                 self.lidar_wheel_distance_pub.publish(distance_msg)
                 if self.get_parameter('/Debug').value:
-                    self.get_logger().info(
-                        f"Following direction: {self.get_parameter('/FollowingDirection').value}: {distance_msg.data}")
-        except Exception:
-            self.get_logger().warning(f"Following direction {self.get_parameter('/FollowingDirection').value}: {distance_msg.data} m")
+                    # self.get_logger().info(
+                    #     f"Following direction: {self.get_parameter('/FollowingDirection').value}: {distance_msg.data}")
+                    pass
+        except Exception as e:
+            self.get_logger().warning(f"ERROR with TOF Following direction : {e} : {distance_msg.data} m")
 
     # receives camera image and parses potholes into history
     def image_callback(self, image):
@@ -205,7 +209,7 @@ class TransformPublisher(Node):
         for hole in keypoints:
             self.circles.insert(0, Circle(hole.pt[0], hole.pt[1], hole.size//2))
 
-        if self.get_parameter('/Debug'):
+        if self.get_parameter('/Debug').value:
             blobs = cv2.drawKeypoints(morph, keypoints, np.zeros((1, 1)), (0, 255, 0),
                                       cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
             cv_display(blobs, 'Potholes', self.window_handle)
