@@ -8,6 +8,7 @@
 ################################
 
 # !/usr/bin/env python
+import cmath
 
 import rclpy
 from rclpy.node import Node
@@ -27,9 +28,11 @@ class Fusion(Node):
         self.declare_parameter('/Debug', False)
 
         self.state = STATE.LINE_FOLLOWING
-        self.curr_heading = self.get_parameter('/InitialHeading')
+        self.curr_heading = self.get_parameter('/InitialHeading').value
         self.target_heading = 0.0
-        self.encoder_curr_heading = self.get_parameter('/InitialHeading')
+        self.encoder_curr_heading = self.get_parameter('/InitialHeading').value
+        self.moving_avg = np.zeros((5,), dtype=np.float32)
+        self.moving_avg_idx = 0
 
         self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.enc_callback, 10)
         self.gps_heading_sub = self.create_subscription(HeadingStatus, "gps_heading", self.gps_callback, 10)
@@ -45,12 +48,27 @@ class Fusion(Node):
         # 64 cm gap between wheel centers
         self.encoder_curr_heading += (enc_msg.right - enc_msg.left) / .32
         if self.get_parameter('/Debug').value:
-            self.get_logger().info(f'encoder report: {enc_msg}, {self.encoder_curr_heading}')
+            pass
+#            self.get_logger().info(f'encoder report: {enc_msg}, {self.encoder_curr_heading}')
+
+    # a 5 point moving average filter
+    def filter_angle(self, new_val):
+        self.moving_avg = np.roll(self.moving_avg, 1)
+        self.moving_avg[0] = new_val
+        return sum(self.moving_avg) / self.moving_avg.size
+
+    # subtracts the angles (x - y) and gives the answer between (-pi, pi]
+    def sub_angles(self, x, y):
+        a = (x - y + 2 * cmath.pi) % (2 * cmath.pi)
+        if a > cmath.pi:
+            a -= 2 * cmath.pi
+        return a
 
     def gps_callback(self, gps_msg):
+        self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
-        self.curr_heading = (1-self.get_parameter('/EncoderWeight')) * gps_msg.curr_heading\
-                             + self.get_parameter('/EncoderWeight') * self.encoder_curr_heading
+        self.curr_heading = (1-self.get_parameter('/EncoderWeight').value) * gps_msg.current_heading\
+                             + self.get_parameter('/EncoderWeight').value * self.encoder_curr_heading
 
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(self.target_heading, self.curr_heading)

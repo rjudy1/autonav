@@ -60,7 +60,6 @@ class TransformPublisher(Node):
         self.declare_parameter("/ObstacleFOV", math.pi/6)
         self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters
         self.declare_parameter("/FollowingDirection", 1)
-        self.declare_parameter("/ObjectDistance", 4.0)
 
         # camera parameters
         self.declare_parameter('/LineDetectCropTop', 0.0)
@@ -154,7 +153,7 @@ class TransformPublisher(Node):
         try:
             if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT \
                 and scan.ranges[round(math.pi * .375 / scan.angle_increment)] is not None \
-                and scan.ranges[round(math.pi * .375 / scan.angle_increment)] < 5.0:
+                and scan.ranges[round(math.pi * .375 / scan.angle_increment)] < 3.0:
                 distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * .375 / scan.angle_increment)])
                 self.lidar_wheel_distance_pub.publish(distance_msg)
                 if self.get_parameter('/Debug').value:
@@ -164,7 +163,7 @@ class TransformPublisher(Node):
 
             elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT \
                     and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] is not None \
-                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] < 5:
+                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] < 3.0:
                 distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * 1.625 / scan.angle_increment)])
                 self.lidar_wheel_distance_pub.publish(distance_msg)
                 if self.get_parameter('/Debug').value:

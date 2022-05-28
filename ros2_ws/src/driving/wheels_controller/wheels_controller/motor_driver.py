@@ -2,38 +2,31 @@ import serial
 import time
 from utils.utils import *
 
-RIGHT_WHEEL = 0x80
-BAUD_RATE = 19200
-CCW = 0x40
+RIGHT_WHEEL = 0x08
 
 
 class Wheels:
-    def __init__(self, port="/dev/ttyUSB0", BAUD=57600):
+    def __init__(self, port="/dev/ttyUSB0", BAUD=57600, addr = 0b110):
         self.serialPort = serial.Serial(port, BAUD)
+        start = 0x80
+        self.addr = addr
+        self.serialPort.write(start.to_bytes(1, 'big'))
 
     def __del__(self):
         self.serialPort.close()
 
     def control_wheels(self, left_speed, right_speed):
-        # left_speed = left_speed*2 + 127
-        # right_speed = right_speed*2 + 127
-        # control right wheel
-        right_cmd = self.convert_to_hex_cmd(right_speed) | RIGHT_WHEEL
+        header = 85
+        left_speed = int(left_speed*2 + 127)
+        right_speed = int(right_speed*2 + 127)
 
-        # control left wheel
-        left_cmd = self.convert_to_hex_cmd(left_speed)
+        # send the left command
+        left_cmd = [header&0xFF, self.addr&0xFF, left_speed&0xFF, (left_speed+header+self.addr)&0xFF]
+        right_cmd = [header&0xFF, RIGHT_WHEEL|self.addr&0xFF, right_speed&0xFF, (right_speed+header+RIGHT_WHEEL|self.addr)&0xFF]
 
-        # self.serialPort.write(bytes('testing', "utf-8"))
-        self.serialPort.write(right_cmd.to_bytes(1, 'big'))
-        # time.sleep(0.1)
-        self.serialPort.write(left_cmd.to_bytes(1, 'big'))
+        self.serialPort.write(bytes(right_cmd))
+        # time.sleep(.05)
+        self.serialPort.write(bytes(left_cmd))
 
         self.serialPort.flush()
-        return self.convert_to_hex_cmd(left_speed), self.convert_to_hex_cmd(right_speed)
-
-    def convert_to_hex_cmd(self, speed):
-        # get magnitude of speed and direction
-        cmd = abs(int(speed)) & 0x3F
-        if speed < 0:
-            cmd = (cmd | CCW)
-        return cmd
+        return left_speed, right_speed

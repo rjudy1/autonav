@@ -95,7 +95,7 @@ class MainRobot(Node):
             light_msg = LightCmd()
             light_msg.type='G'
             light_msg.on = True
-            self.lights_pub(light_msg)
+            self.lights_pub.publish(light_msg)
             self.obj_seen = False
             self.state = STATE.LINE_TO_OBJECT
             self.state_msg.data = STATE.LINE_TO_OBJECT

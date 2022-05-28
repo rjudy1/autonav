@@ -50,7 +50,7 @@ class WheelControl(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.03, 0.0, 0.0, 15, -15)  # for line following
+        self.pid_line = PIDController(-0.06, 0.0, 0.0, 15, -15)  # for line following
         self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
@@ -79,7 +79,7 @@ class WheelControl(Node):
             self.get_logger().info("Both Glitch")
 
     def state_callback(self, new_state):
-        # self.get_logger().info("New State Received: {}".format(new_state.data))
+        self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = int(new_state.data)
 
         # effects internal FollowMode
@@ -99,6 +99,7 @@ class WheelControl(Node):
             self.following_mode = FollowMode.eeTransition
             self.boost_count = 0
             self.get_logger().info("SWITCHED TO TRANSITION STATE")
+
 
     def wheel_callback(self, msg):
         # self.get_logger().info(f"followmode: {self.following_mode}, {msg}")
@@ -176,7 +177,7 @@ class WheelControl(Node):
                 self.boost_count = 0
 
         else:
-            self.get_logger().info(f"INVALID MESSAGE{self.following_direction} : {msg}\n\n")
+            self.get_logger().info(f"Received MESSAGE{self.following_direction} : {msg}\n\n")
             message_valid = False
 
         # self.get_logger().info(f"Calculated left and right speeds: {left_speed} and {right_speed}")

@@ -221,7 +221,7 @@ int main(int argc, char * argv[]) {
     node->get_parameter_or("channel_type", channel_type, std::string("serial"));
     node->get_parameter_or("tcp_ip", tcp_ip, std::string("192.168.0.7"));
     node->get_parameter_or("tcp_port", tcp_port, 20108);
-    node->get_parameter_or("serial_port", serial_port, std::string("/dev/ttyUSB0"));
+    node->get_parameter_or("serial_port", serial_port, std::string("/dev/LIDAR_PORT"));
     node->get_parameter_or("serial_baudrate", serial_baudrate, 115200);
     node->get_parameter_or("frame_id", frame_id, std::string("laser_frame"));
     node->get_parameter_or("inverted", inverted, false);
