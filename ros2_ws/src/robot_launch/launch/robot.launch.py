@@ -122,12 +122,12 @@ def generate_launch_description():
             {'/FollowingDirection': following_dir},
             {'/LineDist': 0.25},
             {'/SideObjectDist': 0.5},
-            {'/DefaultSpeed': 30},
+            {'/DefaultSpeed': 25.0},
             {'/BoostIncrease': 2},
             {'/BoostCountThreshold': 20},
             {'/LineBoostMargin': 30.0},
             {'/GPSBoostMargin': 0.1745},
-            {'/Port': '/dev/ttyUSB1'},
+            {'/Port': '/dev/ttyUSB0'},
         ]
     )
 

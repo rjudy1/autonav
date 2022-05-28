@@ -14,8 +14,8 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from utils.utils import *
 
-from .pid_controller import PIDController
 from .motor_driver import Wheels
+from .pid_controller import PIDController
 
 
 class WheelControl(Node):
@@ -32,7 +32,7 @@ class WheelControl(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/LineDist', 0.175)
         self.declare_parameter('/SideObjectDist', 0.6)
-        self.declare_parameter('/DefaultSpeed', 15)
+        self.declare_parameter('/DefaultSpeed', 15.0)
         self.declare_parameter('/BoostIncrease', 1)
         self.declare_parameter('/BoostCountThreshold', 20)
         self.declare_parameter('/LineBoostMargin', 30.0)

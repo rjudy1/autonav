@@ -21,6 +21,7 @@ class Wheels:
         # control left wheel
         left_cmd = self.convert_to_hex_cmd(left_speed)
 
+        # self.serialPort.write(bytes('testing', "utf-8"))
         self.serialPort.write(right_cmd.to_bytes(1, 'big'))
         time.sleep(0.1)
         self.serialPort.write(left_cmd.to_bytes(1, 'big'))
