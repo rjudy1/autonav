@@ -20,7 +20,7 @@ ticks_per_meter = 4500
 class Encoder(Node):
     def __init__(self):
         super().__init__('encoders')
-        self.declare_parameter('/TeensyEncodersPort', '/dev/ttyACM0')
+        self.declare_parameter('/TeensyEncodersPort', '/dev/ttyACM1')
         self.declare_parameter('/TeensyBaudrate', 115200)
         self.declare_parameter('/TeensyUpdateDelay', .10)
         self.declare_parameter('/Debug', False)
@@ -69,10 +69,6 @@ class Encoder(Node):
 
 
     def timer_callback(self):
-        newMsg = LightCmd()
-        newMsg.type = 'G'
-        newMsg.on = self.toggle
-        self.toggle = not self.toggle
         try:
             self.serialPort.write('Q,**'.encode('utf-8'))
             read = self.serialPort.readline().decode('utf-8')

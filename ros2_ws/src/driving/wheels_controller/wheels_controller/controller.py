@@ -48,7 +48,7 @@ class WheelControl(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.05, 0.0, 0.0, 15, -15)  # for lie following
+        self.pid_line = PIDController(-0.03, 0.0, 0.0, 15, -15)  # for line following
         self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 

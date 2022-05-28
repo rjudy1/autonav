@@ -1,2 +1,2 @@
-char type
+string type
 bool on
