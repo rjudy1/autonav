@@ -7,15 +7,15 @@
 # Purpose: robot big brain based on 2021 brain
 # Date Modified: 21 May 2022
 ################################
-import sys
-
 import rclpy
 from rclpy.node import Node
+import sys
 import threading
 import time
 from utils.utils import *
 from std_msgs.msg import Int32
 from std_msgs.msg import String
+
 
 class MainRobot(Node):
     def __init__(self):
@@ -78,7 +78,7 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
 
             self.gps_navigation_state()
-        elif False:#self.obj_seen:  # object sighted - switch to obstacle avoidance
+        elif False:  # self.obj_seen:  # object sighted - switch to obstacle avoidance
             # We check for an object second because if we have already hit the
             # GPS waypoint we want the robot to record that first.
             self.obj_seen = False
@@ -173,11 +173,20 @@ class MainRobot(Node):
     def line_to_object_state(self):
         # self.get_logger().info("Line to Object Transition State")
         # Just keep turning until the object is not in front of us
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(self.TURN_SPEED - self.follow_dir * self.TURN_SPEED) + "," + str(
-            self.TURN_SPEED + self.follow_dir * self.TURN_SPEED)
+        # hard control of the speeds with this command !!!
+        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(
+            self.TURN_SPEED - (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT)) * self.TURN_SPEED) + "," + str(
+            self.TURN_SPEED + (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT)) * self.TURN_SPEED)
         self.wheel_pub.publish(self.wheel_msg)
 
-        if self.path_clear:
+        if self.waypoint_found:
+            self.waypoint_found = False
+            self.state = STATE.GPS_NAVIGATION
+            self.state_msg.data = STATE.GPS_NAVIGATION
+            self.state_pub.publish(self.state_msg)
+
+            self.gps_navigation_state()
+        elif self.path_clear:
             self.path_clear = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
@@ -187,12 +196,14 @@ class MainRobot(Node):
             self.wheel_pub.publish(self.wheel_msg)
             self.object_avoidance_from_line_state()
 
+
     # Object Avoidance to Line Following Transition State
     def object_to_line_state(self):
         # self.get_logger().info("Object to Line Transition State")
 
         # Gradual Turn
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ','  + str(self.TURN_SPEED - self.follow_dir * self.SLIGHT_TURN) + "," + str(
+        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(
+            self.TURN_SPEED - self.follow_dir * self.SLIGHT_TURN) + "," + str(
             self.TURN_SPEED + self.follow_dir * self.SLIGHT_TURN)
         self.wheel_pub.publish(self.wheel_msg)
 
@@ -215,7 +226,8 @@ class MainRobot(Node):
         # self.get_logger().info("GPS to Object Transition State")
 
         # Just keep turning until the object is not in front of us
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(self.TURN_SPEED - self.follow_dir * self.TURN_SPEED) + "," + str(
+        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(
+            self.TURN_SPEED - self.follow_dir * self.TURN_SPEED) + "," + str(
             self.TURN_SPEED + self.follow_dir * self.TURN_SPEED)
         self.wheel_pub.publish(self.wheel_msg)
         if self.path_clear:
@@ -268,16 +280,26 @@ class MainRobot(Node):
     # between a number of different states in the system.
     def change_state(self):
         # self.get_logger().info(f"state {self.state}")
-        if self.state == STATE.LINE_FOLLOWING:  self.line_following_state()
-        elif self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:  self.object_avoidance_from_line_state()
-        elif self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:  self.object_avoidance_from_gps_state()
-        elif self.state == STATE.GPS_NAVIGATION:  self.gps_navigation_state()
-        elif self.state == STATE.LINE_TO_OBJECT:  self.line_to_object_state()
-        elif self.state == STATE.OBJECT_TO_LINE:  self.object_to_line_state()
-        elif self.state == STATE.GPS_TO_OBJECT:  self.gps_to_object_state()
-        elif self.state == STATE.FIND_LINE:  self.find_line_state()
-        elif self.state == STATE.LINE_ORIENT:  self.line_orientation_state()
-        else: self.get_logger().info("Error: Invalid State")
+        if self.state == STATE.LINE_FOLLOWING:
+            self.line_following_state()
+        elif self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
+            self.object_avoidance_from_line_state()
+        elif self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
+            self.object_avoidance_from_gps_state()
+        elif self.state == STATE.GPS_NAVIGATION:
+            self.gps_navigation_state()
+        elif self.state == STATE.LINE_TO_OBJECT:
+            self.line_to_object_state()
+        elif self.state == STATE.OBJECT_TO_LINE:
+            self.object_to_line_state()
+        elif self.state == STATE.GPS_TO_OBJECT:
+            self.gps_to_object_state()
+        elif self.state == STATE.FIND_LINE:
+            self.find_line_state()
+        elif self.state == STATE.LINE_ORIENT:
+            self.line_orientation_state()
+        else:
+            self.get_logger().info("Error: Invalid State")
 
     # End of State Machine
 
@@ -312,7 +334,7 @@ class MainRobot(Node):
         try:
             if gps_event.data == STATUS.WAYPOINT_FOUND:
                 self.waypoint_found = True
-            elif gps_event.data == WAYPOINT_STRAIGHT:
+            elif gps_event.data == STATUS.WAYPOINT_STRAIGHT:
                 self.waypoint_straight = True
             else:
                 self.get_logger().warning("Unknown Message")
@@ -329,7 +351,7 @@ class MainRobot(Node):
         try:
             if lidar_event.data == STATUS.OBJECT_SEEN:
                 self.obj_seen = True
-            elif (lidar_event.data == STATUS.PATH_CLEAR) and (self.state in self.transition_set):
+            elif lidar_event.data == STATUS.PATH_CLEAR and self.state in self.transition_set:
                 self.path_clear = True
             else:
                 self.get_logger().info(f"Unknown Message {lidar_event}")

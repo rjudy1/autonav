@@ -13,7 +13,6 @@ import cmath
 from dataclasses import dataclass
 from geopy import distance
 import numpy as np
-import pynmea2  #broke
 import serial
 import time
 from utils.utils import *
@@ -49,6 +48,7 @@ class GPS(Node):
         self.declare_parameter('/GPSFollowGoal', 1.0)
         self.declare_parameter('/LineToGPSTrans', 5.0)
         self.declare_parameter('/Port', '/dev/ttyACM0')
+        self.declare_parameter('/Debug', False)
 
         self.WP_LAT1 = self.get_parameter('/WaypointLat1').value
         self.WP_LON1 = self.get_parameter('/WaypointLon1').value
@@ -89,6 +89,7 @@ class GPS(Node):
         # position in gps rounds
         self.waypoint_itr = 0
         self.past_loc = self.take_reading()
+        self.target_loc.append(self.past_loc)  # set initial position as end goal
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
@@ -126,29 +127,19 @@ class GPS(Node):
         self.get_logger().info(f"distance from waypoint: {dist_meters}")
 
         # if we are not currently navigating with GPS data
-        if self.state in self.LINE_MODE and False:  # currently completely disabled
-            self.get_logger().warning("Line Follow state")
-            if dist_meters <= self.TRANS_DIST:
+        if dist_meters <= self.DISTANCE_GOAL:
+            msg = String()
+            msg.data = STATUS.WAYPOINT_FOUND
+            self.waypoint_itr += 1  # go to next waypoint goal
+            self.gps_event_pub.publish(msg)
+            self.get_logger().info("WAYPOINT FOUND - SWITCH POINTS")
+
+            if self.waypoint_itr > len(self.target_loc):
                 msg = String()
                 msg.data = STATUS.WAYPOINT_FOUND
                 self.gps_event_pub.publish(msg)
-                self.get_logger().info("Line to GPS")
-
-        # if we are using GPS data to navigate
-        else:
-            self.get_logger().info("distance: " + str(dist_meters))
-            self.get_logger().info("goal: " + str(self.waypoint_itr))
-            if dist_meters <= self.DISTANCE_GOAL:
-                self.get_logger().info("Arrived")
-                self.waypoint_itr = (self.waypoint_itr + 1)
-                self.get_logger().warning("Switch points")
-                # if we have reached our last waypoint, switch state.
-                if self.waypoint_itr > len(self.target_loc):
-                    msg = String()
-                    msg.data = STATUS.WAYPOINT_FOUND
-                    self.gps_event_pub.publish(msg)
-                    self.waypoint_itr = 0
-                    self.get_logger().warning("End GPS")
+                self.waypoint_itr = 0
+                self.get_logger().warning("FINISHED GPS")
 
     # this function takes a measurement and calculates all of the necessary
     # information from the location to send to the motor controller
@@ -169,9 +160,10 @@ class GPS(Node):
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(target_heading, curr_heading)
         filtered_error_angle = self.filter_angle(error_angle)
-        self.get_logger().warning("Current Heading: " + str(curr_heading) + '\n' +
-                                  "Target Heading: " + str(target_heading) + '\n' +
-                                  "Error: " + str(filtered_error_angle))
+        if self.get_parameter('/Debug').value:
+            self.get_logger().warning("Current Heading: " + str(curr_heading) + '\n' +
+                                      "Target Heading: " + str(target_heading) + '\n' +
+                                      "Error: " + str(filtered_error_angle))
 
         # check state, if in object avoid and GPS, then check error_angle for release
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:

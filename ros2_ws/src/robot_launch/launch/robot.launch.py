@@ -66,7 +66,7 @@ def generate_launch_description():
             {'/PotholeDetectCropBottom': crop_bottom},
             {'/PotholeDetectCropSide': crop_side},
             {'/PotholeBufferSize': 5},
-            {'/ObstacleDetectDistance': 3.0},  # meters
+            {'/ObstacleDetectDistance': 2.0},  # meters
             {'/FollowingDirection': following_dir},
             {"/Debug": True},
         ]

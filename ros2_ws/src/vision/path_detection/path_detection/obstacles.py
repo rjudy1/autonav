@@ -132,12 +132,12 @@ class TransformPublisher(Node):
         for i in range(len(scan.intensities)):
             if i * scan.angle_increment < self.get_parameter('/ObstacleFOV').value/2 \
                     or i * scan.angle_increment > 2*math.pi-self.get_parameter('/ObstacleFOV').value / 2:
-                msg.data = "OBJECT_SEEN" if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] \
-                    else "PATH_CLEAR"
+                msg.data = STATUS.OBJECT_SEEN if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] \
+                    else STATUS.PATH_CLEAR
                 self.history[self.history_idx] = \
                     1 if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] else 0
                 self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
-                if msg.data == "OBJECT_SEEN":  break
+                if msg.data == STATUS.OBJECT_SEEN:  break
 
         if self.path_clear and np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
             # self.get_logger().info("OBJECT_SEEN")
