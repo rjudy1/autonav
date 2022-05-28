@@ -1,0 +1,2 @@
+char type
+bool on

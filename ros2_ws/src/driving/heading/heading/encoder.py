@@ -8,6 +8,7 @@
 ################################
 
 from custom_msgs.msg import EncoderData
+from custom_msgs.msg import LightCmd
 import rclpy
 from rclpy.node import Node
 import serial
@@ -35,14 +36,43 @@ class Encoder(Node):
 
         self.serialPort.write('R,1,**'.encode('utf-8'))
         self.timer = self.create_timer(self.rate, self.timer_callback)
+        self.light_sub = self.create_subscription(LightCmd, "/LightEvents", self.light_callback, 10)
+        self.test_light_pub = self.create_publisher(LightCmd, '/LightEvents', 10)
 
         self.past_left_ticks = 0
         self.past_right_ticks = 0
+        self.toggle = False
 
     def __del__(self):
         self.close()
 
+    def light_callback(self, msg):
+        cmd = ''
+        if msg.type == 'G' or msg.type == 'Y' or msg.type == 'B':
+            cmd += msg.type
+            if msg.on:
+                cmd += ',1,**'
+            else:
+                cmd += ',0,**'
+            try:
+                self.serialPort.write(cmd.encode('utf-8'))
+            except serial.serialutil.SerialException:
+                sleep(0.5)
+            except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                self.get_logger().warning(message)
+                sleep(0.5)
+                self.close()
+        else:
+            self.get_logger().info(f"Message type {msg.type} invalid")
+
+
     def timer_callback(self):
+        newMsg = LightCmd()
+        newMsg.type = 'G'
+        newMsg.on = self.toggle
+        self.toggle = not self.toggle
         try:
             self.serialPort.write('Q,**'.encode('utf-8'))
             read = self.serialPort.readline().decode('utf-8')
