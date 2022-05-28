@@ -27,6 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HeadingStatus.msg"
   "msg/EncoderData.msg"
   "msg/SpeedCmd.msg"
+  "msg/LightCmd.msg"
 )
 
 ament_package()
