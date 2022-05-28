@@ -8,13 +8,15 @@ CCW = 0x40
 
 
 class Wheels:
-    def __init__(self, port="/dev/ttyUSB0", BAUD=19200):
+    def __init__(self, port="/dev/ttyUSB0", BAUD=57600):
         self.serialPort = serial.Serial(port, BAUD)
 
     def __del__(self):
         self.serialPort.close()
 
     def control_wheels(self, left_speed, right_speed):
+        # left_speed = left_speed*2 + 127
+        # right_speed = right_speed*2 + 127
         # control right wheel
         right_cmd = self.convert_to_hex_cmd(right_speed) | RIGHT_WHEEL
 
@@ -23,7 +25,7 @@ class Wheels:
 
         # self.serialPort.write(bytes('testing', "utf-8"))
         self.serialPort.write(right_cmd.to_bytes(1, 'big'))
-        time.sleep(0.1)
+        # time.sleep(0.1)
         self.serialPort.write(left_cmd.to_bytes(1, 'big'))
 
         self.serialPort.flush()
@@ -31,7 +33,7 @@ class Wheels:
 
     def convert_to_hex_cmd(self, speed):
         # get magnitude of speed and direction
-        cmd = abs(int(speed)) & 0xFF
+        cmd = abs(int(speed)) & 0x3F
         if speed < 0:
             cmd = (cmd | CCW)
         return cmd

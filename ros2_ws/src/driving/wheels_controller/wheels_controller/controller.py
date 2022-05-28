@@ -11,6 +11,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from custom_msgs.msg import EncoderData
 from utils.utils import *
 
 from .motor_driver import Wheels
@@ -22,6 +23,7 @@ class WheelControl(Node):
         super().__init__('wheels_controller')
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
         self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
+        self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.odom_callback, 10)
         self.unitChange = 1  # assuming passed in meters, need mm
 
         # start in a stopped state
@@ -63,8 +65,21 @@ class WheelControl(Node):
     def __del__(self):
         self.driver.control_wheels(0,0)
 
+    def odom_callback(self, odom):
+        if odom.right < -0.0001 and odom.left > 0.0:
+            self.driver.control_wheels(self.curr_left_speed - 10, self.curr_right_speed + 5)
+            self.curr_right_speed += 1
+            self.curr_left_speed -= 5
+            self.get_logger().info("Right Glitch")
+        elif odom.right > 0.0 and odom.left < -0.0001:
+            self.driver.control_wheels(self.curr_left_speed + 5, self.curr_right_speed - 5)
+            self.get_logger().info("Left Glitch")
+        elif odom.right < -0.0001 and odom.left < -0.0001:
+            self.driver.control_wheels(self.curr_left_speed, self.curr_right_speed)
+            self.get_logger().info("Both Glitch")
+
     def state_callback(self, new_state):
-        self.get_logger().info("New State Received: {}".format(new_state.data))
+        # self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = int(new_state.data)
 
         # effects internal FollowMode
@@ -79,15 +94,14 @@ class WheelControl(Node):
             self.following_mode = FollowMode.eeGps
             self.boost_count = 0
             self.get_logger().info("SWITCHED TO GPS NAVIGATION")
-        elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or
-            self.state = STATE.LINE_ORIENT:
+        elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or\
+            self.state == STATE.LINE_ORIENT:
             self.following_mode = FollowMode.eeTransition
             self.boost_count = 0
             self.get_logger().info("SWITCHED TO TRANSITION STATE")
 
-
     def wheel_callback(self, msg):
-        self.get_logger().info(f"state: {self.following_mode}, {msg}")
+        # self.get_logger().info(f"followmode: {self.following_mode}, {msg}")
         msg = msg.data
         left_speed = self.curr_left_speed
         right_speed = self.curr_right_speed
@@ -103,7 +117,7 @@ class WheelControl(Node):
                 left_speed = int(float(cmds[0])*self.unitChange)
                 right_speed = int(float(cmds[1])*self.unitChange)
         elif self.following_mode==FollowMode.eeLine and msg[:3]==CODE.LIN_SENDER:
-            self.get_logger().info(f"IN FOLLOW MODE: msg = {msg}")
+            # self.get_logger().info(f"IN FOLLOW MODE: msg = {msg}")
             position = float(msg[4:])
             if position >= self.STOP_LIMIT:
                 left_speed = 0
@@ -117,10 +131,10 @@ class WheelControl(Node):
                 # to the default speed double
                 delta = self.pid_line.control(position_error)
                 delta = delta / 2  if self.following_direction==DIRECTION.RIGHT else -1 * delta / 2
-                self.get_logger().warning(f"compensating by {delta}")
+                # self.get_logger().warning(f"compensating by {delta}")
                 left_speed = self.default_speed + delta
                 right_speed = self.default_speed - delta
-                self.get_logger().info(f"left: {left_speed}, right: {right_speed}")
+                # self.get_logger().info(f"left: {left_speed}, right: {right_speed}")
                 #
                 # // Check if we should in the acceptable zone for picking up speed.i
                 if abs(position_error) <= self.line_boost_margin:
@@ -128,7 +142,7 @@ class WheelControl(Node):
                 else:
                     self.boost_count = 0
         elif self.following_mode == FollowMode.eeObject and msg[:3]==CODE.OBJECT_SENDER:
-            self.get_logger().info(f"sending motor commands {msg}")
+            # self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
             if position >= self.STOP_LIMIT:
                 left_speed = 0
@@ -171,9 +185,8 @@ class WheelControl(Node):
             right_speed += self.speed_boost
 
         # send speed command to wheels
-        # self.get_logger().info(f"left: {left_speed}. curleft: {self.curr_left_speed}; right: {right_speed}. curRight: {self.curr_right_speed}")
         if message_valid and (left_speed != self.curr_left_speed or self.curr_right_speed != right_speed):
-            self.get_logger().info(f"ready to send {left_speed} and {right_speed} and stop is {stop_override}")
+            # self.get_logger().info(f"ready to send {left_speed} and {right_speed} and stop is {stop_override}")
             if not stop_override:
                 if left_speed > self.curr_left_speed + self.MAX_CHANGE:
                     left_speed = self.curr_left_speed + self.MAX_CHANGE

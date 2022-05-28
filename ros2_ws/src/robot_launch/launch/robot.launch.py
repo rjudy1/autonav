@@ -25,52 +25,52 @@ def generate_launch_description():
         ]
     )
 
-    # VISION
-    # create launch description with initial camera launch file
-    # disgusting but not quite sure how to make local path
+    # # VISION
+    # # create launch description with initial camera launch file
+    # # disgusting but not quite sure how to make local path
     ld = LaunchDescription(
-        [IncludeLaunchDescription(PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('realsense2_camera'), 'launch', 'rs_launch.py'))
-        )]
+    #     [IncludeLaunchDescription(PythonLaunchDescriptionSource(
+    #         os.path.join(get_package_share_directory('realsense2_camera'), 'launch', 'rs_launch.py'))
+    #     )]
     )
-    # launch lidar node
-    lidar_node = Node(
-        package="rplidar_ros",
-        executable="rplidarNode",
-        parameters=[
-            {'serial_port': '/dev/ttyUSB0'},
-        ]
-    )
-    # launch line following node
-    lines_node = Node(
-        package="path_detection",
-        executable="lines",
-        parameters=[
-            {'/LineDetectCropTop': crop_top},  # fraction to remove
-            {'/LineDetectCropBottom': crop_bottom},
-            {'/LineDetectCropSide': crop_side},
-            {"/FollowingDirection": following_dir},
-            {'/UseYellow': False},
-            {'/Debug': True},
-        ]
-    )
-    # launch obstacle detection
-    obstacles_node = Node(
-        package="path_detection",
-        executable="obstacles",
-        parameters=[
-            {'/LIDARTrimMin': 1.57},  # radians
-            {'/LIDARTrimMax': 4.71},  # radians
-            {'/ObstacleFOV': math.pi / 6.0},  # radians
-            {'/PotholeDetectCropTop': crop_top},
-            {'/PotholeDetectCropBottom': crop_bottom},
-            {'/PotholeDetectCropSide': crop_side},
-            {'/PotholeBufferSize': 5},
-            {'/ObstacleDetectDistance': 2.0},  # meters
-            {'/FollowingDirection': following_dir},
-            {"/Debug": True},
-        ]
-    )
+    # # launch lidar node
+    # lidar_node = Node(
+    #     package="rplidar_ros",
+    #     executable="rplidarNode",
+    #     parameters=[
+    #         {'serial_port': '/dev/ttyUSB1'},
+    #     ]
+    # )
+    # # launch line following node
+    # lines_node = Node(
+    #     package="path_detection",
+    #     executable="lines",
+    #     parameters=[
+    #         {'/LineDetectCropTop': crop_top},  # fraction to remove
+    #         {'/LineDetectCropBottom': crop_bottom},
+    #         {'/LineDetectCropSide': crop_side},
+    #         {"/FollowingDirection": following_dir},
+    #         {'/UseYellow': True},
+    #         {'/Debug': True},
+    #     ]
+    # )
+    # # launch obstacle detection
+    # obstacles_node = Node(
+    #     package="path_detection",
+    #     executable="obstacles",
+    #     parameters=[
+    #         {'/LIDARTrimMin': 1.57},  # radians
+    #         {'/LIDARTrimMax': 4.71},  # radians
+    #         {'/ObstacleFOV': math.pi / 6.0},  # radians
+    #         {'/PotholeDetectCropTop': crop_top},
+    #         {'/PotholeDetectCropBottom': crop_bottom},
+    #         {'/PotholeDetectCropSide': crop_side},
+    #         {'/PotholeBufferSize': 5},
+    #         {'/ObstacleDetectDistance': 2.0},  # meters
+    #         {'/FollowingDirection': following_dir},
+    #         {"/Debug": True},
+    #     ]
+    # )
 
     # HEADING
     # publishes gps
@@ -99,7 +99,7 @@ def generate_launch_description():
         parameters=[
             {'/TeensyEncodersPort': '/dev/ttyACM1'},
             {'/TeensyBaudrate': 115200},
-            {'/TeensyUpdateDelay': .01},
+            {'/TeensyUpdateDelay': .02},
             {'/Debug': False},
         ]
     )
@@ -120,25 +120,25 @@ def generate_launch_description():
         executable="controller",
         parameters=[
             {'/FollowingDirection': following_dir},
-            {'/LineDist': 0.25},
+            {'/LineDist': 0.3},
             {'/SideObjectDist': 0.5},
             {'/DefaultSpeed': 25.0},
             {'/BoostIncrease': 2},
             {'/BoostCountThreshold': 20},
             {'/LineBoostMargin': 30.0},
             {'/GPSBoostMargin': 0.1745},
-            {'/Port': '/dev/ttyUSB0'},
+            {'/Port': '/dev/MOTOR_PORT'},
         ]
     )
 
     # vision
     # ld.add_action(lidar_node)
-    ld.add_action(lines_node)
+    # ld.add_action(lines_node)
     # ld.add_action(obstacles_node)
 
     # heading
     # ld.add_action(gps_node)
-    # ld.add_action(encoder_node)
+    ld.add_action(encoder_node)
     # ld.add_action(fusion_node)
 
     # motors

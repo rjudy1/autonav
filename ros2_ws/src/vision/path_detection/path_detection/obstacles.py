@@ -140,12 +140,12 @@ class TransformPublisher(Node):
                 if msg.data == STATUS.OBJECT_SEEN:  break
 
         if self.path_clear and np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
-            # self.get_logger().info("OBJECT_SEEN")
+            self.get_logger().info("OBJECT_SEEN")
             self.lidar_str_pub.publish(msg)
             self.path_clear = False
         elif (self.state == STATE.LINE_TO_OBJECT or self.state == STATE.GPS_TO_OBJECT) \
                 and np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE:
-            # self.get_logger().info("PATH_CLEAR")
+            self.get_logger().info("PATH_CLEAR")
             self.lidar_str_pub.publish(msg)
             self.path_clear = True
 

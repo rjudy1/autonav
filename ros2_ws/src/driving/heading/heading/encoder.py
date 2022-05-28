@@ -14,7 +14,7 @@ from rclpy.node import Node
 import serial
 from time import sleep
 
-ticks_per_meter = 4500
+ticks_per_meter = 1404
 
 
 class Encoder(Node):
@@ -22,7 +22,7 @@ class Encoder(Node):
         super().__init__('encoders')
         self.declare_parameter('/TeensyEncodersPort', '/dev/ttyACM1')
         self.declare_parameter('/TeensyBaudrate', 115200)
-        self.declare_parameter('/TeensyUpdateDelay', .10)
+        self.declare_parameter('/TeensyUpdateDelay', .02)
         self.declare_parameter('/Debug', False)
 
         self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
@@ -89,8 +89,8 @@ class Encoder(Node):
                     self.get_logger().info(f'right_dist {right_dist}')
 
                 msg = EncoderData()
-                msg.left = left_dist
-                msg.right = right_dist
+                msg.left = -left_dist
+                msg.right = -right_dist
                 self.encoder_pub.publish(msg)
             else:
                 self.serialPort.flushInput()

@@ -18,6 +18,7 @@ from utils.utils import *
 from std_msgs.msg import Int32
 from std_msgs.msg import String
 from custom_msgs.msg import HeadingStatus
+from custom_msgs.msg import LightCmd
 
 
 class MainRobot(Node):
@@ -34,7 +35,7 @@ class MainRobot(Node):
 
         # Publish to the wheels, lights, state changes
         self.wheel_pub = self.create_publisher(String, "wheel_distance", 10)
-        self.lights_pub = self.create_publisher(String, "light_state", 10)
+        self.lights_pub = self.create_publisher(LightCmd, "light_events", 10)
         self.state_pub = self.create_publisher(Int32, "state_topic", 100)
 
         # Subscribe to new event notifications from the lights node, gps, lidar
@@ -79,6 +80,9 @@ class MainRobot(Node):
 
     # Line Following State
     def line_following_state(self):
+        light_msg = LightCmd()
+        light_msg.type = 'G'
+        light_msg.on = False
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
             self.waypoint_found = False
             self.state = STATE.GPS_NAVIGATION
@@ -88,6 +92,10 @@ class MainRobot(Node):
         elif self.obj_seen:  # object sighted - switch to obstacle avoidance
             # We check for an object second because if we have already hit the
             # GPS waypoint we want the robot to record that first.
+            light_msg = LightCmd()
+            light_msg.type='G'
+            light_msg.on = True
+            self.lights_pub(light_msg)
             self.obj_seen = False
             self.state = STATE.LINE_TO_OBJECT
             self.state_msg.data = STATE.LINE_TO_OBJECT
@@ -134,7 +142,7 @@ class MainRobot(Node):
 
     # Object Avoidance From GPS Navigation State
     def object_avoidance_from_gps_state(self):
-        # self.get_loggger().info("Object Avoidance From GPS State")
+        # self.get_logger().info("Object Avoidance From GPS State")
 
         # Check for another object in front of the robot
         if self.obj_seen:
@@ -323,7 +331,7 @@ class MainRobot(Node):
 
     # Callback for information coming from the line following node
     def line_callback(self, line_event):
-        self.get_logger().info("Message from Line Following Node")
+        # self.get_logger().info("Message from Line Following Node")
 
         # Get the lock before proceeding
         self.lock.acquire()
@@ -380,7 +388,7 @@ class MainRobot(Node):
     # Callback for the timer
     def timer_callback(self):
         # self.get_logger().info("Timer Callback")
-
+        # self.get_logger().info(f"STATE: {self.state}")
         # Get the lock before proceeding
         self.lock.acquire()
         try:
