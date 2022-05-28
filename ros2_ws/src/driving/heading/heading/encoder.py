@@ -36,8 +36,7 @@ class Encoder(Node):
 
         self.serialPort.write('R,1,**'.encode('utf-8'))
         self.timer = self.create_timer(self.rate, self.timer_callback)
-        self.light_sub = self.create_subscription(LightCmd, "/LightEvents", self.light_callback, 10)
-        self.test_light_pub = self.create_publisher(LightCmd, '/LightEvents', 10)
+        self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 10)
 
         self.past_left_ticks = 0
         self.past_right_ticks = 0
