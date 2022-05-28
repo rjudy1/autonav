@@ -8,7 +8,6 @@
 
 # !/usr/bin/env python
 
-from custom_msgs.msg import SpeedCmd
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -22,6 +21,7 @@ class WheelControl(Node):
     def __init__(self):
         super().__init__('wheels_controller')
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
+        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
         self.unitChange = 1  # assuming passed in meters, need mm
 
         # start in a stopped state
@@ -55,12 +55,36 @@ class WheelControl(Node):
         self.driver = Wheels(port=self.get_parameter('/Port').value)
         self.following_mode = FollowMode.eeLine
         self.STOP_LIMIT = 7777
+        self.state = STATE.LINE_FOLLOWING
 
         self.MAX_CHANGE = 14
         self.get_logger().info("Launching motors")
 
     def __del__(self):
         self.driver.control_wheels(0,0)
+
+    def state_callback(self, new_state):
+        self.get_logger().info("New State Received: {}".format(new_state.data))
+        self.state = int(new_state.data)
+
+        # effects internal FollowMode
+        if self.state == STATE.GPS_TO_OBJECT or self.state ==STATE.OBJECT_AVOIDANCE_FROM_GPS or\
+            self.state == STATE.LINE_TO_OBJECT or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
+            self.following_mode = FollowMode.eeObject
+        elif self.state == STATE.LINE_FOLLOWING:
+            self.following_mode = FollowMode.eeLine
+            self.boost_count = 0
+            self.get_logger().info("SWITCHED TO LINE FOLLOWING")
+        elif self.state == STATE.GPS_NAVIGATION:
+            self.following_mode = FollowMode.eeGps
+            self.boost_count = 0
+            self.get_logger().info("SWITCHED TO GPS NAVIGATION")
+        elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or
+            self.state = STATE.LINE_ORIENT:
+            self.following_mode = FollowMode.eeTransition
+            self.boost_count = 0
+            self.get_logger().info("SWITCHED TO TRANSITION STATE")
+
 
     def wheel_callback(self, msg):
         self.get_logger().info(f"state: {self.following_mode}, {msg}")
@@ -71,24 +95,7 @@ class WheelControl(Node):
         stop_override = False
         message_valid = True
 
-        # put all this code in place
-        if msg[:3] == CODE.WHEELS_OBJECT_AVOIDANCE:
-            self.following_mode = FollowMode.eeObject
-            self.boost_count = 0
-            self.get_logger().info("SWITCHED TO OBJECT AVOIDANCE")
-        elif msg[:3] == CODE.WHEELS_LINE_FOLLOWING:
-            self.following_mode = FollowMode.eeLine
-            self.boost_count = 0
-            self.get_logger().info("SWITCHED TO LINE FOLLOWING")
-        elif msg[:3] == CODE.WHEELS_GPS_NAV:
-            self.following_mode = FollowMode.eeGps
-            self.boost_count = 0
-            self.get_logger().info("SWITCHED TO GPS NAVIGATION")
-        elif msg[:3] == CODE.WHEELS_TRANSITION:
-            self.following_mode = FollowMode.eeTransition
-            self.boost_count = 0
-            self.get_logger().info("SWITCHED TO TRANSITION STATE")
-        elif msg[:3] == CODE.TRANSITION_CODE:
+        if msg[:3] == CODE.TRANSITION_CODE:
             cmds = msg[4:].split(',')
             if len(cmds) != 2:
                 self.get_logger().warning("ERROR: MISFORMATTED MESSAGE")
@@ -137,22 +144,22 @@ class WheelControl(Node):
                 right_speed = self.curr_right_speed + delta
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
-            if position >= self.STOP_LIMIT:
-                left_speed = 0
-                right_speed = 0
-                stop_override = True
-                self.boost_count = 0
+            # if position >= self.STOP_LIMIT:
+            #     left_speed = 0
+            #     right_speed = 0
+            #     stop_override = True
+            #     self.boost_count = 0
+            # else:
+            # more differential stuff
+            delta = self.pid_gps.control(position)
+            # GPS sends the error already
+            delta = delta * self.following_direction
+            left_speed = self.curr_left_speed - delta
+            right_speed = self.curr_right_speed + delta
+            if abs(position) <= self.gps_boost_margin:
+                self.boost_count += 1
             else:
-                # more differential stuff
-                delta = self.pid_gps.control(position)
-                # GPS sends the error already
-                delta = delta * self.following_direction
-                left_speed = self.curr_left_speed - delta
-                right_speed = self.curr_right_speed + delta
-                if abs(position) <= self.gps_boost_margin:
-                    self.boost_count += 1
-                else:
-                    self.boost_count = 0
+                self.boost_count = 0
 
         else:
             self.get_logger().info(f"INVALID MESSAGE{self.following_direction} : {msg}\n\n")

@@ -7,6 +7,8 @@
 # Purpose: robot big brain based on 2021 brain
 # Date Modified: 21 May 2022
 ################################
+import math
+
 import rclpy
 from rclpy.node import Node
 import sys
@@ -15,6 +17,7 @@ import time
 from utils.utils import *
 from std_msgs.msg import Int32
 from std_msgs.msg import String
+from custom_msgs.msg import HeadingStatus
 
 
 class MainRobot(Node):
@@ -38,6 +41,7 @@ class MainRobot(Node):
         self.line_sub = self.create_subscription(String, "line_events", self.line_callback, 10)
         self.gps_sub = self.create_subscription(String, "gps_events", self.gps_callback, 10)
         self.depth_sub = self.create_subscription(String, "/mod_lidar", self.lidar_callback, 10)
+        self.heading_sub = self.create_subscription(HeadingStatus, 'gps_heading', self.heading_callback, 10)
 
         # already declared messages to save a couple lines
         self.state_msg = Int32()
@@ -61,6 +65,10 @@ class MainRobot(Node):
         self.follow_dir = self.get_parameter('/FollowingDirection').value
         self.TURN_SPEED = 14
         self.SLIGHT_TURN = 10
+        self.heading = 0.0
+        self.prev_heading = 0.0
+        self.look_for_line = False
+        self.waypoints_done = False
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
@@ -77,8 +85,7 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
 
-            self.gps_navigation_state()
-        elif False:  # self.obj_seen:  # object sighted - switch to obstacle avoidance
+        elif self.obj_seen:  # object sighted - switch to obstacle avoidance
             # We check for an object second because if we have already hit the
             # GPS waypoint we want the robot to record that first.
             self.obj_seen = False
@@ -89,30 +96,41 @@ class MainRobot(Node):
             self.wheel_msg.data = CODE.WHEELS_TRANSITION
             self.wheel_pub.publish(self.wheel_msg)
 
+            self.prev_heading = self.heading
             self.line_to_object_state()  # enter the transition state
 
-    # Object Avoidance From Line Following State
+    # Object Avoidance From Line Following State - trying to get back to line
     def object_avoidance_from_line_state(self):
         # self.get_logger().info("Object Avoidance From Line Following State")
         # Check for another object in front of the robot
-        if self.obj_seen:
+        if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
+            self.waypoint_found = False
+            self.state = STATE.GPS_NAVIGATION
+            self.state_msg.data = STATE.GPS_NAVIGATION
+            self.state_pub.publish(self.state_msg)
+        elif self.obj_seen:
             self.obj_seen = False
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_TO_OBJECT
-
             self.wheel_msg.data = CODE.WHEELS_TRANSITION
             self.wheel_pub.publish(self.wheel_msg)
             self.line_to_object_state()  # enter the transition state
-        elif self.found_line:  # Otherwise see if we found the line.
+
+        elif self.look_for_line and self.found_line:
+            self.look_for_line = False
             self.found_line = False
             self.state_msg.data = STATE.OBJECT_TO_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_TO_LINE
-
             self.wheel_msg.data = CODE.WHEELS_TRANSITION
             self.wheel_pub.publish(self.wheel_msg)
             self.object_to_line_state()  # enter the transition state
+
+        # if we've neared or exceeded our start heading, go ahead and look for the line
+        if self.heading >= (self.prev_heading - math.pi / 18) % 2*math.pi \
+                or self.heading <= (self.prev_heading + math.pi / 6) % 2*math.pi:
+            self.look_for_line = True
 
     # Object Avoidance From GPS Navigation State
     def object_avoidance_from_gps_state(self):
@@ -124,10 +142,10 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
-
             self.wheel_msg.data = CODE.WHEELS_TRANSITION
             self.wheel_pub.publish(self.wheel_msg)
             self.gps_to_object_state()  # enter the transition state
+
         elif self.waypoint_straight:  # Otherwise see if have a clear path to the waypoint
             self.waypoint_straight = False
             self.state_msg.data = STATE.GPS_NAVIGATION
@@ -141,19 +159,8 @@ class MainRobot(Node):
     # GPS Navigation State
     def gps_navigation_state(self):
         # self.get_logger().info("GPS Navigation State")
-
-        # First look for a potential obstacle
-        if self.obj_seen:
-            self.obj_seen = False
-            self.state_msg.data = STATE.GPS_TO_OBJECT
-            self.state_pub.publish(self.state_msg)
-            self.state = STATE.GPS_TO_OBJECT
-
-            self.wheel_msg.data = CODE.WHEELS_TRANSITION
-            self.wheel_pub.publish(self.wheel_msg)
-            self.gps_to_object_state()
         # After looking for an obstacle, see if we have arrived
-        elif self.waypoint_found:
+        if self.wavepoint_found:
             self.waypoint_found = False
             self.state_msg.data = STATE.FIND_LINE
             self.state_pub.publish(self.state_msg)
@@ -162,6 +169,16 @@ class MainRobot(Node):
             self.wheel_msg.data = CODE.WHEELS_TRANSITION
             self.wheel_pub.publish(self.wheel_msg)
             self.find_line_state()
+
+        # First look for a potential obstacle
+        elif self.obj_seen:
+            self.obj_seen = False
+            self.state_msg.data = STATE.GPS_TO_OBJECT
+            self.state_pub.publish(self.state_msg)
+            self.state = STATE.GPS_TO_OBJECT
+            self.wheel_msg.data = CODE.WHEELS_TRANSITION
+            self.wheel_pub.publish(self.wheel_msg)
+            self.gps_to_object_state()
 
     # End of Major States
 
@@ -184,20 +201,21 @@ class MainRobot(Node):
             self.state = STATE.GPS_NAVIGATION
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
-
+            msg = String()
+            msg.data = WHEELS_GPS_NAV
+            self.wheel_pub.publish(msg)
             self.gps_navigation_state()
+
         elif self.path_clear:
             self.path_clear = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
-
             self.wheel_msg.data = CODE.WHEELS_TRANSITION
             self.wheel_pub.publish(self.wheel_msg)
             self.object_avoidance_from_line_state()
 
-
-    # Object Avoidance to Line Following Transition State
+    # Object Avoidance to Line Following Transition State - is gps needed here?
     def object_to_line_state(self):
         # self.get_logger().info("Object to Line Transition State")
 
@@ -206,9 +224,6 @@ class MainRobot(Node):
             self.TURN_SPEED - self.follow_dir * self.SLIGHT_TURN) + "," + str(
             self.TURN_SPEED + self.follow_dir * self.SLIGHT_TURN)
         self.wheel_pub.publish(self.wheel_msg)
-
-        # Soldier Turn
-        # self.safe_publish(self.wheel_pub, CODE.TRANSITION_CODE + str(self.TURN_SPEED - self.follow_dir*self.TURN_SPEED) + "," + str(self.TURN_SPEED + self.follow_dir*self.TURN_SPEED))
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
@@ -261,8 +276,9 @@ class MainRobot(Node):
     def line_orientation_state(self):
         # self.get_logger().info("Line Orientation Transition State")
 
-        # Just keep turning until we are parrallel with the line
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(0) + "," + str(0)
+        # Just keep turning until we are parallel with the line
+        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(5+10*(-1+2*int(self.follow_dir))) \
+                              + "," + str(5+10*(1-2*int(self.follow_dir)))
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.aligned:
@@ -270,8 +286,6 @@ class MainRobot(Node):
             self.state_msg.data = STATE.LINE_FOLLOWING
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_FOLLOWING
-
-            self.safe_publish(self.wheel_pub, CODE.WHEELS_LINE_FOLLOWING)
             self.line_following_state()
 
     # End of Transition States
@@ -304,6 +318,8 @@ class MainRobot(Node):
     # End of State Machine
 
     # Beginning of Callback Methods
+    def heading_callback(self, heading_msg):
+        self.heading = heading_msg.current_heading
 
     # Callback for information coming from the line following node
     def line_callback(self, line_event):
@@ -336,6 +352,8 @@ class MainRobot(Node):
                 self.waypoint_found = True
             elif gps_event.data == STATUS.WAYPOINT_STRAIGHT:
                 self.waypoint_straight = True
+            elif gps_event.data == STATUS.WAYPOINTS_DONE:
+                self.waypoints_done =True
             else:
                 self.get_logger().warning("Unknown Message")
         finally:

@@ -134,9 +134,11 @@ class GPS(Node):
             self.gps_event_pub.publish(msg)
             self.get_logger().info("WAYPOINT FOUND - SWITCH POINTS")
 
-            if self.waypoint_itr > len(self.target_loc):
+            if self.waypoint_itr >= len(self.target_loc):
                 msg = String()
                 msg.data = STATUS.WAYPOINT_FOUND
+                self.gps_event_pub.publish(msg)
+                msg.data = STATUS.WAYPOINTS_DONE
                 self.gps_event_pub.publish(msg)
                 self.waypoint_itr = 0
                 self.get_logger().warning("FINISHED GPS")
