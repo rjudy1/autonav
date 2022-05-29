@@ -1,9 +1,11 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
+/**:
+    ros__parameters:
+        /FollowingDirection:        1   # one is right, 0 is left
 
 fsm:
     ros__parameters:
         /DefaultSpeed:              10
-        /FollowingDirection:        1           # FOLLOWING DIRECTION
         /TimerRate:                 0.05
         /StartState:                0
 
@@ -16,7 +18,6 @@ lines:
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /FollowingDirection:       1           # FOLLOWING DIRECTION
         /UseYellow:                 True
         /Debug:                     True
 
@@ -31,7 +32,6 @@ obstacles:
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
         /ObstacleDetectDistance:    2.0  # meters
-        /FollowingDirection:        1       # FOLLOWING DIRECTION
         /Debug:                     True
 
 gps:
@@ -64,7 +64,6 @@ fusion:
 
 wheels_controller:
     ros__parameters:
-        /FollowingDirection:        1
         /LineDist:                  0.3
         /SideObjectDist:            0.5
         /DefaultSpeed:              35.0
