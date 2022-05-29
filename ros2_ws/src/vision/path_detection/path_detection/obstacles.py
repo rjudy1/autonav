@@ -143,10 +143,12 @@ class TransformPublisher(Node):
                     self.history[self.history_idx] = 0
 
         if np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
-            self.get_logger().info("OBJECT_SEEN")
+            if self.get_parameter('/Debug').value:
+                self.get_logger().info("OBJECT_SEEN")
             self.path_clear = False
         elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE:
-            self.get_logger().info("PATH_CLEAR")
+            if self.get_parameter('/Debug').value:
+                self.get_logger().info("PATH_CLEAR")
             self.path_clear = True
         self.lidar_str_pub.publish(msg)
 

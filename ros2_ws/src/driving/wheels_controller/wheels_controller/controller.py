@@ -66,7 +66,7 @@ class WheelControl(Node):
         self.get_logger().info("Launching motors")
 
     def __del__(self):
-        send_speed_cmd(self, 0, 0)
+        pass
 
     def send_speed_cmd(self, linear, angular):
         msg = SpeedCmd()
@@ -142,11 +142,10 @@ class WheelControl(Node):
                 # delta will come out negative if you need to turn toward the line
 
                 delta = self.pid_line.control(position_error)
-                delta = delta if self.following_direction==DIRECTION.LEFT else -1 * delta
+                delta = delta if self.following_direction==DIRECTION.RIGHT else -1 * delta
                 # self.get_logger().warning(f"compensating by {delta}")
                 linear = round(self.default_speed)
                 angular = round(delta)
-                # self.get_logger().info(f"left: {left_speed}, right: {right_speed}")
                 #
                 # // Check if we should in the acceptable zone for picking up speed.i
                 if abs(position_error) <= self.line_boost_margin:
@@ -163,36 +162,36 @@ class WheelControl(Node):
                 self.boost_count = 0
             else:
                 pass
-                # c++ does this to calculate differntial and apply to default speed
+                # delta is negative if we need to go toward object
                 delta = self.pid_obj.control(self.target_obj_dist - position)
-                delta = delta * self.following_direction
-                linear = self.default_speed
-                angular = delta
+                delta = delta if self.following_direction==DIRECTION.LEFT else -1*delta
+                linear = round(self.default_speed*3/4)
+                angular = round(delta)
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
-            # more differential stuff
+            # delta is still negative if we need to go toward whatever
             delta = self.pid_gps.control(position)
-            # GPS sends the error already
-            delta = delta * self.following_direction
-            linear = self.default_speed
-            angular = delta
+            # GPS sends the error as - for left turns and + for right turns
+            linear = round(self.default_speed)
+            angular = round(delta)
             if abs(position) <= self.gps_boost_margin:
                 self.boost_count += 1
             else:
                 self.boost_count = 0
 
         else:
-            if self.get_parameter('/Debug').value:
-                self.get_logger().info(f"Received MESSAGE out of use: {msg}\n\n")
+            # if self.get_parameter('/Debug').value:
+            #     self.get_logger().info(f"Received MESSAGE out of use: {msg}\n\n")
             message_valid = False
 
-        # self.get_logger().info(f"Calculated left and right speeds: {left_speed} and {right_speed}")
         if self.boost_count > self.boost_count_threshold and message_valid:
             linear += self.speed_boost
 
         # send speed command to wheels
+
+        # self.get_logger().info(f"current speeds: ({self.curr_linear}, {self.curr_angular}); new speeds: ({linear, angular})")
         if message_valid and (linear != self.curr_linear or angular != self.curr_angular):
-            # self.get_logger().info(f"ready to send {left_speed} and {right_speed} and stop is {stop_override}")
+            self.get_logger().info(f"ready to send {linear} and {angular} and stop is {stop_override}")
             if not stop_override:
                 if linear > self.curr_linear + self.MAX_CHANGE:
                     linear = self.curr_linear + self.MAX_CHANGE
@@ -204,7 +203,7 @@ class WheelControl(Node):
                     angular = self.curr_angular - self.MAX_ANGULAR_CHANGE
             # self.get_logger().info(f"SETTING WHEEL SPEED TO {left_speed} and {right_speed}")
             self.send_speed_cmd(linear, angular)
-            if self.get_parameter('/Debug'):
+            if self.get_parameter('/Debug').value:
                 self.get_logger().info(f"setting speeds: ({linear, angular})")
         self.curr_linear = linear
         self.curr_angular = angular

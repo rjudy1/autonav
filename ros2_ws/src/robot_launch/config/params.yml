@@ -3,7 +3,7 @@
 fsm:
     ros__parameters:
         /DefaultSpeed:              10
-        /FollowingDirection:        1           # FOLLOWING DIRECTION
+        /FollowingDirection:        0           # FOLLOWING DIRECTION
         /TimerRate:                 0.05
         /StartState:                0
 
@@ -16,8 +16,8 @@ lines:
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /FollowingDirection:       1           # FOLLOWING DIRECTION
-        /UseYellow:                 True
+        /FollowingDirection:        0           # FOLLOWING DIRECTION
+        /UseYellow:                 False
         /Debug:                     True
 
 
@@ -31,8 +31,8 @@ obstacles:
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
         /ObstacleDetectDistance:    2.0  # meters
-        /FollowingDirection:        1       # FOLLOWING DIRECTION
-        /Debug:                     True
+        /FollowingDirection:        0       # FOLLOWING DIRECTION
+        /Debug:                     False
 
 gps:
     ros__parameters:
@@ -64,10 +64,10 @@ fusion:
 
 wheels_controller:
     ros__parameters:
-        /FollowingDirection:        1
+        /FollowingDirection:        0  # FOLLOWING DIR
         /LineDist:                  0.3
         /SideObjectDist:            0.5
-        /DefaultSpeed:              35.0
+        /DefaultSpeed:              30.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
         /LineBoostMargin:           30.0

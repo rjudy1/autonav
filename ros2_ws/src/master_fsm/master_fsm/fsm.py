@@ -341,8 +341,8 @@ class MainRobot(Node):
                 self.found_line = True
             elif line_event.data == STATUS.ALIGNED:
                 self.aligned = True
-            else:
-                self.get_logger().info("UNKNOWN MESSAGE")
+            # else:
+            #     self.get_logger().info("UNKNOWN MESSAGE")
         finally:
             # Release the lock
             self.lock.release()
@@ -369,7 +369,7 @@ class MainRobot(Node):
 
     # Callback for information from the depth camera
     def lidar_callback(self, lidar_event):
-        self.get_logger().info("Message from LIDAR")
+        # self.get_logger().info("Message from LIDAR")
 
         # Get the lock before proceeding
         self.lock.acquire()

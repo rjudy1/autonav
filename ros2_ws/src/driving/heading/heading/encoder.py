@@ -14,6 +14,7 @@ import rclpy
 from rclpy.node import Node
 import serial
 from time import sleep
+import threading
 
 ticks_per_meter = 1404
 
@@ -27,7 +28,7 @@ class Encoder(Node):
         self.declare_parameter('/Debug', False)
 
         self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
-                                        self.get_parameter('/TeensyBaudrate').value)
+                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.2)
         self.serialPort.flushInput()
         self.serialPort.flushOutput()
 
@@ -43,15 +44,26 @@ class Encoder(Node):
         self.past_left_ticks = 0
         self.past_right_ticks = 0
         self.toggle = False
+        # Make a lock so the callbacks don't create race conditions
+        self.lock = threading.Lock()
 
     def __del__(self):
+        self.serialPort.write("M,89,89,**".encode())
         self.close()
 
     def speed_callback(self, msg):
-        msg = f"M,{str(msg.linear_speed)},{str(msg.angular_speed)},**"
-        self.serialPort.write(msg)
+        # Get the lock before proceeding
+        self.lock.acquire()
+        msg = f"M,{msg.linear_speed},{msg.angular_speed},**"
+        self.get_logger().info(f"sending: {msg}")
+        self.serialPort.write(msg.encode())
+        # x = self.serialPort.readline()
+        # self.get_logger().info(f"retrieved response: {x}")
+        self.lock.release()
 
     def light_callback(self, msg):
+        # Get the lock before proceeding
+        self.lock.acquire()
         cmd = ''
         if msg.type == 'G' or msg.type == 'Y' or msg.type == 'B':
             cmd += msg.type
@@ -62,6 +74,7 @@ class Encoder(Node):
             try:
                 self.serialPort.write(cmd.encode('utf-8'))
             except serial.serialutil.SerialException:
+                self.get_logger().warning("Serial Exception occurred")
                 sleep(0.5)
             except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
@@ -71,9 +84,10 @@ class Encoder(Node):
                 self.close()
         else:
             self.get_logger().info(f"Message type {msg.type} invalid")
-
+        self.lock.release()
 
     def timer_callback(self):
+        self.lock.acquire()
         try:
             self.serialPort.write('Q,**'.encode('utf-8'))
             read = self.serialPort.readline().decode('utf-8')
@@ -108,11 +122,7 @@ class Encoder(Node):
             message = template.format(type(ex).__name__, ex.args)
             self.get_logger().warning(message)
             sleep(0.5)
-            self.close()
-
-    def close(self):
-        self.serialPort.write('R,0,**'.encode('utf-8'))
-        self.serialPort.close()
+        self.lock.release()
 
 
 def main(args=None):
@@ -121,4 +131,4 @@ def main(args=None):
     try:
         rclpy.spin(encoder_pub)
     except KeyboardInterrupt:
-        encoder_pub.close()
+        pass

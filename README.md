@@ -4,8 +4,9 @@ This repository contains the code used for the Cedarville AutoNav 2022 robot. Th
 ## Quick Start
 1. Navigate to `cd ros2_ws` and build with `colcon build`
 2. Source ROS2 and your build with `. /opt/ros/ros2_distro/setup.bash && . /install/setup.bash`
-3. Run `ros2 launch robot_launch robot.launch.py`. If this doesn't run or throws errors, view the robot.launch.py file to modify the port parameters.
-4. (Optional) if you want to see the laser scan, run the following commands in new terminals:
+3. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors when prompted.
+4. Run `ros2 launch robot_launch robot.launch.py`. If this doesn't run or throws errors, view the robot.launch.py file to modify the port parameters.
+5. (Optional) if you want to see the laser scan, run the following commands in new terminals:
 - `ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 world laser_frame`
 - `rviz2 ./install/rplidar_ros/share/rplidar_ros/rviz/rplidar.rviz`
 
