@@ -1,0 +1,76 @@
+# 1 on /FollowingDirection is right line following, 0 in state is line following
+
+fsm:
+    ros__parameters:
+        /DefaultSpeed:              10
+        /FollowingDirection:        1           # FOLLOWING DIRECTION
+        /TimerRate:                 0.05
+        /StartState:                0
+
+rplidar_node:
+    ros__parameters:
+        serial_port:                '/dev/LIDAR_PORT'
+
+lines:
+    ros__parameters:
+        /LineDetectCropTop:         0.0         # fraction to remove
+        /LineDetectCropBottom:      .2
+        /LineDetectCropSide:        .2
+        /FollowingDirection:       1           # FOLLOWING DIRECTION
+        /UseYellow:                 True
+        /Debug:                     True
+
+
+obstacles:
+    ros__parameters:
+        /LIDARTrimMin:              1.31  # radians
+        /LIDARTrimMax:              4.97  # radians
+        /ObstacleFOV:               0.5236  # radians
+        /PotholeDetectCropTop:      0.0
+        /PotholeDetectCropBottom:   0.2
+        /PotholeDetectCropSide:     0.2
+        /PotholeBufferSize:         5
+        /ObstacleDetectDistance:    2.0  # meters
+        /FollowingDirection:        1       # FOLLOWING DIRECTION
+        /Debug:                     True
+
+gps:
+    ros__parameters:
+        /WaypointLat1:              39.4481695
+        /WaypointLon1:              -83.4882655
+        /WaypointLat2:              0.0
+        /WaypointLon2:              0.0
+        /WaypointLat3:              0.0
+        /WaypointLon3:              0.0
+        /WaypointLat4:              0.0
+        /WaypointLon4:              0.0
+        /ExitAngle:                 0.2  # radians
+        /GPSFollowGoal:             3.0
+        /LineToGPSTrans:            5.0
+        /Port:                      '/dev/GPS_PORT'
+
+encoders:
+    ros__parameters:
+        /TeensyEncodersPort:        '/dev/TEENSY_PORT'
+        /TeensyBaudrate:            115200
+        /TeensyUpdateDelay:         .02
+        /Debug:                     False
+
+fusion:
+    ros__parameters:
+        /InitialHeading:            -1.5
+        /EncoderWeight:             .90
+        /Debug:                     True
+
+wheels_controller:
+    ros__parameters:
+        /FollowingDirection:        1
+        /LineDist:                  0.3
+        /SideObjectDist:            0.5
+        /DefaultSpeed:              35.0
+        /BoostIncrease:             2
+        /BoostCountThreshold:       20
+        /LineBoostMargin:           30.0
+        /GPSBoostMargin:            0.1745
+        /Port:                      '/dev/MOTOR_PORT'
+        /Debug:                     True

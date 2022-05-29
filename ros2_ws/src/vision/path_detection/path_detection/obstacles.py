@@ -11,6 +11,8 @@
 
 from dataclasses import dataclass
 import math
+
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -41,7 +43,7 @@ def check_collision(a, b, c, x, y, radius):
 
 class TransformPublisher(Node):
     def __init__(self):
-        super().__init__('lidar_modifier')
+        super().__init__('obstacles')
         self.lidar_pub = self.create_publisher(LaserScan, '/laser_frame', 10)
         self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
@@ -55,8 +57,8 @@ class TransformPublisher(Node):
         self.state = STATE.LINE_FOLLOWING
 
         # lidar parameters
-        self.declare_parameter("/LIDARTrimMin", 1.57)
-        self.declare_parameter("/LIDARTrimMax", 4.71)
+        self.declare_parameter("/LIDARTrimMin", 1.31)
+        self.declare_parameter("/LIDARTrimMax", 4.97)
         self.declare_parameter("/ObstacleFOV", math.pi/6)
         self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters
         self.declare_parameter("/FollowingDirection", 1)
@@ -128,25 +130,25 @@ class TransformPublisher(Node):
 
         # scan in the range in front of robot to check for obstacles
         msg = String()
-        for i in range(len(scan.intensities)):
+        for i in range(len(scan.ranges)):
             if i * scan.angle_increment < self.get_parameter('/ObstacleFOV').value/2 \
-                    or i * scan.angle_increment > 2*math.pi-self.get_parameter('/ObstacleFOV').value / 2:
-                msg.data = STATUS.OBJECT_SEEN if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] \
-                    else STATUS.PATH_CLEAR
-                self.history[self.history_idx] = \
-                    1 if self.get_parameter("/ObstacleDetectDistance").value > scan.ranges[i] else 0
+                    or i * scan.angle_increment > 2 * math.pi - self.get_parameter('/ObstacleFOV').value / 2:
                 self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
-                if msg.data == STATUS.OBJECT_SEEN:  break
+                if scan.ranges[i] < self.get_parameter("/ObstacleDetectDistance").value:
+                    msg.data = STATUS.OBJECT_SEEN
+                    self.history[self.history_idx] = 1
+                    break
+                else:
+                    msg.data = STATUS.PATH_CLEAR
+                    self.history[self.history_idx] = 0
 
-        if self.path_clear and np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
+        if np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
             self.get_logger().info("OBJECT_SEEN")
-            self.lidar_str_pub.publish(msg)
             self.path_clear = False
-        elif (self.state == STATE.LINE_TO_OBJECT or self.state == STATE.GPS_TO_OBJECT) \
-                and np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE:
+        elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE:
             self.get_logger().info("PATH_CLEAR")
-            self.lidar_str_pub.publish(msg)
             self.path_clear = True
+        self.lidar_str_pub.publish(msg)
 
         # publish the wheel distance from the obstacle based on following direction
         distance_msg = String()

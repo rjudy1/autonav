@@ -12,9 +12,10 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 from custom_msgs.msg import EncoderData
+from custom_msgs.msg import SpeedCmd
 from utils.utils import *
 
-from .motor_driver import Wheels
+# from .motor_driver import Wheels
 from .pid_controller import PIDController
 
 
@@ -23,23 +24,25 @@ class WheelControl(Node):
         super().__init__('wheels_controller')
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
         self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
-        self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.odom_callback, 10)
+        # self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.odom_callback, 10)
+        self.motor_pub = self.create_publisher(SpeedCmd, 'speed_cmd', 10)
         self.unitChange = 1  # assuming passed in meters, need mm
 
         # start in a stopped state
-        self.curr_right_speed = 0
-        self.curr_left_speed = 0
+        self.curr_linear = 0
+        self.curr_angular = 0
         self.boost_count = 0
 
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/LineDist', 0.175)
         self.declare_parameter('/SideObjectDist', 0.6)
-        self.declare_parameter('/DefaultSpeed', 15.0)
+        self.declare_parameter('/DefaultSpeed', 35.0)
         self.declare_parameter('/BoostIncrease', 1)
         self.declare_parameter('/BoostCountThreshold', 20)
         self.declare_parameter('/LineBoostMargin', 30.0)
         self.declare_parameter('/GPSBoostMargin', 0.1745)
         self.declare_parameter('/Port', '/dev/ttyUSB0')
+        self.declare_parameter('/Debug', False)
 
         self.following_direction = self.get_parameter('/FollowingDirection').value
         self.target_line_dist = self.get_parameter('/LineDist').value*1000
@@ -54,29 +57,35 @@ class WheelControl(Node):
         self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
-        self.driver = Wheels(port=self.get_parameter('/Port').value)
         self.following_mode = FollowMode.eeLine
         self.STOP_LIMIT = 7777
         self.state = STATE.LINE_FOLLOWING
 
-        self.MAX_CHANGE = 14
+        self.MAX_CHANGE = 20
+        self.MAX_ANGULAR_CHANGE = 20
         self.get_logger().info("Launching motors")
 
     def __del__(self):
-        self.driver.control_wheels(0,0)
+        send_speed_cmd(self, 0, 0)
 
-    def odom_callback(self, odom):
-        if odom.right < -0.0001 and odom.left > 0.0:
-            self.driver.control_wheels(self.curr_left_speed - 10, self.curr_right_speed + 5)
-            self.curr_right_speed += 1
-            self.curr_left_speed -= 5
-            self.get_logger().info("Right Glitch")
-        elif odom.right > 0.0 and odom.left < -0.0001:
-            self.driver.control_wheels(self.curr_left_speed + 5, self.curr_right_speed - 5)
-            self.get_logger().info("Left Glitch")
-        elif odom.right < -0.0001 and odom.left < -0.0001:
-            self.driver.control_wheels(self.curr_left_speed, self.curr_right_speed)
-            self.get_logger().info("Both Glitch")
+    def send_speed_cmd(self, linear, angular):
+        msg = SpeedCmd()
+        msg.linear_speed = linear + 89
+        msg.angular_speed = angular + 89
+        self.motor_pub.publish(msg)
+
+    # def odom_callback(self, odom):
+    #     if odom.right < -0.0001 and odom.left > 0.0:
+    #         self.driver.control_wheels(self.curr_left_speed - 10, self.curr_right_speed + 5)
+    #         self.curr_right_speed += 1
+    #         self.curr_left_speed -= 5
+    #         self.get_logger().info("Right Glitch")
+    #     elif odom.right > 0.0 and odom.left < -0.0001:
+    #         self.driver.control_wheels(self.curr_left_speed + 5, self.curr_right_speed - 5)
+    #         self.get_logger().info("Left Glitch")
+    #     elif odom.right < -0.0001 and odom.left < -0.0001:
+    #         self.driver.control_wheels(self.curr_left_speed, self.curr_right_speed)
+    #         self.get_logger().info("Both Glitch")
 
     def state_callback(self, new_state):
         self.get_logger().info("New State Received: {}".format(new_state.data))
@@ -104,8 +113,8 @@ class WheelControl(Node):
     def wheel_callback(self, msg):
         # self.get_logger().info(f"followmode: {self.following_mode}, {msg}")
         msg = msg.data
-        left_speed = self.curr_left_speed
-        right_speed = self.curr_right_speed
+        linear = self.curr_linear
+        angular = self.curr_angular
 
         stop_override = False
         message_valid = True
@@ -115,26 +124,28 @@ class WheelControl(Node):
             if len(cmds) != 2:
                 self.get_logger().warning("ERROR: MISFORMATTED MESSAGE")
             else:
-                left_speed = int(float(cmds[0])*self.unitChange)
-                right_speed = int(float(cmds[1])*self.unitChange)
+                linear = int(float(cmds[0])*self.unitChange)
+                angular = int(float(cmds[1])*self.unitChange)
         elif self.following_mode==FollowMode.eeLine and msg[:3]==CODE.LIN_SENDER:
             # self.get_logger().info(f"IN FOLLOW MODE: msg = {msg}")
             position = float(msg[4:])
             if position >= self.STOP_LIMIT:
-                left_speed = 0
-                right_speed = 0
+                linear = 0
+                angular = 0
                 stop_override = True
                 self.boost_count = 0
             else:
                 position_error = self.target_line_dist - position
                 # self.get_logger().warning(f"POSITION ERROR {position_error}")
-                # Calculate the differential and apply it
-                # to the default speed double
+
+                # Position error is negative if we need to turn toward the line
+                # delta will come out negative if you need to turn toward the line
+
                 delta = self.pid_line.control(position_error)
-                delta = delta / 2  if self.following_direction==DIRECTION.RIGHT else -1 * delta / 2
+                delta = delta if self.following_direction==DIRECTION.LEFT else -1 * delta
                 # self.get_logger().warning(f"compensating by {delta}")
-                left_speed = self.default_speed + delta
-                right_speed = self.default_speed - delta
+                linear = round(self.default_speed)
+                angular = round(delta)
                 # self.get_logger().info(f"left: {left_speed}, right: {right_speed}")
                 #
                 # // Check if we should in the acceptable zone for picking up speed.i
@@ -146,8 +157,8 @@ class WheelControl(Node):
             # self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
             if position >= self.STOP_LIMIT:
-                left_speed = 0
-                right_speed = 0
+                linear = 0
+                angular = 0
                 stop_override = True
                 self.boost_count = 0
             else:
@@ -155,53 +166,48 @@ class WheelControl(Node):
                 # c++ does this to calculate differntial and apply to default speed
                 delta = self.pid_obj.control(self.target_obj_dist - position)
                 delta = delta * self.following_direction
-                left_speed = self.curr_left_speed - delta
-                right_speed = self.curr_right_speed + delta
+                linear = self.default_speed
+                angular = delta
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
-            # if position >= self.STOP_LIMIT:
-            #     left_speed = 0
-            #     right_speed = 0
-            #     stop_override = True
-            #     self.boost_count = 0
-            # else:
             # more differential stuff
             delta = self.pid_gps.control(position)
             # GPS sends the error already
             delta = delta * self.following_direction
-            left_speed = self.curr_left_speed - delta
-            right_speed = self.curr_right_speed + delta
+            linear = self.default_speed
+            angular = delta
             if abs(position) <= self.gps_boost_margin:
                 self.boost_count += 1
             else:
                 self.boost_count = 0
 
         else:
-            self.get_logger().info(f"Received MESSAGE{self.following_direction} : {msg}\n\n")
+            if self.get_parameter('/Debug').value:
+                self.get_logger().info(f"Received MESSAGE out of use: {msg}\n\n")
             message_valid = False
 
         # self.get_logger().info(f"Calculated left and right speeds: {left_speed} and {right_speed}")
         if self.boost_count > self.boost_count_threshold and message_valid:
-            left_speed += self.speed_boost
-            right_speed += self.speed_boost
+            linear += self.speed_boost
 
         # send speed command to wheels
-        if message_valid and (left_speed != self.curr_left_speed or self.curr_right_speed != right_speed):
+        if message_valid and (linear != self.curr_linear or angular != self.curr_angular):
             # self.get_logger().info(f"ready to send {left_speed} and {right_speed} and stop is {stop_override}")
             if not stop_override:
-                if left_speed > self.curr_left_speed + self.MAX_CHANGE:
-                    left_speed = self.curr_left_speed + self.MAX_CHANGE
-                elif left_speed < self.curr_left_speed - self.MAX_CHANGE:
-                    left_speed = self.curr_left_speed - self.MAX_CHANGE
-                if right_speed > self.curr_right_speed + self.MAX_CHANGE:
-                    right_speed = self.curr_right_speed + self.MAX_CHANGE
-                elif right_speed < self.curr_right_speed - self.MAX_CHANGE:
-                    right_speed = self.curr_right_speed - self.MAX_CHANGE
+                if linear > self.curr_linear + self.MAX_CHANGE:
+                    linear = self.curr_linear + self.MAX_CHANGE
+                elif linear < self.curr_linear - self.MAX_CHANGE:
+                    linear = self.curr_linear - self.MAX_CHANGE
+                if angular > self.curr_angular + self.MAX_ANGULAR_CHANGE:
+                    angular = self.curr_angular + self.MAX_ANGULAR_CHANGE
+                elif angular < self.curr_angular - self.MAX_ANGULAR_CHANGE:
+                    angular = self.curr_angular - self.MAX_ANGULAR_CHANGE
             # self.get_logger().info(f"SETTING WHEEL SPEED TO {left_speed} and {right_speed}")
-            self.get_logger().info(f"{self.driver.control_wheels(left_speed, right_speed)}")
-
-        self.curr_left_speed = left_speed
-        self.curr_right_speed = right_speed
+            self.send_speed_cmd(linear, angular)
+            if self.get_parameter('/Debug'):
+                self.get_logger().info(f"setting speeds: ({linear, angular})")
+        self.curr_linear = linear
+        self.curr_angular = angular
 
 
 def main(args=None):

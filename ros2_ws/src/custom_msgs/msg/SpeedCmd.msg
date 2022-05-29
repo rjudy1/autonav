@@ -1,2 +1,2 @@
-int32 left_speed
-int32 right_speed
+int32 linear_speed
+int32 angular_speed

@@ -9,6 +9,12 @@ from utils.utils import *
 
 
 def generate_launch_description():
+    config = os.path.join(
+        get_package_share_directory('robot_launch'),
+        'config',
+        'params.yml'
+    )
+
     following_dir = DIRECTION.LEFT
     crop_top = 0.0
     crop_bottom = .2
@@ -18,16 +24,16 @@ def generate_launch_description():
         package="master_fsm",
         executable="fsm",
         parameters=[
-            {'/DefaultSpeed': 10},
-            {'/FollowingDirection': following_dir},
-            {'/TimerRate': .05},
-            {'/StartState': STATE.LINE_FOLLOWING},
+            # {'/DefaultSpeed': 10},
+            # {'/FollowingDirection': following_dir},
+            # {'/TimerRate': .05},
+            # {'/StartState': STATE.LINE_FOLLOWING},
+            config
         ]
     )
 
     # # VISION
     # # create launch description with initial camera launch file
-    # # disgusting but not quite sure how to make local path
     ld = LaunchDescription(
         [IncludeLaunchDescription(PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('realsense2_camera'), 'launch', 'rs_launch.py'))
@@ -38,7 +44,8 @@ def generate_launch_description():
         package="rplidar_ros",
         executable="rplidarNode",
         parameters=[
-            {'serial_port': '/dev/LIDAR_PORT'},
+            # {'serial_port': '/dev/LIDAR_PORT'},
+            config
         ]
     )
     # launch line following node
@@ -46,12 +53,13 @@ def generate_launch_description():
         package="path_detection",
         executable="lines",
         parameters=[
-            {'/LineDetectCropTop': crop_top},  # fraction to remove
-            {'/LineDetectCropBottom': crop_bottom},
-            {'/LineDetectCropSide': crop_side},
-            {"/FollowingDirection": following_dir},
-            {'/UseYellow': True},
-            {'/Debug': True},
+            # {'/LineDetectCropTop': crop_top},  # fraction to remove
+            # {'/LineDetectCropBottom': crop_bottom},
+            # {'/LineDetectCropSide': crop_side},
+            # {"/FollowingDirection": following_dir},
+            # {'/UseYellow': True},
+            # {'/Debug': True},
+            config
         ]
     )
     # launch obstacle detection
@@ -59,16 +67,17 @@ def generate_launch_description():
         package="path_detection",
         executable="obstacles",
         parameters=[
-            {'/LIDARTrimMin': 1.57},  # radians
-            {'/LIDARTrimMax': 4.71},  # radians
-            {'/ObstacleFOV': math.pi / 6.0},  # radians
-            {'/PotholeDetectCropTop': crop_top},
-            {'/PotholeDetectCropBottom': crop_bottom},
-            {'/PotholeDetectCropSide': crop_side},
-            {'/PotholeBufferSize': 5},
-            {'/ObstacleDetectDistance': 2.0},  # meters
-            {'/FollowingDirection': following_dir},
-            {"/Debug": True},
+            # {'/LIDARTrimMin': 1.31},  # radians
+            # {'/LIDARTrimMax': 4.97},  # radians
+            # {'/ObstacleFOV': math.pi / 6.0},  # radians
+            # {'/PotholeDetectCropTop': crop_top},
+            # {'/PotholeDetectCropBottom': crop_bottom},
+            # {'/PotholeDetectCropSide': crop_side},
+            # {'/PotholeBufferSize': 5},
+            # {'/ObstacleDetectDistance': 2.0},  # meters
+            # {'/FollowingDirection': following_dir},
+            # {"/Debug": True},
+            config
         ]
     )
 
@@ -78,18 +87,19 @@ def generate_launch_description():
         package="heading",
         executable="gps_publisher",
         parameters=[
-            {'/WaypointLat1': 39.4481695},
-            {'/WaypointLon1': -83.4882655},
-            {'/WaypointLat2': 0.0},
-            {'/WaypointLon2': 0.0},
-            {'/WaypointLat3': 0.0},
-            {'/WaypointLon3': 0.0},
-            {'/WaypointLat4': 0.0},
-            {'/WaypointLon4': 0.0},
-            {'/ExitAngle': 0.2},  # radians
-            {'/GPSFollowGoal': 3.0},
-            {'/LineToGPSTrans': 5.0},
-            {'/Port': '/dev/GPS_PORT'},
+            # {'/WaypointLat1': 39.4481695},
+            # {'/WaypointLon1': -83.4882655},
+            # {'/WaypointLat2': 0.0},
+            # {'/WaypointLon2': 0.0},
+            # {'/WaypointLat3': 0.0},
+            # {'/WaypointLon3': 0.0},
+            # {'/WaypointLat4': 0.0},
+            # {'/WaypointLon4': 0.0},
+            # {'/ExitAngle': 0.2},  # radians
+            # {'/GPSFollowGoal': 3.0},
+            # {'/LineToGPSTrans': 5.0},
+            # {'/Port': '/dev/GPS_PORT'},
+            config
         ]
     )
     # publishes turning
@@ -97,10 +107,11 @@ def generate_launch_description():
         package="heading",
         executable="encoder_pub",
         parameters=[
-            {'/TeensyEncodersPort': '/dev/TEENSY_PORT'},
-            {'/TeensyBaudrate': 115200},
-            {'/TeensyUpdateDelay': .02},
-            {'/Debug': False},
+            # {'/TeensyEncodersPort': '/dev/TEENSY_PORT'},
+            # {'/TeensyBaudrate': 115200},
+            # {'/TeensyUpdateDelay': .02},
+            # {'/Debug': False},
+            config
         ]
     )
     # merges heading data
@@ -108,9 +119,10 @@ def generate_launch_description():
         package="heading",
         executable="fusion",
         parameters=[
-            {'/InitialHeading': -1.5},
-            {'/EncoderWeight': .90},
-            {'/Debug': True},
+            # {'/InitialHeading': -1.5},
+            # {'/EncoderWeight': .90},
+            # {'/Debug': True},
+            config
         ]
     )
 
@@ -119,22 +131,24 @@ def generate_launch_description():
         package="wheels_controller",
         executable="controller",
         parameters=[
-            {'/FollowingDirection': following_dir},
-            {'/LineDist': 0.3},
-            {'/SideObjectDist': 0.5},
-            {'/DefaultSpeed': 25.0},
-            {'/BoostIncrease': 2},
-            {'/BoostCountThreshold': 20},
-            {'/LineBoostMargin': 30.0},
-            {'/GPSBoostMargin': 0.1745},
-            {'/Port': '/dev/MOTOR_PORT'},
+            # {'/FollowingDirection': following_dir},
+            # {'/LineDist': 0.3},
+            # {'/SideObjectDist': 0.5},
+            # {'/DefaultSpeed': 35.0},
+            # {'/BoostIncrease': 2},
+            # {'/BoostCountThreshold': 20},
+            # {'/LineBoostMargin': 30.0},
+            # {'/GPSBoostMargin': 0.1745},
+            # {'/Port': '/dev/MOTOR_PORT'},
+            # {'/Debug': True},
+            config
         ]
     )
 
     # vision
-    # ld.add_action(lidar_node)
+    ld.add_action(lidar_node)
     ld.add_action(lines_node)
-    # ld.add_action(obstacles_node)
+    ld.add_action(obstacles_node)
 
     # heading
     ld.add_action(gps_node)

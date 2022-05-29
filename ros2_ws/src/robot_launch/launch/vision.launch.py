@@ -18,20 +18,19 @@ def generate_launch_description():
 
     # VISION
     # create launch description with initial camera launch file
-    # disgusting but not quite sure how to make local path
     ld = LaunchDescription(
         [IncludeLaunchDescription(PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('realsense2_camera'), 'launch', 'rs_launch.py'))
         )]
     )
-    # # launch lidar node
-    # lidar_node = Node(
-    #     package="rplidar_ros",
-    #     executable="rplidarNode",
-    #     parameters=[
-    #         {'serial_port': '/dev/ttyUSB1'},
-    #     ]
-    # )
+    # launch lidar node
+    lidar_node = Node(
+        package="rplidar_ros",
+        executable="rplidarNode",
+        parameters=[
+            {'serial_port': '/dev/ttyUSB1'},
+        ]
+    )
     # launch line following node
     lines_node = Node(
         package="path_detection",
@@ -64,7 +63,7 @@ def generate_launch_description():
     )
 
     # vision
-    # ld.add_action(lidar_node)
+    ld.add_action(lidar_node)
     ld.add_action(lines_node)
     ld.add_action(obstacles_node)
 

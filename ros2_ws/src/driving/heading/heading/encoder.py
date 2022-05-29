@@ -9,6 +9,7 @@
 
 from custom_msgs.msg import EncoderData
 from custom_msgs.msg import LightCmd
+from custom_msgs.msg import SpeedCmd
 import rclpy
 from rclpy.node import Node
 import serial
@@ -37,6 +38,7 @@ class Encoder(Node):
         self.serialPort.write('R,1,**'.encode('utf-8'))
         self.timer = self.create_timer(self.rate, self.timer_callback)
         self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 10)
+        self.motor_sub = self.create_subscription(SpeedCmd, "speed_cmd", self.speed_callback, 10)
 
         self.past_left_ticks = 0
         self.past_right_ticks = 0
@@ -44,6 +46,10 @@ class Encoder(Node):
 
     def __del__(self):
         self.close()
+
+    def speed_callback(self, msg):
+        msg = f"M,{str(msg.linear_speed)},{str(msg.angular_speed)},**"
+        self.serialPort.write(msg)
 
     def light_callback(self, msg):
         cmd = ''

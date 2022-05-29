@@ -23,7 +23,7 @@ from custom_msgs.msg import LightCmd
 
 class MainRobot(Node):
     def __init__(self):
-        super().__init__("main_robot")
+        super().__init__("fsm")
 
         self.declare_parameter('/DefaultSpeed', 15)
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
@@ -199,9 +199,8 @@ class MainRobot(Node):
         # self.get_logger().info("Line to Object Transition State")
         # Just keep turning until the object is not in front of us
         # hard control of the speeds with this command !!!
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(
-            self.TURN_SPEED - (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT)) * self.TURN_SPEED) + "," + str(
-            self.TURN_SPEED + (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT)) * self.TURN_SPEED)
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.TURN_SPEED}," \
+                              f"{self.TURN_SPEED + (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT)) * self.TURN_SPEED}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.waypoint_found:

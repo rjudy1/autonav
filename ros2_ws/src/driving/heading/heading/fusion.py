@@ -21,7 +21,7 @@ from std_msgs.msg import String
 
 class Fusion(Node):
     def __init__(self):
-        super().__init__('lidar_modifier')
+        super().__init__('fusion')
 
         self.declare_parameter("/InitialHeading", 0.000)
         self.declare_parameter('/EncoderWeight', .5)
@@ -72,14 +72,14 @@ class Fusion(Node):
 
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(self.target_heading, self.curr_heading)
-        filtered_error_angle = self.filter_angle(error_angle)
+        # filtered_error_angle = self.filter_angle(error_angle)
         self.get_logger().warning("Current Heading: " + str(self.curr_heading) + '\n' +
                                   "Target Heading: " + str(self.target_heading) + '\n' +
-                                  "Error: " + str(filtered_error_angle))
+                                  "Error: " + str(error_angle))
 
         # check state, if in object avoid and GPS, then check error_angle for release
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
-            if self.is_object_clear(filtered_error_angle):
+            if self.is_object_clear(error_angle):
                 self.get_logger().info(self.WAYPOINT_STRAIGHT)
                 msg = String()
                 msg.data = WAYPOINT_STRAIGHT
@@ -87,7 +87,7 @@ class Fusion(Node):
 
         # publish
         msg = String()
-        msg.data = CODE.GPS_SENDER + ',' + str(filtered_error_angle)
+        msg.data = CODE.GPS_SENDER + ',' + str(error_angle)
         self.wheel_pub.publish(msg)
 
         if self.get_parameter('/Debug').value:
