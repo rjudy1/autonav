@@ -34,7 +34,7 @@ def generate_launch_description():
     # publishes turning
     encoder_node = Node(
         package="heading",
-        executable="encoder_pub",
+        executable="teensy",
         parameters=[
             config
         ]
@@ -63,7 +63,7 @@ def generate_launch_description():
     ld.add_action(fusion_node)
 
     # motors
-    ld.add_action(motor_node)
+    # ld.add_action(motor_node)
 
     # master machine
     ld.add_action(fsm_node)

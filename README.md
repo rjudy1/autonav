@@ -37,8 +37,8 @@ The GPS node `gps_publisher` belongs to the `heading` package which monitors the
 - `/LineToGPSTrans`
 - `/Port` which is the port the GPS is on 
 
-### Encoders
-The encoders publish to the `encoder_data` topic. They can track the distance the wheels travel to the centimeter and report the change since last message.
+### Teensy/Encoders
+The encoders publish to the `encoder_data` topic. They can track the distance the wheels travel to the centimeter and report the change since last message. This node is extremely important it actually sends the motor messages to the wheels and also manages the lights. 
 - `/TeensyEncodersPort`
 - `/TeensyBaudrate`
 - `TeensyUpdateDelay`
@@ -51,7 +51,7 @@ The fusion node publishes to the wheels and can publish its own `gps_event` mess
 - `/Debug`
 
 ### Wheels Controller
-The wheels controller receives the wheel_distance commands and obstacles events and changes the wheel speeds accordingly.
+The wheels controller receives the wheel_distance commands and obstacles events and then publishes a message that changes the speeds accordingly. This message is received by the teensy node in the heading package.
 - `FollowingDirection`
 - `/LineDist`
 - `/SideObjectDist`

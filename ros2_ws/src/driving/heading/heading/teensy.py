@@ -1,12 +1,20 @@
 ################################
 # AutoNav 2022 Competition Robot
-# Package: wheel_controller
-# File: controller.py
-# Purpose: control wheels
+# Package: encoders
+# File: encoder_pub.py
+# Purpose: interface with teensy to report wheel turning and
 # Date Modified: 21 May 2022
+# To run: ros2 run rs2l_transform transform
 ################################
 
-# !/usr/bin/env python
+from custom_msgs.msg import EncoderData
+from custom_msgs.msg import LightCmd
+from custom_msgs.msg import SpeedCmd
+import rclpy
+from rclpy.node import Node
+import serial
+from time import sleep
+import threading
 
 import rclpy
 from rclpy.node import Node
@@ -18,13 +26,40 @@ from utils.utils import *
 from .pid_controller import PIDController
 
 
-class WheelControl(Node):
+ticks_per_meter = 1404
+
+
+class Teensy(Node):
     def __init__(self):
-        super().__init__('wheels_controller')
+        super().__init__('teensy')
+        self.declare_parameter('/TeensyEncodersPort', '/dev/ttyACM1')
+        self.declare_parameter('/TeensyBaudrate', 115200)
+        self.declare_parameter('/TeensyUpdateDelay', .02)
+        self.declare_parameter('/Debug', False)
+
+        self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
+                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.2)
+        self.serialPort.flushInput()
+        self.serialPort.flushOutput()
+
+        #  publish for right and left encoder distances
+        self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
+        self.rate = self.get_parameter('/TeensyUpdateDelay').value
+
+        self.serialPort.write('R,1,**'.encode('utf-8'))
+        # self.timer = self.create_timer(self.rate, self.timer_callback)
+#        self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 10)
+        # self.motor_sub = self.create_subscription(SpeedCmd, "speed_cmd", self.speed_callback, 10)
+
+        self.past_left_ticks = 0
+        self.past_right_ticks = 0
+        self.toggle = False
+        # Make a lock so the callbacks don't create race conditions
+        self.lock = threading.Lock()
+
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
         self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
-        # self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.odom_callback, 10)
-        self.motor_pub = self.create_publisher(SpeedCmd, 'speed_cmd', 10)
+        # self.motor_pub = self.create_publisher(SpeedCmd, 'speed_cmd', 10)
         self.unitChange = 1  # assuming passed in meters, need mm
 
         # start in a stopped state
@@ -41,7 +76,7 @@ class WheelControl(Node):
         self.declare_parameter('/LineBoostMargin', 30.0)
         self.declare_parameter('/GPSBoostMargin', 0.1745)
         self.declare_parameter('/Port', '/dev/ttyUSB0')
-        self.declare_parameter('/Debug', False)
+        # self.declare_parameter('/Debug', False)
 
         self.following_direction = self.get_parameter('/FollowingDirection').value
         self.target_line_dist = self.get_parameter('/LineDist').value*1000
@@ -52,7 +87,7 @@ class WheelControl(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.02, 0.0, -0.01, 15, -15)  # for line following
+        self.pid_line = PIDController(-0.015, 0.0, -0.01, 15, -15)  # for line following
         self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
@@ -65,7 +100,8 @@ class WheelControl(Node):
         self.get_logger().info("Launching motors")
 
     def __del__(self):
-        pass
+        self.serialPort.write("M,89,89,**".encode())
+        self.close()
 
     def send_speed_cmd(self, linear, angular):
         msg = SpeedCmd()
@@ -78,8 +114,8 @@ class WheelControl(Node):
         self.state = int(new_state.data)
 
         # effects internal FollowMode
-        if self.state == STATE.GPS_TO_OBJECT or self.state ==STATE.OBJECT_AVOIDANCE_FROM_GPS or\
-            self.state == STATE.LINE_TO_OBJECT or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
+        if self.state == STATE.GPS_TO_OBJECT or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS or \
+                self.state == STATE.LINE_TO_OBJECT or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
             self.following_mode = FollowMode.eeObject
         elif self.state == STATE.LINE_FOLLOWING:
             self.following_mode = FollowMode.eeLine
@@ -89,8 +125,8 @@ class WheelControl(Node):
             self.following_mode = FollowMode.eeGps
             self.boost_count = 0
             self.get_logger().info("SWITCHED TO GPS NAVIGATION")
-        elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or\
-            self.state == STATE.LINE_ORIENT:
+        elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or \
+                self.state == STATE.LINE_ORIENT:
             self.following_mode = FollowMode.eeTransition
             self.boost_count = 0
             self.get_logger().info("SWITCHED TO TRANSITION STATE")
@@ -109,9 +145,9 @@ class WheelControl(Node):
             if len(cmds) != 2:
                 self.get_logger().warning("ERROR: MISFORMATTED MESSAGE")
             else:
-                linear = int(float(cmds[0])*self.unitChange)
-                angular = int(float(cmds[1])*self.unitChange)
-        elif self.following_mode==FollowMode.eeLine and msg[:3]==CODE.LIN_SENDER:
+                linear = int(float(cmds[0]) * self.unitChange)
+                angular = int(float(cmds[1]) * self.unitChange)
+        elif self.following_mode == FollowMode.eeLine and msg[:3] == CODE.LIN_SENDER:
             # self.get_logger().info(f"IN FOLLOW MODE: msg = {msg}")
             position = float(msg[4:])
             if position >= self.STOP_LIMIT:
@@ -127,7 +163,7 @@ class WheelControl(Node):
                 # delta will come out negative if you need to turn toward the line
 
                 delta = self.pid_line.control(position_error)
-                delta = delta if self.following_direction==DIRECTION.RIGHT else -1 * delta
+                delta = delta if self.following_direction == DIRECTION.RIGHT else -1 * delta
                 # self.get_logger().warning(f"compensating by {delta}")
                 linear = round(self.default_speed)
                 angular = round(delta)
@@ -137,7 +173,7 @@ class WheelControl(Node):
                     self.boost_count += 1
                 else:
                     self.boost_count = 0
-        elif self.following_mode == FollowMode.eeObject and msg[:3]==CODE.OBJECT_SENDER:
+        elif self.following_mode == FollowMode.eeObject and msg[:3] == CODE.OBJECT_SENDER:
             # self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
             if position >= self.STOP_LIMIT:
@@ -149,8 +185,8 @@ class WheelControl(Node):
                 pass
                 # delta is negative if we need to go toward object
                 delta = self.pid_obj.control(self.target_obj_dist - position)
-                delta = delta if self.following_direction==DIRECTION.LEFT else -1*delta
-                linear = round(self.default_speed*3/4)
+                delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
+                linear = round(self.default_speed * 3 / 4)
                 angular = round(delta)
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
@@ -186,25 +222,88 @@ class WheelControl(Node):
                     angular = self.curr_angular + self.MAX_ANGULAR_CHANGE
                 elif angular < self.curr_angular - self.MAX_ANGULAR_CHANGE:
                     angular = self.curr_angular - self.MAX_ANGULAR_CHANGE
-            # self.get_logger().info(f"SETTING WHEEL SPEED TO {left_speed} and {right_speed}")
-            self.send_speed_cmd(linear, angular)
-            if self.get_parameter('/Debug').value:
-                self.get_logger().info(f"setting speeds: ({linear, angular})")
+            # self.get_logger().info(f"SETTING WHEEL SPEED VALID")
+
+            self.send_speed(linear+89, angular+89)
+            self.get_logger().info(f"setting speeds: ({linear, angular})")
+
         self.curr_linear = linear
         self.curr_angular = angular
 
+    def send_speed(self, linear, angular):
+        # Get the lock before proceeding
+        msg = f"M,{linear},{angular},**"
+        self.get_logger().info(f"sending: {linear, angular}")
+        self.serialPort.write(msg.encode())
+
+    def light_callback(self, msg):
+        # Get the lock before proceeding
+        # self.lock.acquire()
+        cmd = ''
+        if msg.type == 'G' or msg.type == 'Y' or msg.type == 'B':
+            cmd += msg.type
+            if msg.on:
+                cmd += ',1,**'
+            else:
+                cmd += ',0,**'
+            try:
+                self.serialPort.write(cmd.encode('utf-8'))
+            except serial.serialutil.SerialException:
+                self.get_logger().warning("Serial Exception occurred")
+                sleep(0.5)
+            except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                self.get_logger().warning(message)
+                sleep(0.5)
+                self.close()
+        else:
+            self.get_logger().info(f"Message type {msg.type} invalid")
+        # self.lock.release()
+
+    def timer_callback(self):
+        # self.lock.acquire()
+        try:
+            self.serialPort.write('Q,**'.encode('utf-8'))
+            read = self.serialPort.readline().decode('utf-8')
+            data = read.split(',')
+            if data[0] == 'E' and len(data) == 4 and data[3] == '**\r\n':
+                # find ticks since last change
+                left_ticks = int(data[1]) - self.past_left_ticks
+                right_ticks = int(data[2]) - self.past_right_ticks
+
+                # update history
+                self.past_left_ticks = int(data[1])
+                self.past_right_ticks = int(data[2])
+
+                left_dist = left_ticks / ticks_per_meter
+                right_dist = right_ticks / ticks_per_meter
+
+                # if self.get_parameter('/Debug').value:
+                #     self.get_logger().info(f'left_dist {left_dist}')
+                #     self.get_logger().info(f'right_dist {right_dist}')
+
+                msg = EncoderData()
+                msg.left = -left_dist
+                msg.right = -right_dist
+                self.encoder_pub.publish(msg)
+            else:
+                self.serialPort.flushInput()
+            sleep(self.rate)
+        except serial.serialutil.SerialException:
+            sleep(0.5)
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            self.get_logger().warning(message)
+            sleep(0.5)
+        # self.lock.release()
+
 
 def main(args=None):
-    rclpy.init(args=args)
-    wheels = WheelControl()
-
+    rclpy.init()
+    encoder_pub = Teensy()
     try:
-        rclpy.spin(wheels)
+        rclpy.spin(encoder_pub)
     except KeyboardInterrupt:
-        # Destroy the node explicitly (optional)
-        wheels.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
+        pass

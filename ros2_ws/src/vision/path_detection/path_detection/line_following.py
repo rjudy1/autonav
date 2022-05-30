@@ -14,9 +14,9 @@ import numpy as np
 from rclpy.node import Node
 from utils.utils import *
 
-class LineFollowing(Node):
-    def __init__(self):
-        super().__init__('following')
+class LineFollowing():
+    def __init__(self, direction, use_yellow, debug):
+        # super().__init__('following')
 
         # Class attributes
         self.MAX_DIST = 7777
@@ -29,19 +29,9 @@ class LineFollowing(Node):
         self.LINE_CODE = "LIN,"
         self.window_handle = []
 
-        # Read ROS Params - Line Following
-        self.declare_parameter("/FollowingDirection", DIRECTION.LEFT)
-        # self.declare_parameter('/LineBufferSize', 5)
-        # self.declare_parameter('/LineThreshMin', 250)
-        # self.declare_parameter('/LineThreshMax', 255)
-        # self.declare_parameter('/LineHeightStart', 470.0)
-        # self.declare_parameter('/LineHeightStep', 50.0)
-        # self.declare_parameter('/LineLostCount', 100)
-        # self.declare_parameter('/LineDist', 200)
-        self.declare_parameter('/Debug', True)
-        self.declare_parameter('/UseYellow', True)
+        self.use_yellow = use_yellow
 
-        self.FOLLOWING_DIR = self.get_parameter('/FollowingDirection').value
+        self.FOLLOWING_DIR = direction
         self.BUFF_SIZE = 5
         self.THRESH_MIN = 250
         self.MAX_PIXEL = 255  # linethreshmax
@@ -49,7 +39,7 @@ class LineFollowing(Node):
         self.HEIGHT_STEP = 50.0
         self.LINE_LOST_COUNT = 100
         self.LINE_FOLLOW_DIST = 200  ## line dist
-        self.DEBUG_MODE = self.get_parameter('/Debug').value
+        self.DEBUG_MODE = debug
         self.moving = [200] * self.BUFF_SIZE
 
     def filter_result(self):
@@ -64,7 +54,7 @@ class LineFollowing(Node):
 
     def filter_image(self, image):
         # HSV filtering
-        grey = hsv_filter(image, use_white=not self.get_parameter('/UseYellow').value)
+        grey = hsv_filter(image, use_white=not self.use_yellow)
 
         # # REMOVE, UNNECESSARY DUE TO NEW HSV FILTERING
         # # Threshold a single portion of the image and then place that portion on a blank image

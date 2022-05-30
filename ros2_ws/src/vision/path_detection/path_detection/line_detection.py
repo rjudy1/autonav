@@ -15,39 +15,28 @@ import numpy as np
 from rclpy.node import Node
 from utils.utils import *
 
-class LineDetection(Node):
-    def __init__(self):
-        super().__init__('detection')
+class LineDetection():
+    def __init__(self, buffersize, bufferfill, croptop, cropbottom, cropside, maxwhite, minslope, linelength, linedistance, debug, use_yellow):
+        # super().__init__('detection')
         self.history_idx = 0
         self.slope = None
         self.aligned = False
         self.found_line = False
         self.window_handle = []
 
-        # Read ROS Params - Line Detection
-        self.declare_parameter('/LineDetectBufferSize', 10)
-        self.declare_parameter('/LineDetectBufferFill', 0.8)
-        self.declare_parameter('/LineDetectCropTop', 0.0)
-        self.declare_parameter('/LineDetectCropBottom', 0.2)
-        self.declare_parameter('/LineDetectCropSide', 0.2)
-        self.declare_parameter('/LineDetectMaxWhite', 0.5)
-        self.declare_parameter('/LineDetectMinSlope', 0.9)
-        self.declare_parameter('/LineDetectMinLineLength', 0.35)
-        self.declare_parameter('/LineDetectLineDistance', 150)
-        self.declare_parameter('/Debug', True)
-        self.declare_parameter('/UseYellow', True)
-
-
-        self.BUFF_SIZE = self.get_parameter('/LineDetectBufferSize').value
-        self.BUFF_FILL = self.get_parameter('/LineDetectBufferFill').value
-        self.CROP_TOP = self.get_parameter('/LineDetectCropTop').value
-        self.CROP_BOTTOM = self.get_parameter('/LineDetectCropBottom').value
-        self.CROP_SIDE = self.get_parameter('/LineDetectCropSide').value
-        self.MAX_WHITE = self.get_parameter('/LineDetectMaxWhite').value
-        self.MIN_SLOPE = self.get_parameter('/LineDetectMinSlope').value
-        self.MIN_LINE_LENGTH = self.get_parameter('/LineDetectMinLineLength').value
-        self.LINE_DISTANCE = self.get_parameter('/LineDetectLineDistance').value
+        self.BUFF_SIZE = buffersize
+        self.BUFF_FILL = bufferfill
+        self.CROP_TOP = croptop
+        self.CROP_BOTTOM = cropbottom
+        self.CROP_SIDE = cropside
+        self.MAX_WHITE = maxwhite
+        self.MIN_SLOPE = minslope
+        self.MIN_LINE_LENGTH = linelength
+        self.LINE_DISTANCE = linedistance
         self.line_history = [0] * self.BUFF_SIZE
+
+        self.debug = debug
+        self.use_yellow = use_yellow
 
         self.distance = 0
 
@@ -61,21 +50,21 @@ class LineDetection(Node):
         cv_display(image, 'Line Detection Color Image', self.window_handle)
 
         # Remove Shadows
-        image = hsv_filter(image, use_white=not self.get_parameter('/UseYellow').value)
+        image = hsv_filter(image, use_white=not self.use_yellow)
 
         # Discard Oversaturated Images
         if np.count_nonzero(image) < image.shape[0]*image.shape[1]*self.MAX_WHITE:
             # Open Image
             morph = cv2.morphologyEx(image, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)))
             line, coords = self.determine_line(morph, state)
-            if self.get_parameter('/Debug').value:
+            if self.debug:
                 if line:
                     x1, y1, x2, y2 = coords
                     morph = cv2.cvtColor(morph, cv2.COLOR_GRAY2RGB)
                     cv2.line(morph, (x1, y1), (x2, y2), (0, 255, 0), thickness=5)
                 cv_display(morph, 'Line Detection Opened Image', self.window_handle)
         else:
-            self.get_logger().warning("Oversaturated LineDetection Image")
+            # self.get_logger().warning("Oversaturated LineDetection Image")
             self.update_history(0)
 
         found_line = self.determine_state()

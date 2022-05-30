@@ -188,17 +188,17 @@ class GPS(Node):
                 if message[0] == '$GNGGA':
                     lat = float(message[2]) / 100 * (-1 + 2 * int(message[3] == 'N'))
                     lon = float(message[4]) / 100 * (-1 + 2 * int(message[5] == 'E'))
-                    self.get_logger().warning(f"FOUND GNGGA FIX {lat}, {lon}")
+                    # self.get_logger().warning(f"FOUND GNGGA FIX {lat}, {lon}")
                     return complex(lat, lon)
                 elif message[0] == "$GNRMC":
                     lat = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'N'))
                     lon = float(message[5]) / 100 * (-1 + 2 * int(message[6] == 'E'))
-                    self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
+                    # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
                     return complex(lat, lon)
                 elif message[0] == "$GNGLL":
                     lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
                     lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
-                    self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
+                    # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
                     return complex(lat, lon)
             except Exception as e:
                 self.get_logger().warning(f"ERROR IN READING: {e}. Take robot outside")
@@ -217,7 +217,7 @@ class GPS(Node):
         time.sleep(0.2)
 
         # Close the recording file
-        self.get_logger().info("Cleanup Finished")
+        # self.get_logger().info("Cleanup Finished")
 
 
 def main(args=None):

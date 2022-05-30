@@ -89,23 +89,23 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
 
-        elif self.obj_seen:  # object sighted - switch to obstacle avoidance
-            # We check for an object second because if we have already hit the
-            # GPS waypoint we want the robot to record that first.
-            light_msg = LightCmd()
-            light_msg.type='G'
-            light_msg.on = True
-            self.lights_pub.publish(light_msg)
-            self.obj_seen = False
-            self.state = STATE.LINE_TO_OBJECT
-            self.state_msg.data = STATE.LINE_TO_OBJECT
-            self.state_pub.publish(self.state_msg)
-
-            self.wheel_msg.data = CODE.WHEELS_TRANSITION
-            self.wheel_pub.publish(self.wheel_msg)
-
-            self.prev_heading = self.heading
-            self.line_to_object_state()  # enter the transition state
+        # elif self.obj_seen:  # object sighted - switch to obstacle avoidance
+        #     # We check for an object second because if we have already hit the
+        #     # GPS waypoint we want the robot to record that first.
+        #     light_msg = LightCmd()
+        #     light_msg.type='B'
+        #     light_msg.on = True
+        #     self.lights_pub.publish(light_msg)
+        #     self.obj_seen = False
+        #     self.state = STATE.LINE_TO_OBJECT
+        #     self.state_msg.data = STATE.LINE_TO_OBJECT
+        #     self.state_pub.publish(self.state_msg)
+        #
+        #     self.wheel_msg.data = CODE.WHEELS_TRANSITION
+        #     self.wheel_pub.publish(self.wheel_msg)
+        #
+        #     self.prev_heading = self.heading
+        #     self.line_to_object_state()  # enter the transition state
 
     # Object Avoidance From Line Following State - trying to get back to line
     def object_avoidance_from_line_state(self):
@@ -334,7 +334,10 @@ class MainRobot(Node):
 
         # Get the lock before proceeding
         self.lock.acquire()
-
+        light_msg = LightCmd()
+        light_msg.type = 'B'
+        light_msg.on = False
+        self.lights_pub.publish(light_msg)
         try:
             if line_event.data == STATUS.FOUND_LINE:
                 self.get_logger().warning("FOUND LINE!!")
@@ -378,8 +381,6 @@ class MainRobot(Node):
                 self.obj_seen = True
             elif lidar_event.data == STATUS.PATH_CLEAR and self.state in self.transition_set:
                 self.path_clear = True
-            else:
-                self.get_logger().info(f"Unknown Message {lidar_event}")
         finally:
             # Release the lock
             self.lock.release()

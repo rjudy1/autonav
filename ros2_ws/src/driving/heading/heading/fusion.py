@@ -65,7 +65,7 @@ class Fusion(Node):
         return a
 
     def gps_callback(self, gps_msg):
-        self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
+        # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
         self.curr_heading = (1-self.get_parameter('/EncoderWeight').value) * gps_msg.current_heading\
                              + self.get_parameter('/EncoderWeight').value * self.encoder_curr_heading
@@ -73,14 +73,14 @@ class Fusion(Node):
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(self.target_heading, self.curr_heading)
         # filtered_error_angle = self.filter_angle(error_angle)
-        self.get_logger().warning("Current Heading: " + str(self.curr_heading) + '\n' +
-                                  "Target Heading: " + str(self.target_heading) + '\n' +
-                                  "Error: " + str(error_angle))
+        # self.get_logger().warning("Current Heading: " + str(self.curr_heading) + '\n' +
+        #                           "Target Heading: " + str(self.target_heading) + '\n' +
+        #                           "Error: " + str(error_angle))
 
         # check state, if in object avoid and GPS, then check error_angle for release
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
             if self.is_object_clear(error_angle):
-                self.get_logger().info(self.WAYPOINT_STRAIGHT)
+                # self.get_logger().info(self.WAYPOINT_STRAIGHT)
                 msg = String()
                 msg.data = WAYPOINT_STRAIGHT
                 self.event_pub.publish(msg)
@@ -90,8 +90,8 @@ class Fusion(Node):
         msg.data = CODE.GPS_SENDER + ',' + str(error_angle)
         self.wheel_pub.publish(msg)
 
-        if self.get_parameter('/Debug').value:
-            self.get_logger().info(f'encoder report: {gps_msg}, {self.curr_heading}')
+        # if self.get_parameter('/Debug').value:
+        #     self.get_logger().info(f'encoder report: {gps_msg}, {self.curr_heading}')
 
 
 def main(args=None):

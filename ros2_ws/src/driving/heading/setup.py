@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             "fusion=heading.fusion:main",
-            "encoder_pub=heading.encoder:main",
+            "teensy=heading.teensy:main",
             "gps_publisher=heading.gps_reader:main"
         ],
     },
