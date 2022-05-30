@@ -83,11 +83,24 @@ class TransformPublisher(Node):
         self.get_logger().info("Waiting for image/lidar topics...")
 
     def state_callback(self, new_state):
-        self.get_logger().info("New State Received: {}".format(new_state.data))
+        # self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = new_state.data
 
     def get_c(self, i, scan):
         return -(190 * (452-math.cos(i * scan.angle_increment)) - 452 * (190-math.sin(i * scan.angle_increment)))
+
+    def check_range(self, scan, min, max, max_distance):
+        distances = 0
+        count = 0
+        for i in range(len(scan.ranges)):
+            if max > i * scan.angle_increment > min and scan.ranges[i] is not None and scan.ranges[i] != math.inf\
+                    and scan.ranges[i] < max_distance:
+                distances += scan.ranges[i] * math.sin(i*scan.angle_increment)
+                count += 1
+        try:
+            return distances / count
+        except ZeroDivisionError:
+            return .75  # parameterize later
 
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
@@ -155,27 +168,16 @@ class TransformPublisher(Node):
         # publish the wheel distance from the obstacle based on following direction
         distance_msg = String()
         try:
-            if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT \
-                and scan.ranges[round(math.pi * .375 / scan.angle_increment)] is not None \
-                and scan.ranges[round(math.pi * .375 / scan.angle_increment)] < 3.0:
-                distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * .375 / scan.angle_increment)])
-                self.lidar_wheel_distance_pub.publish(distance_msg)
-                if self.get_parameter('/Debug').value:
-                    # self.get_logger().info(
-                    #     f"Direction: {self.get_parameter('/FollowingDirection').value} : {distance_msg.data}")
-                    pass
+            if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
+                if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, math.pi/4, 55*math.pi/180, 2.0))
+                    self.lidar_wheel_distance_pub.publish(distance_msg)
+                elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT:
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, math.pi*7/8, 305*math.pi/180, 2.0))
+                    self.lidar_wheel_distance_pub.publish(distance_msg)
 
-            elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT \
-                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] is not None \
-                    and scan.ranges[round(math.pi * 1.625 / scan.angle_increment)] < 3.0:
-                distance_msg.data = "OBJ," + str(scan.ranges[round(math.pi * 1.625 / scan.angle_increment)])
-                self.lidar_wheel_distance_pub.publish(distance_msg)
-                if self.get_parameter('/Debug').value:
-                    # self.get_logger().info(
-                    #     f"Following direction: {self.get_parameter('/FollowingDirection').value}: {distance_msg.data}")
-                    pass
         except Exception as e:
-            self.get_logger().warning(f"ERROR with TOF Following direction : {e} : {distance_msg.data} m")
+            self.get_logger().warning(f"ERROR with TOF Following direction : {e}")
 
     # receives camera image and parses potholes into history
     def image_callback(self, image):

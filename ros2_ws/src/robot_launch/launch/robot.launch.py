@@ -96,7 +96,7 @@ def generate_launch_description():
 
     # heading
     ld.add_action(gps_node)
-    # ld.add_action(encoder_node)
+    ld.add_action(encoder_node)
     ld.add_action(fusion_node)
 
     # motors

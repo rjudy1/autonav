@@ -44,11 +44,11 @@ class GPS(Node):
         self.declare_parameter('/WaypointLon3', 0.0)
         self.declare_parameter('/WaypointLat4', 0.0)
         self.declare_parameter('/WaypointLon4', 0.0)
-        self.declare_parameter('/ExitAngle', .2)
         self.declare_parameter('/GPSFollowGoal', 1.0)
         self.declare_parameter('/LineToGPSTrans', 5.0)
         self.declare_parameter('/Port', '/dev/ttyACM0')
         self.declare_parameter('/Debug', False)
+        self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
 
         self.WP_LAT1 = self.get_parameter('/WaypointLat1').value
         self.WP_LON1 = self.get_parameter('/WaypointLon1').value
@@ -58,7 +58,6 @@ class GPS(Node):
         self.WP_LON3 = self.get_parameter('/WaypointLon3').value
         self.WP_LAT4 = self.get_parameter('/WaypointLat4').value
         self.WP_LON4 = self.get_parameter('/WaypointLon4').value
-        self.exit_angle = self.get_parameter('/ExitAngle').value
         self.DISTANCE_GOAL = self.get_parameter('/GPSFollowGoal').value
         self.line_to_gps = self.get_parameter('/LineToGPSTrans').value
 
@@ -114,10 +113,6 @@ class GPS(Node):
         trajectory = curr - past
         return cmath.phase(trajectory)  # in radians [-pi, pi]  # this might be a problem
 
-    # return true if we can switch back from obstacle avoidance to GPS nav
-    def is_object_clear(self, error_angle):
-        return abs(error_angle * -self.following_dir) < self.exit_angle
-
     # this function returns true if we are within the threshold of the
     # GPS waypoint
     def check_waypoint(self, curr):
@@ -132,7 +127,7 @@ class GPS(Node):
             msg.data = STATUS.WAYPOINT_FOUND
             self.waypoint_itr += 1  # go to next waypoint goal
             self.gps_event_pub.publish(msg)
-            self.get_logger().info("WAYPOINT FOUND - SWITCH POINTS")
+            self.get_logger().info(f"WAYPOINT FOUND - SWITCH POINTS to {self.target_loc[self.waypoint_itr]}")
 
             if self.waypoint_itr >= len(self.target_loc):
                 msg = String()
@@ -153,27 +148,10 @@ class GPS(Node):
         # calculate our current heading and the heading we need to have and publish these
         curr_heading = self.calc_heading(self.past_loc, loc)
         target_heading = self.calc_heading(loc, self.target_loc[self.waypoint_itr])
-        self.get_logger().info(f"heading: {curr_heading}")
         heading_msg = HeadingStatus()
         heading_msg.current_heading = curr_heading
         heading_msg.target_heading = target_heading
         self.heading_pub.publish(heading_msg)
-
-        # calculate and filter the error in the angle of the two headings
-        error_angle = self.sub_angles(target_heading, curr_heading)
-        filtered_error_angle = self.filter_angle(error_angle)
-        if self.get_parameter('/Debug').value:
-            self.get_logger().warning("Current Heading: " + str(curr_heading) + '\n' +
-                                      "Target Heading: " + str(target_heading) + '\n' +
-                                      "Error: " + str(filtered_error_angle))
-
-        # check state, if in object avoid and GPS, then check error_angle for release
-        if self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
-            if self.is_object_clear(filtered_error_angle):
-                self.get_logger().info(STATUS.WAYPOINT_STRAIGHT)
-                msg = String()
-                msg.data = STATUS.WAYPOINT_STRAIGHT
-                self.gps_event_pub.publish(msg)
 
         # save off the location
         self.past_loc = loc
@@ -205,12 +183,12 @@ class GPS(Node):
                 time.sleep(1)
 
     def state_callback(self, new_state):
-        self.get_logger().info("New State Received: {}".format(new_state.data))
+        # self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = new_state.data
 
     def __del__(self):
-        self.get_logger().info("Deleting GPS Node")
-        self.get_logger().info("Closing GPS Connection")
+        # self.get_logger().info("Deleting GPS Node")
+        # self.get_logger().info("Closing GPS Connection")
 
         # close serial port
         self.ser.close()

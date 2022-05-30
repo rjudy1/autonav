@@ -27,6 +27,8 @@ class Fusion(Node):
         self.declare_parameter('/EncoderWeight', .5)
         self.declare_parameter('/Debug', False)
 
+        self.declare_parameter('/ExitAngle', .2)
+        self.exit_angle = self.get_parameter('/ExitAngle').value
         self.state = STATE.LINE_FOLLOWING
         self.curr_heading = self.get_parameter('/InitialHeading').value
         self.target_heading = 0.0
@@ -40,7 +42,7 @@ class Fusion(Node):
         self.event_pub = self.create_publisher(String, "gps_events", 10)
 
     def state_callback(self, new_state):
-        self.get_logger().info("New State Received: {}".format(new_state.data))
+        # self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = int(new_state.data)
 
     # encoder must be sufficiently faster than GPS to be considered updated
@@ -64,6 +66,10 @@ class Fusion(Node):
             a -= 2 * cmath.pi
         return a
 
+    # return true if we can switch back from obstacle avoidance to GPS nav
+    def is_heading_restored(self, error_angle):
+        return abs(error_angle) < self.exit_angle
+
     def gps_callback(self, gps_msg):
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
@@ -73,21 +79,25 @@ class Fusion(Node):
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(self.target_heading, self.curr_heading)
         # filtered_error_angle = self.filter_angle(error_angle)
-        # self.get_logger().warning("Current Heading: " + str(self.curr_heading) + '\n' +
-        #                           "Target Heading: " + str(self.target_heading) + '\n' +
-        #                           "Error: " + str(error_angle))
+        if self.get_parameter('/Debug').value:
+            self.get_logger().warning("Current GPS HEADING: " + str(self.curr_heading) + '\n' +
+                                      "Current Encoder Heading: " + str(self.encoder_curr_heading) + '\n' +
+                                      "Current Weighted Heading " + str(self.curr_heading) + '\n' +
+                                      "Target Heading: " + str(gps_msg.target_heading) + '\n' +
+                                      "Error: " + str(error_angle))
 
         # check state, if in object avoid and GPS, then check error_angle for release
-        if self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
-            if self.is_object_clear(error_angle):
+        if self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS or STATE.OBJECT_AVOIDANCE_FROM_LINE:
+            if self.is_heading_restored(error_angle) and self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
                 # self.get_logger().info(self.WAYPOINT_STRAIGHT)
                 msg = String()
-                msg.data = WAYPOINT_STRAIGHT
+                msg.data = STATUS.HEADING_RESTORED
                 self.event_pub.publish(msg)
 
         # publish
         msg = String()
         msg.data = CODE.GPS_SENDER + ',' + str(error_angle)
+        # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
         self.wheel_pub.publish(msg)
 
         # if self.get_parameter('/Debug').value:

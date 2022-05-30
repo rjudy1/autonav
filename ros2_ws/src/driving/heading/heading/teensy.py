@@ -11,6 +11,7 @@ from custom_msgs.msg import EncoderData
 from custom_msgs.msg import LightCmd
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Int32
 from std_msgs.msg import String
 import serial
 from time import sleep
@@ -49,7 +50,7 @@ class Teensy(Node):
         self.timer = self.create_timer(self.rate, self.timer_callback)
         self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 10)
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
-        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
+        self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
 
         self.following_direction = self.get_parameter('/FollowingDirection').value
         self.target_line_dist = self.get_parameter('/LineDist').value*1000
@@ -60,9 +61,9 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.015, 0.0, -0.01, 15, -15)  # for line following
-        self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
-        self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
+        self.pid_line = PIDController(-0.06, 0.0, -0.001, 15, -15)  # for line following
+        self.pid_obj = PIDController(12.0, 0.0, 0.0, 15, -15)   # for object avoidance
+        self.pid_gps = PIDController(1.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -79,6 +80,8 @@ class Teensy(Node):
         self.state = STATE.LINE_FOLLOWING
         self.MAX_CHANGE = 20
         self.MAX_ANGULAR_CHANGE = 20
+        self.get_logger().info("Enable power to motors")
+        sleep(5)
         self.get_logger().info("Launching motors")
 
     def __del__(self):
@@ -152,18 +155,14 @@ class Teensy(Node):
         elif self.following_mode == FollowMode.eeObject and msg[:3] == CODE.OBJECT_SENDER:
             # self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
-            if position >= self.STOP_LIMIT:
-                linear = 0
-                angular = 0
-                stop_override = True
-                self.boost_count = 0
-            else:
-                pass
-                # delta is negative if we need to go toward object
-                delta = self.pid_obj.control(self.target_obj_dist - position)
-                delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
-                linear = round(self.default_speed * 3 / 4)
-                angular = round(delta)
+
+            # delta is negative if we need to go toward object
+            delta = self.pid_obj.control(self.target_obj_dist - position)
+            delta = delta if self.following_direction == DIRECTION.RIGHT else -1 * delta
+            linear = round(self.default_speed * 3 / 4)
+            angular = round(delta)
+            self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}")
+
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
             # delta is still negative if we need to go toward whatever
@@ -175,6 +174,7 @@ class Teensy(Node):
                 self.boost_count += 1
             else:
                 self.boost_count = 0
+            self.get_logger().info(f"IN GPS MODE, message{position}")
 
         else:
             # if self.get_parameter('/Debug').value:
@@ -188,7 +188,6 @@ class Teensy(Node):
 
         # self.get_logger().info(f"current speeds: ({self.curr_linear}, {self.curr_angular}); new speeds: ({linear, angular})")
         if message_valid and (linear != self.curr_linear or angular != self.curr_angular):
-            self.get_logger().info(f"ready to send {linear} and {angular} and stop is {stop_override}")
             if not stop_override:
                 if linear > self.curr_linear + self.MAX_CHANGE:
                     linear = self.curr_linear + self.MAX_CHANGE
@@ -210,7 +209,6 @@ class Teensy(Node):
         # Get the lock before proceeding
         msg = f"M,{linear},{angular},**"
         self.serialPort.write(msg.encode())
-        self.get_logger().info(f"sending: {linear, angular}")
         sleep(.02)
 
     def light_callback(self, msg):

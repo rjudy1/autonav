@@ -102,12 +102,13 @@ class Lines(Node):
         # Line Detection
         elif self.state in self.line_detection_states:
             found_line, aligned = self.line_detection.image_callback(image, self.state)
+            self.get_logger().info(f"FOUND LINE STATUS?: {found_line}, {aligned}")
             close_windows(self.line_following.window_handle)
             # self.get_logger().warning("Line Detection")
             if found_line:
                 # self.get_logger().warning(self.FOUND_LINE)
                 msg = String()
-                msg.data = str(STATUS.FOUND_LINE)
+                msg.data = STATUS.FOUND_LINE
                 self.event_pub.publish(msg)
             if aligned:
                 # self.get_logger().warning(self.ALIGNED)
@@ -117,7 +118,7 @@ class Lines(Node):
                 self.event_pub.publish(msg)
         else:
             close_windows(self.line_following.window_handle)
-            self.get_logger().info("In bad state spot")
+            # self.get_logger().info("In bad state spot")
             self.line_detection.reset()
 
     def state_callback(self, new_state):

@@ -18,20 +18,20 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /UseYellow:                 True
-        /Debug:                     False
+        /UseYellow:                 False
+        /Debug:                     True
 
 
 /obstacles:
     ros__parameters:
         /LIDARTrimMin:              1.31  # radians
         /LIDARTrimMax:              4.97  # radians
-        /ObstacleFOV:               0.5236  # radians
+        /ObstacleFOV:               0.43633  # radians
         /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.5  # meters
+        /ObstacleDetectDistance:    1.0  # meters
         /Debug:                     False
 
 /gps:
@@ -44,10 +44,10 @@
         /WaypointLon3:              0.0
         /WaypointLat4:              0.0
         /WaypointLon4:              0.0
-        /ExitAngle:                 0.2  # radians
-        /GPSFollowGoal:             3.0
+        /GPSFollowGoal:             1.5
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
+        /Debug:                     True
 
 /teensy:
     ros__parameters:
@@ -55,29 +55,17 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .05
         /Debug:                     True
-        /LineDist:                  0.3
-        /SideObjectDist:            0.5
-        /DefaultSpeed:              30.0
+        /LineDist:                  0.25
+        /SideObjectDist:            0.75
+        /DefaultSpeed:              35.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
         /LineBoostMargin:           30.0
         /GPSBoostMargin:            0.1745
-
 
 /fusion:
     ros__parameters:
         /InitialHeading:            -1.5
-        /EncoderWeight:             .90
-        /Debug:                     True
-
-/wheels_controller:
-    ros__parameters:
-        /LineDist:                  0.3
-        /SideObjectDist:            0.5
-        /DefaultSpeed:              30.0
-        /BoostIncrease:             2
-        /BoostCountThreshold:       20
-        /LineBoostMargin:           30.0
-        /GPSBoostMargin:            0.1745
-        /Port:                      '/dev/MOTOR_PORT'
-        /Debug:                     True
+        /EncoderWeight:             .50
+        /ExitAngle:                 0.4  # radians
+        /Debug:                     False
