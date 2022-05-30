@@ -203,6 +203,12 @@ class MainRobot(Node):
                               f"{self.TURN_SPEED + (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT)) * self.TURN_SPEED}"
         self.wheel_pub.publish(self.wheel_msg)
 
+        time.sleep(1)
+        light_msg = LightCmd()
+        light_msg.type='B'
+        light_msg.on = False
+        self.lights_pub.publish(light_msg)
+
         if self.waypoint_found:
             self.waypoint_found = False
             self.state = STATE.GPS_NAVIGATION

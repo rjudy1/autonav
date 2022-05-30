@@ -9,22 +9,14 @@
 
 from custom_msgs.msg import EncoderData
 from custom_msgs.msg import LightCmd
-from custom_msgs.msg import SpeedCmd
-import rclpy
-from rclpy.node import Node
-import serial
-from time import sleep
-import threading
-
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-from custom_msgs.msg import SpeedCmd
+import serial
+from time import sleep
 from utils.utils import *
 
-# from .motor_driver import Wheels
 from .pid_controller import PIDController
-
 
 ticks_per_meter = 1404
 
@@ -36,37 +28,6 @@ class Teensy(Node):
         self.declare_parameter('/TeensyBaudrate', 115200)
         self.declare_parameter('/TeensyUpdateDelay', .02)
         self.declare_parameter('/Debug', False)
-
-        self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
-                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.2)
-        self.serialPort.flushInput()
-        self.serialPort.flushOutput()
-
-        #  publish for right and left encoder distances
-        self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
-        self.rate = self.get_parameter('/TeensyUpdateDelay').value
-
-        self.serialPort.write('R,1,**'.encode('utf-8'))
-        # self.timer = self.create_timer(self.rate, self.timer_callback)
-#        self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 10)
-        # self.motor_sub = self.create_subscription(SpeedCmd, "speed_cmd", self.speed_callback, 10)
-
-        self.past_left_ticks = 0
-        self.past_right_ticks = 0
-        self.toggle = False
-        # Make a lock so the callbacks don't create race conditions
-        self.lock = threading.Lock()
-
-        self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
-        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
-        # self.motor_pub = self.create_publisher(SpeedCmd, 'speed_cmd', 10)
-        self.unitChange = 1  # assuming passed in meters, need mm
-
-        # start in a stopped state
-        self.curr_linear = 0
-        self.curr_angular = 0
-        self.boost_count = 0
-
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/LineDist', 0.175)
         self.declare_parameter('/SideObjectDist', 0.6)
@@ -76,7 +37,19 @@ class Teensy(Node):
         self.declare_parameter('/LineBoostMargin', 30.0)
         self.declare_parameter('/GPSBoostMargin', 0.1745)
         self.declare_parameter('/Port', '/dev/ttyUSB0')
-        # self.declare_parameter('/Debug', False)
+
+        self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
+                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.2)
+        self.serialPort.flushInput()
+        self.serialPort.flushOutput()
+
+        #  publish for right and left encoder distances
+        self.rate = self.get_parameter('/TeensyUpdateDelay').value
+        self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
+        self.timer = self.create_timer(self.rate, self.timer_callback)
+        self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 10)
+        self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
+        self.state_sub = self.create_subscription(String, "state_topic", self.state_callback, 10)
 
         self.following_direction = self.get_parameter('/FollowingDirection').value
         self.target_line_dist = self.get_parameter('/LineDist').value*1000
@@ -91,10 +64,19 @@ class Teensy(Node):
         self.pid_obj = PIDController(0.025, 0.0, 1000.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(2.5, 0.0, 0.0, 15, -15)   # for during gps navigation
 
+        # encoder parameters
+        self.unitChange = 1  # assuming passed in meters, need mm
+        self.boost_count = 0
+        self.past_left_ticks = 0
+        self.past_right_ticks = 0
+
+        # motor parameters
+        self.curr_linear = 0
+        self.curr_angular = 0
+        self.toggle = False
         self.following_mode = FollowMode.eeLine
         self.STOP_LIMIT = 7777
         self.state = STATE.LINE_FOLLOWING
-
         self.MAX_CHANGE = 20
         self.MAX_ANGULAR_CHANGE = 20
         self.get_logger().info("Launching motors")
@@ -102,12 +84,6 @@ class Teensy(Node):
     def __del__(self):
         self.serialPort.write("M,89,89,**".encode())
         self.close()
-
-    def send_speed_cmd(self, linear, angular):
-        msg = SpeedCmd()
-        msg.linear_speed = linear + 89
-        msg.angular_speed = angular + 89
-        self.motor_pub.publish(msg)
 
     def state_callback(self, new_state):
         self.get_logger().info("New State Received: {}".format(new_state.data))
@@ -233,30 +209,27 @@ class Teensy(Node):
     def send_speed(self, linear, angular):
         # Get the lock before proceeding
         msg = f"M,{linear},{angular},**"
-        self.get_logger().info(f"sending: {linear, angular}")
         self.serialPort.write(msg.encode())
+        self.get_logger().info(f"sending: {linear, angular}")
+        sleep(.02)
 
     def light_callback(self, msg):
         # Get the lock before proceeding
         # self.lock.acquire()
-        cmd = ''
+        # cmd = ''
         if msg.type == 'G' or msg.type == 'Y' or msg.type == 'B':
-            cmd += msg.type
-            if msg.on:
-                cmd += ',1,**'
-            else:
-                cmd += ',0,**'
-            try:
-                self.serialPort.write(cmd.encode('utf-8'))
-            except serial.serialutil.SerialException:
-                self.get_logger().warning("Serial Exception occurred")
-                sleep(0.5)
-            except Exception as ex:
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                self.get_logger().warning(message)
-                sleep(0.5)
-                self.close()
+            cmd = f"{msg.type},{int(msg.on)},**"
+            # try:
+            self.serialPort.write(cmd.encode('utf-8'))
+            # except serial.serialutil.SerialException:
+            #     self.get_logger().warning("Serial Exception occurred")
+            #     sleep(0.5)
+            # except Exception as ex:
+            #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            #     message = template.format(type(ex).__name__, ex.args)
+            #     self.get_logger().warning(message)
+            #     sleep(0.5)
+            #     self.close()
         else:
             self.get_logger().info(f"Message type {msg.type} invalid")
         # self.lock.release()
