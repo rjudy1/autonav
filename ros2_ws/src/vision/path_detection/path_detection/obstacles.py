@@ -159,7 +159,7 @@ class TransformPublisher(Node):
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("OBJECT_SEEN")
             self.path_clear = False
-        elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE:
+        elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE and not self.path_clear:
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("PATH_CLEAR")
             self.path_clear = True
