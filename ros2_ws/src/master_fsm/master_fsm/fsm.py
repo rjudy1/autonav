@@ -334,9 +334,8 @@ class MainRobot(Node):
                 light_msg.type = 'G'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
-                time.sleep(.5)
-                light_msg.on = False
-                self.lights_pub.publish(light_msg)
+                # light_msg.on = False
+                # self.lights_pub.publish(light_msg)
             elif gps_event.data == STATUS.HEADING_RESTORED:
                 self.heading_restored = True
 
@@ -372,13 +371,14 @@ class MainRobot(Node):
                 light_msg.type = 'B'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
-                time.sleep(.5)
-                light_msg.on = False
-                self.lights_pub.publish(light_msg)
-                time.sleep(.5)
 
             elif lidar_event.data == STATUS.PATH_CLEAR and self.state in self.transition_set:
                 self.path_clear = True
+                light_msg = LightCmd()
+                light_msg.type = 'B'
+                light_msg.on = False
+                self.lights_pub.publish(light_msg)
+
         finally:
             # Release the lock
             self.lock.release()
