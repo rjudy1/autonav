@@ -40,7 +40,7 @@ class Teensy(Node):
         self.declare_parameter('/Port', '/dev/ttyUSB0')
 
         self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
-                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.2)
+                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.05)
         self.serialPort.flushInput()
         self.serialPort.flushOutput()
 
@@ -61,9 +61,9 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.06, 0.0, -0.001, 15, -15)  # for line following
+        self.pid_line = PIDController(-0.09, 0.0, -0.12, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 0.0, 15, -15)   # for object avoidance
-        self.pid_gps = PIDController(1.5, 0.0, 0.0, 15, -15)   # for during gps navigation
+        self.pid_gps = PIDController(12.0, 0.0, 0.0, 15, -15)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm

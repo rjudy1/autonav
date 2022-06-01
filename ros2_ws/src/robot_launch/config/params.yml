@@ -53,9 +53,9 @@
     ros__parameters:
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
-        /TeensyUpdateDelay:         .05
+        /TeensyUpdateDelay:         .1
         /Debug:                     True
-        /LineDist:                  0.25
+        /LineDist:                  0.30
         /SideObjectDist:            0.75
         /DefaultSpeed:              35.0
         /BoostIncrease:             2
@@ -65,7 +65,7 @@
 
 /fusion:
     ros__parameters:
-        /InitialHeading:            -1.5
+        /InitialHeading:            -2.75762
         /EncoderWeight:             .50
         /ExitAngle:                 0.4  # radians
         /Debug:                     False

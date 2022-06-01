@@ -107,8 +107,10 @@ class TransformPublisher(Node):
     # third portion replaces obstacle in front and time of flight sensors
     def lidar_callback(self, scan):
         # adjust range to only include data in front of scanner
-        scan.angle_max += abs(scan.angle_min)
-        scan.angle_min = 0.0
+
+        self.get_logger().info(f"trim range: {scan.angle_max}, scan range: {scan.angle_min}")
+        scan.angle_max += math.pi
+        scan.angle_min += math.pi
 
         scan_range = scan.angle_max - scan.angle_min
         trim_range = self.get_parameter('/LIDARTrimMax').value - self.get_parameter('/LIDARTrimMin').value
@@ -118,42 +120,49 @@ class TransformPublisher(Node):
         trim_base = round(shift / scan_range * len(scan.ranges))
 
         try:
+
+            # self.get_logger().info(f"Ranges length: {len(scan.ranges)}, base: {trim_base}, width: {width}")
+            # self.get_logger().info(f"trim range: {trim_range}, scan range: {scan_range}")
             if len(scan.intensities) > trim_base + width:
                 for i in range(trim_base, trim_base + width):
                     scan.ranges[i] = math.inf
                     scan.intensities[i] = 0.0
-            else:
+            elif len(scan.ranges):
                 for i in range(trim_base, trim_base + width):
                     scan.ranges[i] = math.inf
         except Exception:
-            self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}")
+            self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
-        # insert pothole additions to lidar here - can compensate with constants for the camera angle
-        for circle in self.circles:
-            # front part of lidar scan 0 to pi/2 radians
-            for i in range(len(scan.ranges)):
-                if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
-                    dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
-                                                self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
-                    if dist < scan.ranges[i] and hit:
-                        scan.ranges[i] = dist
-                        scan.intensities[i] = 47
+        # # insert pothole additions to lidar here - can compensate with constants for the camera angle
+        # for circle in self.circles:
+        #     # front part of lidar scan 0 to pi/2 radians
+        #     for i in range(len(scan.ranges)):
+        #         if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
+        #             dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
+        #                                         self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
+        #             if dist < scan.ranges[i] and hit:
+        #                 scan.ranges[i] = dist
+        #                 scan.intensities[i] = 47
 
         self.lidar_pub.publish(scan)
 
         # scan in the range in front of robot to check for obstacles
         msg = String()
+        msg.data = STATUS.PATH_CLEAR
+        count1 = 0
         for i in range(len(scan.ranges)):
             if i * scan.angle_increment < self.get_parameter('/ObstacleFOV').value/2 \
                     or i * scan.angle_increment > 2 * math.pi - self.get_parameter('/ObstacleFOV').value / 2:
                 self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
                 if scan.ranges[i] < self.get_parameter("/ObstacleDetectDistance").value:
-                    msg.data = STATUS.OBJECT_SEEN
-                    self.history[self.history_idx] = 1
-                    break
-                else:
-                    msg.data = STATUS.PATH_CLEAR
-                    self.history[self.history_idx] = 0
+                    if count1 > 2:
+                        msg.data = STATUS.OBJECT_SEEN
+                    count1+=1
+
+        if msg.data == STATUS.PATH_CLEAR:
+            self.history[self.history_idx] = 0
+        else:
+            self.history[self.history_idx] = 1
 
         if np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
             if self.get_parameter('/Debug').value:

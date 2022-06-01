@@ -116,7 +116,7 @@ class GPS(Node):
     # this function returns true if we are within the threshold of the
     # GPS waypoint
     def check_waypoint(self, curr):
-        target_point = (self.target_loc[self.waypoint_itr].real, self.target_loc[self.waypoint_itr].imag)
+        target_point = (self.target_loc[self.waypoint_itr%len(self.target_loc)].real, self.target_loc[self.waypoint_itr%len(self.target_loc)].imag)
         current_point = (curr.real, curr.imag)
         dist_meters = distance.distance(current_point, target_point).m
         self.get_logger().info(f"distance from waypoint: {dist_meters}")
