@@ -62,8 +62,8 @@ class Teensy(Node):
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
         self.pid_line = PIDController(-0.09, 0.0, -0.12, 15, -15)  # for line following
-        self.pid_obj = PIDController(12.0, 0.0, 0.0, 15, -15)   # for object avoidance
-        self.pid_gps = PIDController(12.0, 0.0, 0.0, 15, -15)   # for during gps navigation
+        self.pid_obj = PIDController(12.0, 0.0, 2.0, 15, -15)   # for object avoidance
+        self.pid_gps = PIDController(12.0, 0.0, 3.0, 15, -15)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -99,19 +99,19 @@ class Teensy(Node):
         elif self.state == STATE.LINE_FOLLOWING:
             self.following_mode = FollowMode.eeLine
             self.boost_count = 0
-            self.get_logger().info("SWITCHED TO LINE FOLLOWING")
+            # self.get_logger().info("SWITCHED TO LINE FOLLOWING")
         elif self.state == STATE.GPS_NAVIGATION:
             self.following_mode = FollowMode.eeGps
             self.boost_count = 0
-            self.get_logger().info("SWITCHED TO GPS NAVIGATION")
+            # self.get_logger().info("SWITCHED TO GPS NAVIGATION")
         elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or \
                 self.state == STATE.LINE_ORIENT:
             self.following_mode = FollowMode.eeTransition
             self.boost_count = 0
-            self.get_logger().info("SWITCHED TO TRANSITION STATE")
+            # self.get_logger().info("SWITCHED TO TRANSITION STATE")
 
     def wheel_callback(self, msg):
-        # self.get_logger().info(f"followmode: {self.following_mode}, {msg}")
+        # self.get_logger().info(f"follow mode: {self.following_mode}, {msg}")
         msg = msg.data
         linear = self.curr_linear
         angular = self.curr_angular
@@ -124,8 +124,8 @@ class Teensy(Node):
             if len(cmds) != 2:
                 self.get_logger().warning("ERROR: MISFORMATTED MESSAGE")
             else:
-                linear = int(float(cmds[0]) * self.unitChange)
-                angular = int(float(cmds[1]) * self.unitChange)
+                linear = int(float(cmds[0]))
+                angular = int(float(cmds[1]))
         elif self.following_mode == FollowMode.eeLine and msg[:3] == CODE.LIN_SENDER:
             # self.get_logger().info(f"IN FOLLOW MODE: msg = {msg}")
             position = float(msg[4:])
@@ -158,10 +158,10 @@ class Teensy(Node):
 
             # delta is negative if we need to go toward object
             delta = self.pid_obj.control(self.target_obj_dist - position)
-            delta = delta if self.following_direction == DIRECTION.RIGHT else -1 * delta
+            delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
             linear = round(self.default_speed * 3 / 4)
             angular = round(delta)
-            self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}")
+            self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
@@ -186,7 +186,7 @@ class Teensy(Node):
 
         # send speed command to wheels
 
-        # self.get_logger().info(f"current speeds: ({self.curr_linear}, {self.curr_angular}); new speeds: ({linear, angular})")
+        self.get_logger().info(f"current speeds: ({self.curr_linear}, {self.curr_angular}); new speeds: ({linear, angular})")
         if message_valid and (linear != self.curr_linear or angular != self.curr_angular):
             if not stop_override:
                 if linear > self.curr_linear + self.MAX_CHANGE:

@@ -18,6 +18,7 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
+        /LineDetectDistance:        1.0
         /UseYellow:                 False
         /Debug:                     True
 
@@ -31,7 +32,7 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.0  # meters
+        /ObstacleDetectDistance:    1.5  # meters
         /Debug:                     False
 
 /gps:
@@ -56,7 +57,7 @@
         /TeensyUpdateDelay:         .1
         /Debug:                     True
         /LineDist:                  0.30
-        /SideObjectDist:            0.75
+        /SideObjectDist:            0.5
         /DefaultSpeed:              35.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
@@ -66,6 +67,6 @@
 /fusion:
     ros__parameters:
         /InitialHeading:            -2.75762
-        /EncoderWeight:             .50
+        /EncoderWeight:             .75
         /ExitAngle:                 0.4  # radians
         /Debug:                     False

@@ -6,7 +6,7 @@
 # File: line_detection.py
 # Purpose: controls line detection
 # Author: Modified from 2020-21 autonav team code for ROS2
-# Date Modified: 24 May 2022
+# Date Modified: 31 May 2022
 ################################
 
 import cv2
@@ -15,9 +15,10 @@ import numpy as np
 from rclpy.node import Node
 from utils.utils import *
 
+
 class LineDetection():
     def __init__(self, buffersize, bufferfill, croptop, cropbottom, cropside, maxwhite, minslope, linelength, linedistance, debug, use_yellow):
-        # super().__init__('detection')
+        super().__init__('detection')
         self.history_idx = 0
         self.slope = None
         self.aligned = False
@@ -98,18 +99,19 @@ class LineDetection():
         robot_center = [x // 2, y]
         dist_left = math.sqrt(pow(x1 - robot_center[0], 2) + pow(y1 - robot_center[1], 2))
         dist_right = math.sqrt(pow(x2 - robot_center[0], 2) + pow(y2 - robot_center[1], 2))
-        dist_center = dist_left = math.sqrt(pow(line_center[0] - robot_center[0], 2) + pow(line_center[1] - robot_center[1], 2))
-        return min([dist_left, dist_right, dist_center])
+        dist_center = math.sqrt(pow(line_center[0] - robot_center[0], 2) + pow(line_center[1] - robot_center[1], 2))
+        return min([dist_left, dist_right, dist_center]) / 300  # pixels to meters
 
     def determine_state(self):
-        if not self.found_line and (self.line_history.count(1) >= self.BUFF_FILL * self.BUFF_SIZE) \
-                and (self.distance <= self.LINE_DISTANCE):
+        if self.line_history.count(1) >= self.BUFF_FILL * self.BUFF_SIZE and (self.distance <= self.LINE_DISTANCE):
             self.found_line = True
             return True
         return False
 
     def determine_orientation(self):
-        if self.found_line and not self.aligned and self.slope >= self.MIN_SLOPE:
+        # self.get_logger().info(f"Slope {self.slope}")
+
+        if self.found_line and self.slope >= self.MIN_SLOPE:
             self.aligned = True
             return True
         return False

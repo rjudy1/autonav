@@ -106,43 +106,81 @@ class TransformPublisher(Node):
     # second portion adds potholes based on image data
     # third portion replaces obstacle in front and time of flight sensors
     def lidar_callback(self, scan):
-        # adjust range to only include data in front of scanner
+        # adjust range to only include data in front of scanner\
 
-        self.get_logger().info(f"trim range: {scan.angle_max}, scan range: {scan.angle_min}")
+        # self.get_logger().info(f"trim range: {scan.angle_max}, scan range: {scan.angle_min}")
         scan.angle_max += math.pi
         scan.angle_min += math.pi
 
-        scan_range = scan.angle_max - scan.angle_min
-        trim_range = self.get_parameter('/LIDARTrimMax').value - self.get_parameter('/LIDARTrimMin').value
-        width = round(trim_range / scan_range * len(scan.ranges))
+        trim_min = self.get_parameter('/LIDARTrimMin').value
+        trim_max = self.get_parameter('/LIDARTrimMax').value
+        
+        new_ranges = []
+        new_intensities = []
 
-        shift = self.get_parameter('/LIDARTrimMin').value - scan.angle_min
-        trim_base = round(shift / scan_range * len(scan.ranges))
+        startOffset = int(scan.angle_min/scan.angle_increment)
+        endOffset = int(scan.angle_max/scan.angle_increment)
 
+        startTrim = int(trim_min/scan.angle_increment)
+        endTrim = int(trim_max/scan.angle_increment)
         try:
-
-            # self.get_logger().info(f"Ranges length: {len(scan.ranges)}, base: {trim_base}, width: {width}")
-            # self.get_logger().info(f"trim range: {trim_range}, scan range: {scan_range}")
-            if len(scan.intensities) > trim_base + width:
-                for i in range(trim_base, trim_base + width):
-                    scan.ranges[i] = math.inf
-                    scan.intensities[i] = 0.0
-            elif len(scan.ranges):
-                for i in range(trim_base, trim_base + width):
-                    scan.ranges[i] = math.inf
+            if len(scan.intensities) > 0:
+                i = 0
+                while i <= startOffset:
+                    new_ranges.append(math.inf)
+                    new_intensities.append(0.0)
+                    i += 1
+                while i <= startTrim:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    new_intensities.append(scan.intensities[i - (startOffset + 1)])
+                    i += 1
+                while i <= endTrim:
+                    new_ranges.append(math.inf)
+                    new_intensities.append(0.0)
+                    i += 1
+                while i <= endOffset:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    new_intensities.append(scan.intensities[i - (startOffset + 1)])
+                    i += 1
+                while i <= int(6.28/scan.angle_increment):
+                    new_ranges.append(math.inf)
+                    new_intensities.append(0.0)
+                    i += 1
+                scan.ranges = new_ranges
+                scan.intensities = new_intensities
+            else:
+                i = 0
+                while i <= startOffset:
+                    new_ranges.append(math.inf)
+                    i += 1
+                while i <= startTrim:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    i += 1
+                while i <= endTrim:
+                    new_ranges.append(math.inf)
+                    i += 1
+                while i <= endOffset:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    i += 1
+                while i <= int(6.28/scan.angle_increment):
+                    new_ranges.append(math.inf)
+                    i += 1
+                scan.ranges = new_ranges
+            scan.angle_min = 0.0
+            scan.angle_max = 6.28
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
-        # # insert pothole additions to lidar here - can compensate with constants for the camera angle
-        # for circle in self.circles:
-        #     # front part of lidar scan 0 to pi/2 radians
-        #     for i in range(len(scan.ranges)):
-        #         if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
-        #             dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
-        #                                         self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
-        #             if dist < scan.ranges[i] and hit:
-        #                 scan.ranges[i] = dist
-        #                 scan.intensities[i] = 47
+        # insert pothole additions to lidar here - can compensate with constants for the camera angle
+        for circle in self.circles:
+            # front part of lidar scan 0 to pi/2 radians
+            for i in range(len(scan.ranges)):
+                if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
+                    dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
+                                                self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
+                    if dist < scan.ranges[i] and hit:
+                        scan.ranges[i] = dist
+                        scan.intensities[i] = 47
 
         self.lidar_pub.publish(scan)
 
@@ -153,16 +191,15 @@ class TransformPublisher(Node):
         for i in range(len(scan.ranges)):
             if i * scan.angle_increment < self.get_parameter('/ObstacleFOV').value/2 \
                     or i * scan.angle_increment > 2 * math.pi - self.get_parameter('/ObstacleFOV').value / 2:
-                self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE
                 if scan.ranges[i] < self.get_parameter("/ObstacleDetectDistance").value:
-                    if count1 > 2:
+                    if count1 > 1: # get at least two points of obstacle in front to trigger found
                         msg.data = STATUS.OBJECT_SEEN
                     count1+=1
 
         if msg.data == STATUS.PATH_CLEAR:
-            self.history[self.history_idx] = 0
+            self.update_history(0)
         else:
-            self.history[self.history_idx] = 1
+            self.update_history(1)
 
         if np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
             if self.get_parameter('/Debug').value:
@@ -179,10 +216,10 @@ class TransformPublisher(Node):
         try:
             if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
                 if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, math.pi/4, 55*math.pi/180, 2.0))
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 40*math.pi/180, 55*math.pi/180, 2.0))
                     self.lidar_wheel_distance_pub.publish(distance_msg)
                 elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, math.pi*7/8, 305*math.pi/180, 2.0))
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 305*math.pi/180, 320*math.pi/180, 2.0))
                     self.lidar_wheel_distance_pub.publish(distance_msg)
 
         except Exception as e:

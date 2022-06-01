@@ -27,7 +27,7 @@ class Lines(Node):
     def __init__(self):
         super().__init__('lines')
 
-        self.state = STATE.LINE_FOLLOWING
+        self.state = STATE.FIND_LINE
         self.LINE_CODE = "LIN,"
 
         # Subscribe to the camera color image
@@ -43,20 +43,20 @@ class Lines(Node):
         self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
 
         # Read ROS Params - Line Detection
-        self.declare_parameter('/LineDetectBufferSize', 10)
-        self.declare_parameter('/LineDetectBufferFill', 0.8)
+        self.declare_parameter('/LineDetectBufferSize', 5)
+        self.declare_parameter('/LineDetectBufferFill', 0.6)
         self.declare_parameter('/LineDetectCropTop', 0.0)
         self.declare_parameter('/LineDetectCropBottom', 0.2)
         self.declare_parameter('/LineDetectCropSide', 0.2)
         self.declare_parameter('/LineDetectMaxWhite', 0.5)
-        self.declare_parameter('/LineDetectMinSlope', 0.9)
+        self.declare_parameter('/LineDetectMinSlope', 1.5)
         self.declare_parameter('/LineDetectMinLineLength', 0.35)
-        self.declare_parameter('/LineDetectLineDistance', 150)
+        self.declare_parameter('/LineDetectLineDistance', 1.75)
         self.declare_parameter('/Debug', True)
         self.declare_parameter('/UseYellow', False)
         self.declare_parameter("/FollowingDirection", DIRECTION.LEFT)
 
-        self.get_logger().warning(f"STARTUP {            self.get_parameter('/UseYellow').value,}")
+        self.get_logger().warning(f"STARTUP { self.get_parameter('/UseYellow').value,}")
 
         # Initialize Classes
         self.line_detection = LineDetection(
