@@ -61,7 +61,7 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.09, 0.0, -0.12, 15, -15)  # for line following
+        self.pid_line = PIDController(-0.06, 0.0, 0.0, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(12.0, 0.0, 3.0, 15, -15)   # for during gps navigation
 

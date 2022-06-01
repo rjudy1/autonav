@@ -18,7 +18,7 @@ from utils.utils import *
 
 class LineDetection():
     def __init__(self, buffersize, bufferfill, croptop, cropbottom, cropside, maxwhite, minslope, linelength, linedistance, debug, use_yellow):
-        super().__init__('detection')
+        # super().__init__('detection')
         self.history_idx = 0
         self.slope = None
         self.aligned = False

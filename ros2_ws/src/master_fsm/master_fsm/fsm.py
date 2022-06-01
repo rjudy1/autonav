@@ -196,6 +196,7 @@ class MainRobot(Node):
 
         elif self.path_clear:
             self.path_clear = False
+            self.obj_seen = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
@@ -243,7 +244,6 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.found_line:
-            self.found_line = False
             self.state_msg.data = STATE.LINE_ORIENT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_ORIENT
@@ -369,6 +369,7 @@ class MainRobot(Node):
 
             elif lidar_event.data == STATUS.PATH_CLEAR and self.state in self.transition_set:
                 self.path_clear = True
+                self.obj_seen = False
                 light_msg = LightCmd()
                 light_msg.type = 'B'
                 light_msg.on = False

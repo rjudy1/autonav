@@ -32,7 +32,7 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.5  # meters
+        /ObstacleDetectDistance:    2.0  # meters
         /Debug:                     False
 
 /gps:
@@ -57,7 +57,7 @@
         /TeensyUpdateDelay:         .1
         /Debug:                     True
         /LineDist:                  0.30
-        /SideObjectDist:            0.5
+        /SideObjectDist:            1.0
         /DefaultSpeed:              35.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
