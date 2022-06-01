@@ -107,24 +107,66 @@ class TransformPublisher(Node):
     # third portion replaces obstacle in front and time of flight sensors
     def lidar_callback(self, scan):
         # adjust range to only include data in front of scanner
-        scan.angle_max += abs(scan.angle_min)
-        scan.angle_min = 0.0
 
-        scan_range = scan.angle_max - scan.angle_min
-        trim_range = self.get_parameter('/LIDARTrimMax').value - self.get_parameter('/LIDARTrimMin').value
-        width = round(trim_range / scan_range * len(scan.ranges))
+        scan.angle_min += math.pi
+        scan.angle_max += math.pi
 
-        shift = self.get_parameter('/LIDARTrimMin').value - scan.angle_min
-        trim_base = round(shift / scan_range * len(scan.ranges))
+        trim_min = self.get_parameter('/LIDARTrimMin').value
+        trim_max = self.get_parameter('/LIDARTrimMax').value
+        
+        new_ranges = []
+        new_intensities = []
 
+        startOffset = int(scan.angle_min/scan.angle_increment)
+        endOffset = int(scan.angle_max/scan.angle_increment)
+
+        startTrim = int(trim_min/scan.angle_offset)
+        endTrim = int(trim_max/scan.angle_offset)
         try:
-            if len(scan.intensities) > trim_base + width:
-                for i in range(trim_base, trim_base + width):
-                    scan.ranges[i] = math.inf
-                    scan.intensities[i] = 0.0
+            if len(scan.intensities) > 0:
+                i = 0
+                while i <= startOffset:
+                    new_ranges.append(math.inf)
+                    new_intensities.append(0.0)
+                    i += 1
+                while i <= startTrim:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    new_intensities.append(scan.intensities[i - (startOffset + 1)])
+                    i += 1
+                while i <= endTrim:
+                    new_ranges.append(math.inf)
+                    new_intensities.append(0.0)
+                    i += 1
+                while i <= endOffset:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    new_intensities.append(scan.intensities[i - (startOffset + 1)])
+                    i += 1
+                while i <= int(6.28/scan.angle_offset):
+                    new_ranges.append(math.inf)
+                    new_intensities.append(0.0)
+                    i += 1
+                scan.ranges = new_ranges
+                scan.intensities = new_intensities
             else:
-                for i in range(trim_base, trim_base + width):
-                    scan.ranges[i] = math.inf
+                i = 0
+                while i <= startOffset:
+                    new_ranges.append(math.inf)
+                    i += 1
+                while i <= startTrim:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    i += 1
+                while i <= endTrim:
+                    new_ranges.append(math.inf)
+                    i += 1
+                while i <= endOffset:
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    i += 1
+                while i <= int(6.28/scan.angle_offset):
+                    new_ranges.append(math.inf)
+                    i += 1
+                scan.ranges = new_ranges
+            scan.angle_min = 0.0
+            scan.angle_max = 0.0
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}")
 
