@@ -344,9 +344,6 @@ class MainRobot(Node):
                 light_msg.type = 'Y'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
-                time.sleep(.5)
-                light_msg.on = False
-                self.lights_pub.publish(light_msg)
 
             elif gps_event.data == STATUS.WAYPOINTS_DONE:
                 self.waypoints_done = True
