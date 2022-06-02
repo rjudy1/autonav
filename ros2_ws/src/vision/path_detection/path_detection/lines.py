@@ -27,7 +27,9 @@ class Lines(Node):
     def __init__(self):
         super().__init__('lines')
 
-        self.state = STATE.FIND_LINE
+        self.count = 0
+
+        self.state = STATE.LINE_FOLLOWING
         self.LINE_CODE = "LIN,"
 
         # Subscribe to the camera color image
@@ -86,6 +88,7 @@ class Lines(Node):
         self.get_logger().info("Waiting for image topics...")
 
     def image_callback(self, ros_image):
+        self.count += 1
         image = bridge_image(ros_image, "bgr8")
 
         # Line Followings
@@ -96,13 +99,15 @@ class Lines(Node):
             distance = self.line_following.image_callback(image)
             # self.get_logger().warning("LINE_DISTANCE: " + str(distance))
             msg = String()
-            msg.data = self.LINE_CODE+str(distance)
-            self.motor_pub.publish(msg)
+            msg.data = self.LINE_CODE+str(distance)+str(self.count)
+            if self.count%2==1:
+                self.get_logger().info(f"sending {msg.data}")
+                self.motor_pub.publish(msg)
 
         # Line Detection
         elif self.state in self.line_detection_states:
             found_line, aligned = self.line_detection.image_callback(image, self.state)
-            self.get_logger().info(f"FOUND LINE STATUS?: {found_line}, {aligned}")
+            # self.get_logger().info(f"Finding: {found_line}, {aligned}")
             close_windows(self.line_following.window_handle)
             # self.get_logger().warning("Line Detection")
             if found_line:

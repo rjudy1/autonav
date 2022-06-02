@@ -80,27 +80,27 @@ class MainRobot(Node):
         light_msg = LightCmd()
         light_msg.type = 'G'
         light_msg.on = False
-        if False and self.waypoint_found and not self.waypoints_done:  # reached gps waypoint - switch to gps navigation
-            self.waypoint_found = False
-            self.state = STATE.GPS_NAVIGATION
-            self.state_msg.data = STATE.GPS_NAVIGATION
-            self.state_pub.publish(self.state_msg)
-
-        elif self.obj_seen:  # object sighted - switch to obstacle avoidance
-            # We check for an object second because if we have already hit the
-            # GPS waypoint we want the robot to record that first.
-            self.obj_seen = False
-            self.state = STATE.LINE_TO_OBJECT
-            self.state_msg.data = STATE.LINE_TO_OBJECT
-            self.state_pub.publish(self.state_msg)
-            light_msg = LightCmd()
-            light_msg.type = 'Y'
-            light_msg.on = True
-            self.lights_pub.publish(light_msg)
-            time.sleep(.5)
-
-            self.prev_heading = self.heading
-            self.line_to_object_state()  # enter the transition state
+        # if False and self.waypoint_found and not self.waypoints_done:  # reached gps waypoint - switch to gps navigation
+        #     self.waypoint_found = False
+        #     self.state = STATE.GPS_NAVIGATION
+        #     self.state_msg.data = STATE.GPS_NAVIGATION
+        #     self.state_pub.publish(self.state_msg)
+        #
+        # elif self.obj_seen:  # object sighted - switch to obstacle avoidance
+        #     # We check for an object second because if we have already hit the
+        #     # GPS waypoint we want the robot to record that first.
+        #     self.obj_seen = False
+        #     self.state = STATE.LINE_TO_OBJECT
+        #     self.state_msg.data = STATE.LINE_TO_OBJECT
+        #     self.state_pub.publish(self.state_msg)
+        #     light_msg = LightCmd()
+        #     light_msg.type = 'Y'
+        #     light_msg.on = True
+        #     self.lights_pub.publish(light_msg)
+        #     time.sleep(.5)
+        #
+        #     self.prev_heading = self.heading
+        #     self.line_to_object_state()  # enter the transition state
 
     # Object Avoidance From Line Following State - trying to get back to line
     def object_avoidance_from_line_state(self):
@@ -365,7 +365,7 @@ class MainRobot(Node):
                 light_msg = LightCmd()
                 light_msg.type = 'B'
                 light_msg.on = True
-                self.lights_pub.publish(light_msg)
+                # self.lights_pub.publish(light_msg)
 
             elif lidar_event.data == STATUS.PATH_CLEAR and self.state in self.transition_set:
                 self.path_clear = True

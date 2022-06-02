@@ -19,7 +19,7 @@ from utils.utils import *
 
 from .pid_controller import PIDController
 
-ticks_per_meter = 1404
+ticks_per_meter = 1400
 
 
 class Teensy(Node):
@@ -48,7 +48,7 @@ class Teensy(Node):
         self.rate = self.get_parameter('/TeensyUpdateDelay').value
         self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
         self.timer = self.create_timer(self.rate, self.timer_callback)
-        self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 10)
+        self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 5)
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
         self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
 
@@ -61,7 +61,7 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.06, 0.0, 0.0, 15, -15)  # for line following
+        self.pid_line = PIDController(-0.075, 0.0, -.12, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.0, 15, -15)   # for object avoidance
         self.pid_gps = PIDController(12.0, 0.0, 3.0, 15, -15)   # for during gps navigation
 
@@ -112,6 +112,8 @@ class Teensy(Node):
 
     def wheel_callback(self, msg):
         # self.get_logger().info(f"follow mode: {self.following_mode}, {msg}")
+        self.get_logger().info(f"sending {msg.data}")
+        x = msg
         msg = msg.data
         linear = self.curr_linear
         angular = self.curr_angular
@@ -186,7 +188,7 @@ class Teensy(Node):
 
         # send speed command to wheels
 
-        self.get_logger().info(f"current speeds: ({self.curr_linear}, {self.curr_angular}); new speeds: ({linear, angular})")
+        # self.get_logger().info(f"current speeds: ({self.curr_linear}, {self.curr_angular}); new speeds: ({linear, angular})")
         if message_valid and (linear != self.curr_linear or angular != self.curr_angular):
             if not stop_override:
                 if linear > self.curr_linear + self.MAX_CHANGE:
@@ -197,7 +199,7 @@ class Teensy(Node):
                     angular = self.curr_angular + self.MAX_ANGULAR_CHANGE
                 elif angular < self.curr_angular - self.MAX_ANGULAR_CHANGE:
                     angular = self.curr_angular - self.MAX_ANGULAR_CHANGE
-            # self.get_logger().info(f"SETTING WHEEL SPEED VALID")
+            self.get_logger().info(f"handling {x}")
 
             self.send_speed(linear+89, angular+89)
             self.get_logger().info(f"setting speeds: ({linear, angular})")

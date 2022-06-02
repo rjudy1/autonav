@@ -1,7 +1,7 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /FollowingDirection:        0   # 1  is right, 0 is left
+        /FollowingDirection:        1   # 1  is right, 0 is left
 
 /fsm:
     ros__parameters:
@@ -54,11 +54,11 @@
     ros__parameters:
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
-        /TeensyUpdateDelay:         .1
+        /TeensyUpdateDelay:         .2
         /Debug:                     True
         /LineDist:                  0.30
         /SideObjectDist:            1.0
-        /DefaultSpeed:              35.0
+        /DefaultSpeed:              25.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
         /LineBoostMargin:           30.0

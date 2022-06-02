@@ -62,11 +62,11 @@ class CODE:
 def hsv_filter(image, use_white=True):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     if not use_white:
-        lower = np.array([0, 65, 100])
-        upper = np.array([179, 255, 255])
+        lower = np.array([18, 150, 100])
+        upper = np.array([60, 255, 255])
     else:  # for white line following
-        lower = np.array([0, 0, 170])
-        upper = np.array([179, 70, 255])
+        lower = np.array([0, 0, 210])
+        upper = np.array([179, 50, 255])
     return cv2.inRange(hsv, lower, upper)
 
 
