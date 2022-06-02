@@ -3,7 +3,9 @@
     ros__parameters:
         /FollowingDirection:        0   # 1  is right, 0 is left
         /InitialHeading:            -1.8675022996339328  # set before build
-        /DefaultSpeed:              33.0
+        /LineSpeed:                 33.0
+        /ObjectSpeed:               33.0
+        /GpsSpeed:                  29.0
         /UseYellow:                 True
 
 /fsm:

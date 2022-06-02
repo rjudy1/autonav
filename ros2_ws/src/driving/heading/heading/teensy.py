@@ -32,7 +32,9 @@ class Teensy(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/LineDist', 0.175)
         self.declare_parameter('/SideObjectDist', 0.6)
-        self.declare_parameter('/DefaultSpeed', 35.0)
+        self.declare_parameter('/LineSpeed', 33.0)
+        self.declare_parameter('/ObjectSpeed', 33.0)
+        self.declare_parameter('/GpsSpeed', 30.0)
         self.declare_parameter('/BoostIncrease', 1)
         self.declare_parameter('/BoostCountThreshold', 20)
         self.declare_parameter('/LineBoostMargin', 30.0)
@@ -56,7 +58,9 @@ class Teensy(Node):
         self.following_direction = self.get_parameter('/FollowingDirection').value
         self.target_line_dist = self.get_parameter('/LineDist').value*1000
         self.target_obj_dist = self.get_parameter('/SideObjectDist').value
-        self.default_speed = self.get_parameter('/DefaultSpeed').value
+        self.line_speed = self.get_parameter('/LineSpeed').value
+        self.object_speed = self.get_parameter('/ObjectSpeed').value
+        self.gps_speed = self.get_parameter('/GpsSpeed').value
         self.speed_boost = self.get_parameter('/BoostIncrease').value
         self.boost_count_threshold = self.get_parameter('/BoostCountThreshold').value
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
@@ -148,7 +152,7 @@ class Teensy(Node):
                 delta = self.pid_line.control(position_error)
                 delta = delta if self.following_direction == DIRECTION.RIGHT else -1 * delta
                 # self.get_logger().warning(f"compensating by {delta}")
-                linear = round(self.default_speed)
+                linear = round(self.line_speed)
                 angular = round(delta)
                 #
                 # // Check if we should in the acceptable zone for picking up speed.i
@@ -163,8 +167,8 @@ class Teensy(Node):
             # delta is negative if we need to go toward object
             delta = self.pid_obj.control(self.target_obj_dist - position)
             delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
-            linear = round(self.default_speed * 3 / 4)
-            angular = round(delta)
+            linear = round(self.object_speed)
+            angular = round(delta * 3 / 4)
             self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
@@ -173,7 +177,7 @@ class Teensy(Node):
             # delta is still negative if we need to go toward whatever
             delta = self.pid_gps.control(position)
             # GPS sends the error as - for left turns and + for right turns
-            linear = round(self.default_speed)
+            linear = round(self.gps_speed)
             angular = round(delta)
             self.get_logger().info(f"GPS directed speed/angle: {linear} {angular}")
             if abs(position) <= self.gps_boost_margin:

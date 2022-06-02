@@ -58,13 +58,13 @@ class MainRobot(Node):
         self.aligned = False
         self.waypoint_found = False
         self.heading_restored = False
-        self.heading_passed = False
         self.path_clear = False
         self.follow_dir = self.get_parameter('/FollowingDirection').value
         self.TURN_SPEED = 20
         self.SLIGHT_TURN = 15
         self.heading = 0.0
         self.prev_heading = 0.0
+        self.exit_heading = 0.0
         self.look_for_line = False
         self.waypoints_done = False
 
@@ -95,6 +95,10 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
 
             self.prev_heading = self.heading
+            # if self.follow_dir == DIRECTION.LEFT:
+
+            # else:
+
             self.line_to_object_state()  # enter the transition state
 
     # Object Avoidance From Line Following State - trying to get back to line
@@ -114,28 +118,14 @@ class MainRobot(Node):
             self.state = STATE.LINE_TO_OBJECT
             self.line_to_object_state()  # enter the transition state
 
-        elif self.found_line:  # and self.look_for_line
+        elif self.found_line: # and self.heading_restored:  # and self.look_for_line
             self.look_for_line = False
             self.found_line = False
+            self.heading_restored = False
             self.state_msg.data = STATE.OBJECT_TO_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_TO_LINE
             self.object_to_line_state()  # enter the transition state
-
-        # elif self.heading_passed:  # and self.look_for_line
-        #     self.look_for_line = False
-        #     self.heading_passed = False
-        #     self.state_msg.data = STATE.OBJECT_TO_LINE
-        #     self.state_pub.publish(self.state_msg)
-        #     self.state = STATE.OBJECT_TO_LINE
-        #     self.object_to_line_state()  # enter the transition state
-
-### HELPS AVOID THE WRONG LINE/TO TEST
-        # if we've neared or exceeded our start heading, go ahead and look for the line
-        # if self.heading_restored:
-        #     self.heading_restored = False
-        #     self.look_for_line = True
-        #     self.get_logger("looking for the line")
 
     # Object Avoidance From GPS Navigation State
     def object_avoidance_from_gps_state(self):
@@ -308,8 +298,6 @@ class MainRobot(Node):
     # Beginning of Callback Methods
     def heading_callback(self, heading_msg):
         self.heading = heading_msg.current_heading
-        # if self.prev_heading + (-1 + 2*int(self.follow_dir == DIRECTION.LEFT))*math.pi/2 > self.heading:
-        #     self.heading_passed = True
 
     # Callback for information coming from the line following node
     def line_callback(self, line_event):
@@ -346,14 +334,6 @@ class MainRobot(Node):
                 self.lights_pub.publish(light_msg)
                 # light_msg.on = False
                 # self.lights_pub.publish(light_msg)
-            elif gps_event.data == STATUS.HEADING_RESTORED:
-                self.heading_restored = True
-
-                # flash yellow light to indicate heading restored
-                light_msg = LightCmd()
-                light_msg.type = 'Y'
-                light_msg.on = True
-                self.lights_pub.publish(light_msg)
 
             elif gps_event.data == STATUS.WAYPOINTS_DONE:
                 self.waypoints_done = True
