@@ -40,12 +40,13 @@ class Teensy(Node):
         self.declare_parameter('/Port', '/dev/ttyUSB0')
 
         self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
-                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.05)
+                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.005)
         self.serialPort.flushInput()
         self.serialPort.flushOutput()
 
         #  publish for right and left encoder distances
         self.rate = self.get_parameter('/TeensyUpdateDelay').value
+        self.get_logger().info(f"self.rate {self.rate}")
         self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
         self.timer = self.create_timer(self.rate, self.timer_callback)
         self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 5)
@@ -61,9 +62,9 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.075, 0.0, -.12, 15, -15)  # for line following
+        self.pid_line = PIDController(-0.1, 0.0, -0.14, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.0, 15, -15)   # for object avoidance
-        self.pid_gps = PIDController(12.0, 0.0, 3.0, 15, -15)   # for during gps navigation
+        self.pid_gps = PIDController(12.0, 0.0, 3.0, 30, -30)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -78,10 +79,10 @@ class Teensy(Node):
         self.following_mode = FollowMode.eeLine
         self.STOP_LIMIT = 7777
         self.state = STATE.LINE_FOLLOWING
-        self.MAX_CHANGE = 20
-        self.MAX_ANGULAR_CHANGE = 20
-        self.get_logger().info("Enable power to motors")
-        sleep(5)
+        self.MAX_CHANGE = 5
+        self.MAX_ANGULAR_CHANGE = 5
+        # self.get_logger().info("Enable power to motors")
+        # sleep(5)
         self.get_logger().info("Launching motors")
 
     def __del__(self):
@@ -112,8 +113,8 @@ class Teensy(Node):
 
     def wheel_callback(self, msg):
         # self.get_logger().info(f"follow mode: {self.following_mode}, {msg}")
-        self.get_logger().info(f"sending {msg.data}")
-        x = msg
+        # self.get_logger().info(f"sending {msg.data}")
+        # x = msg
         msg = msg.data
         linear = self.curr_linear
         angular = self.curr_angular
@@ -128,6 +129,7 @@ class Teensy(Node):
             else:
                 linear = int(float(cmds[0]))
                 angular = int(float(cmds[1]))
+            # self.get_logger().info(f"FOLLOWING TRA with delta {angular}, speed {linear}")
         elif self.following_mode == FollowMode.eeLine and msg[:3] == CODE.LIN_SENDER:
             # self.get_logger().info(f"IN FOLLOW MODE: msg = {msg}")
             position = float(msg[4:])
@@ -199,7 +201,7 @@ class Teensy(Node):
                     angular = self.curr_angular + self.MAX_ANGULAR_CHANGE
                 elif angular < self.curr_angular - self.MAX_ANGULAR_CHANGE:
                     angular = self.curr_angular - self.MAX_ANGULAR_CHANGE
-            self.get_logger().info(f"handling {x}")
+            # self.get_logger().info(f"handling {x}")
 
             self.send_speed(linear+89, angular+89)
             self.get_logger().info(f"setting speeds: ({linear, angular})")
@@ -262,14 +264,12 @@ class Teensy(Node):
                 self.encoder_pub.publish(msg)
             else:
                 self.serialPort.flushInput()
-            sleep(self.rate)
         except serial.serialutil.SerialException:
-            sleep(0.5)
+            self.get_logger().info("encoder error in serial port")
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             self.get_logger().warning(message)
-            sleep(0.5)
         # self.lock.release()
 
 

@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'heading'
+package_name = 'test_tools'
 
 setup(
     name=package_name,
@@ -20,9 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "fusion=heading.fusion:main",
-            "teensy=heading.teensy:main",
-            "gps_publisher=heading.gps_reader:main",
+            "talker=test_tools.publisher:main",
+            "listener=test_tools.subscriber:main",
         ],
     },
 )

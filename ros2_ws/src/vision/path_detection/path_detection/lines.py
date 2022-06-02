@@ -29,7 +29,7 @@ class Lines(Node):
 
         self.count = 0
 
-        self.state = STATE.LINE_FOLLOWING
+        self.state = STATE.OBJECT_TO_LINE
         self.LINE_CODE = "LIN,"
 
         # Subscribe to the camera color image
@@ -99,10 +99,10 @@ class Lines(Node):
             distance = self.line_following.image_callback(image)
             # self.get_logger().warning("LINE_DISTANCE: " + str(distance))
             msg = String()
-            msg.data = self.LINE_CODE+str(distance)+str(self.count)
-            if self.count%2==1:
-                self.get_logger().info(f"sending {msg.data}")
-                self.motor_pub.publish(msg)
+            msg.data = self.LINE_CODE+str(distance)#+f"00{self.count}"
+            # if self.count%2==1:
+            # self.get_logger().info(f"sending {msg.data}")
+            self.motor_pub.publish(msg)
 
         # Line Detection
         elif self.state in self.line_detection_states:

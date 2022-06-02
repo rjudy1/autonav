@@ -9,6 +9,7 @@
 
 # !/usr/bin/env python
 import cmath
+import math
 
 import rclpy
 from rclpy.node import Node
@@ -48,7 +49,9 @@ class Fusion(Node):
     # encoder must be sufficiently faster than GPS to be considered updated
     def enc_callback(self, enc_msg):
         # 64 cm gap between wheel centers
-        self.encoder_curr_heading += (enc_msg.right - enc_msg.left) / .32
+        self.encoder_curr_heading = ((enc_msg.right - enc_msg.left) / .32) % (math.pi * 2)
+        if self.encoder_curr_heading > math.pi:
+            self.encoder_curr_heading += -2*math.pi
         if self.get_parameter('/Debug').value:
             pass
 #            self.get_logger().info(f'encoder report: {enc_msg}, {self.encoder_curr_heading}')
@@ -71,16 +74,19 @@ class Fusion(Node):
         return abs(error_angle) < self.exit_angle
 
     def gps_callback(self, gps_msg):
+        if -0.01 < gps_msg.current_heading < 0.01:
+            encoder_weight = 1.0
+        else:
+            encoder_weight = self.get_parameter('/EncoderWeight').value
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
-        self.curr_heading = (1-self.get_parameter('/EncoderWeight').value) * gps_msg.current_heading\
-                             + self.get_parameter('/EncoderWeight').value * self.encoder_curr_heading
+        self.curr_heading = (1-encoder_weight) * gps_msg.current_heading + encoder_weight * self.encoder_curr_heading
 
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(self.target_heading, self.curr_heading)
         # filtered_error_angle = self.filter_angle(error_angle)
         if self.get_parameter('/Debug').value:
-            self.get_logger().warning("Current GPS HEADING: " + str(self.curr_heading) + '\n' +
+            self.get_logger().warning("Current GPS HEADING: " + str(gps_msg.current_heading) + '\n' +
                                       "Current Encoder Heading: " + str(self.encoder_curr_heading) + '\n' +
                                       "Current Weighted Heading " + str(self.curr_heading) + '\n' +
                                       "Target Heading: " + str(gps_msg.target_heading) + '\n' +

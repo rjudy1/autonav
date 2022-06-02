@@ -144,6 +144,7 @@ class GPS(Node):
         loc = self.take_reading()  # get the new reading
         # Check if we are at the waypoint
         self.check_waypoint(loc)
+        self.get_logger().info(f"loc {loc}")
 
         # calculate our current heading and the heading we need to have and publish these
         curr_heading = self.calc_heading(self.past_loc, loc)
@@ -179,8 +180,9 @@ class GPS(Node):
                     # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
                     return complex(lat, lon)
             except Exception as e:
-                self.get_logger().warning(f"ERROR IN READING: {e}. Take robot outside")
-                time.sleep(1)
+                # self.get_logger().warning(f"ERROR IN READING: {e}. Take robot outside")
+                pass
+                # time.sleep(1)
 
     def state_callback(self, new_state):
         # self.get_logger().info("New State Received: {}".format(new_state.data))

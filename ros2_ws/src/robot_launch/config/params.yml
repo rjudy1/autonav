@@ -1,12 +1,14 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /FollowingDirection:        1   # 1  is right, 0 is left
+        /FollowingDirection:        0   # 1  is right, 0 is left
+        /InitialHeading:            -1.8675022996339328  # set before build
+        /DefaultSpeed:              33.0
+        /UseYellow:                 True
 
 /fsm:
     ros__parameters:
-        /DefaultSpeed:              10
-        /TimerRate:                 0.05
+        /TimerRate:                 0.05  # rate at which to check and do state specified behavior
         /StartState:                0
 
 /rplidar_node:
@@ -19,7 +21,6 @@
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
         /LineDetectDistance:        1.0
-        /UseYellow:                 False
         /Debug:                     True
 
 
@@ -27,18 +28,18 @@
     ros__parameters:
         /LIDARTrimMin:              1.31  # radians
         /LIDARTrimMax:              4.97  # radians
-        /ObstacleFOV:               0.43633  # radians
+        /ObstacleFOV:               0.61  # radians
         /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    2.0  # meters
+        /ObstacleDetectDistance:    1.5  # meters
         /Debug:                     False
 
 /gps:
     ros__parameters:
-        /WaypointLat1:              39.4481695
-        /WaypointLon1:              -83.4882655
+        /WaypointLat1:              39.448189400000004
+        /WaypointLon1:              -83.4882465
         /WaypointLat2:              0.0
         /WaypointLon2:              0.0
         /WaypointLat3:              0.0
@@ -58,7 +59,6 @@
         /Debug:                     True
         /LineDist:                  0.30
         /SideObjectDist:            1.0
-        /DefaultSpeed:              25.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
         /LineBoostMargin:           30.0
@@ -66,7 +66,6 @@
 
 /fusion:
     ros__parameters:
-        /InitialHeading:            -2.75762
         /EncoderWeight:             .75
         /ExitAngle:                 0.4  # radians
-        /Debug:                     False
+        /Debug:                     True

@@ -24,7 +24,6 @@ class MainRobot(Node):
     def __init__(self):
         super().__init__("fsm")
 
-        self.declare_parameter('/DefaultSpeed', 15)
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/TimerRate', .05)
         self.declare_parameter('/StartState', STATE.LINE_FOLLOWING)
@@ -62,8 +61,8 @@ class MainRobot(Node):
         self.heading_passed = False
         self.path_clear = False
         self.follow_dir = self.get_parameter('/FollowingDirection').value
-        self.TURN_SPEED = 15
-        self.SLIGHT_TURN = 10
+        self.TURN_SPEED = 20
+        self.SLIGHT_TURN = 15
         self.heading = 0.0
         self.prev_heading = 0.0
         self.look_for_line = False
@@ -81,27 +80,33 @@ class MainRobot(Node):
         light_msg = LightCmd()
         light_msg.type = 'G'
         light_msg.on = False
-        # if False and self.waypoint_found and not self.waypoints_done:  # reached gps waypoint - switch to gps navigation
-        #     self.waypoint_found = False
-        #     self.state = STATE.GPS_NAVIGATION
-        #     self.state_msg.data = STATE.GPS_NAVIGATION
-        #     self.state_pub.publish(self.state_msg)
-        #
-        # elif self.obj_seen:  # object sighted - switch to obstacle avoidance
-        #     # We check for an object second because if we have already hit the
-        #     # GPS waypoint we want the robot to record that first.
-        #     self.obj_seen = False
-        #     self.state = STATE.LINE_TO_OBJECT
-        #     self.state_msg.data = STATE.LINE_TO_OBJECT
-        #     self.state_pub.publish(self.state_msg)
-        #     light_msg = LightCmd()
-        #     light_msg.type = 'Y'
-        #     light_msg.on = True
-        #     self.lights_pub.publish(light_msg)
-        #     time.sleep(.5)
-        #
-        #     self.prev_heading = self.heading
-        #     self.line_to_object_state()  # enter the transition state
+        if self.waypoint_found and not self.waypoints_done:  # reached gps waypoint - switch to gps navigation
+            self.waypoint_found = False
+            self.state = STATE.GPS_NAVIGATION
+            self.state_msg.data = STATE.GPS_NAVIGATION
+            self.state_pub.publish(self.state_msg)
+
+            # buzz if object seen
+            light_msg = LightCmd()
+            light_msg.type = 'G'
+            light_msg.on = True
+            self.lights_pub.publish(light_msg)
+
+        elif self.obj_seen:  # object sighted - switch to obstacle avoidance
+            # We check for an object second because if we have already hit the
+            # GPS waypoint we want the robot to record that first.
+            self.obj_seen = False
+            self.state = STATE.LINE_TO_OBJECT
+            self.state_msg.data = STATE.LINE_TO_OBJECT
+            self.state_pub.publish(self.state_msg)
+            light_msg = LightCmd()
+            light_msg.type = 'Y'
+            light_msg.on = True
+            self.lights_pub.publish(light_msg)
+            time.sleep(.5)
+
+            self.prev_heading = self.heading
+            self.line_to_object_state()  # enter the transition state
 
     # Object Avoidance From Line Following State - trying to get back to line
     def object_avoidance_from_line_state(self):
@@ -216,10 +221,11 @@ class MainRobot(Node):
         # self.get_logger().info("Object to Line Transition State")
 
         # Gradual Turn
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + \
-                            f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{(-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN}"
-        self.wheel_pub(self.wheel_msg)
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 2 / 3)}"
+        self.wheel_pub.publish(self.wheel_msg)
+        self.get_logger().info("In object to line state publishing:")
+        self.get_logger().info(self.wheel_msg.data)
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
@@ -318,7 +324,7 @@ class MainRobot(Node):
         self.lock.acquire()
         try:
             if line_event.data == STATUS.FOUND_LINE:
-                self.get_logger().warning("FOUND LINE!!")
+                # self.get_logger().warning("FOUND LINE!!")
                 self.found_line = True
             elif line_event.data == STATUS.ALIGNED:
                 self.aligned = True
@@ -376,7 +382,7 @@ class MainRobot(Node):
                 light_msg = LightCmd()
                 light_msg.type = 'B'
                 light_msg.on = True
-                # self.lights_pub.publish(light_msg)
+                self.lights_pub.publish(light_msg)
 
             elif lidar_event.data == STATUS.PATH_CLEAR and self.state in self.transition_set:
                 self.path_clear = True
