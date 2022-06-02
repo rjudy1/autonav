@@ -3,7 +3,7 @@
 # Package: encoders
 # File: encoder_pub.py
 # Purpose: interface with teensy to report wheel turning and
-# Date Modified: 21 May 2022
+# Date Modified: 2 June 2022
 # To run: ros2 run rs2l_transform transform
 ################################
 
@@ -64,7 +64,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.1, 0.0, -0.14, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.0, 15, -15)   # for object avoidance
-        self.pid_gps = PIDController(12.0, 0.0, 3.0, 30, -30)   # for during gps navigation
+        self.pid_gps = PIDController(7.0, 0.0, 3.5, 30, -30)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -82,7 +82,7 @@ class Teensy(Node):
         self.MAX_CHANGE = 5
         self.MAX_ANGULAR_CHANGE = 5
         # self.get_logger().info("Enable power to motors")
-        # sleep(5)
+        sleep(3)
         self.get_logger().info("Launching motors")
 
     def __del__(self):
@@ -169,11 +169,13 @@ class Teensy(Node):
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
+            self.get_logger().info(f"GPS position error: {position}")
             # delta is still negative if we need to go toward whatever
             delta = self.pid_gps.control(position)
             # GPS sends the error as - for left turns and + for right turns
             linear = round(self.default_speed)
             angular = round(delta)
+            self.get_logger().info(f"GPS directed speed/angle: {linear} {angular}")
             if abs(position) <= self.gps_boost_margin:
                 self.boost_count += 1
             else:

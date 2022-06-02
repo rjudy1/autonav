@@ -32,7 +32,7 @@ def generate_launch_description():
         ]
     )
     # publishes turning
-    encoder_node = Node(
+    teensy_node = Node(
         package="heading",
         executable="teensy",
         parameters=[
@@ -48,22 +48,10 @@ def generate_launch_description():
         ]
     )
 
-    # MOTOR CONTROL
-    motor_node = Node(
-        package="wheels_controller",
-        executable="controller",
-        parameters=[
-            config
-        ]
-    )
-
     # heading
     ld.add_action(gps_node)
-    ld.add_action(encoder_node)
+    ld.add_action(teensy_node)
     ld.add_action(fusion_node)
-
-    # motors
-    # ld.add_action(motor_node)
 
     # master machine
     ld.add_action(fsm_node)

@@ -144,7 +144,8 @@ class GPS(Node):
         loc = self.take_reading()  # get the new reading
         # Check if we are at the waypoint
         self.check_waypoint(loc)
-        self.get_logger().info(f"loc {loc}")
+        if self.get_parameter('/Debug').value:
+            self.get_logger().info(f"loc {loc}")
 
         # calculate our current heading and the heading we need to have and publish these
         curr_heading = self.calc_heading(self.past_loc, loc)

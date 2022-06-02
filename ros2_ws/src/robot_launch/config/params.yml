@@ -38,7 +38,7 @@
 
 /gps:
     ros__parameters:
-        /WaypointLat1:              39.448189400000004
+        /WaypointLat1:              39.44818940
         /WaypointLon1:              -83.4882465
         /WaypointLat2:              0.0
         /WaypointLon2:              0.0
@@ -49,20 +49,20 @@
         /GPSFollowGoal:             1.5
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
-        /Debug:                     True
+        /Debug:                     False
 
 /teensy:
     ros__parameters:
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .2
-        /Debug:                     True
         /LineDist:                  0.30
         /SideObjectDist:            1.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
         /LineBoostMargin:           30.0
         /GPSBoostMargin:            0.1745
+        /Debug:                     True
 
 /fusion:
     ros__parameters:

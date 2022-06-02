@@ -86,12 +86,6 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
 
-            # buzz if object seen
-            light_msg = LightCmd()
-            light_msg.type = 'G'
-            light_msg.on = True
-            self.lights_pub.publish(light_msg)
-
         elif self.obj_seen:  # object sighted - switch to obstacle avoidance
             # We check for an object second because if we have already hit the
             # GPS waypoint we want the robot to record that first.
@@ -99,11 +93,6 @@ class MainRobot(Node):
             self.state = STATE.LINE_TO_OBJECT
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
-            light_msg = LightCmd()
-            light_msg.type = 'Y'
-            light_msg.on = True
-            self.lights_pub.publish(light_msg)
-            time.sleep(.5)
 
             self.prev_heading = self.heading
             self.line_to_object_state()  # enter the transition state
@@ -171,6 +160,12 @@ class MainRobot(Node):
     def gps_navigation_state(self):
         # self.get_logger().info("GPS Navigation State")
         # After looking for an obstacle, see if we have arrived
+        # buzz if object seen
+        light_msg = LightCmd()
+        light_msg.type = 'G'
+        light_msg.on = False
+        self.lights_pub.publish(light_msg)
+
         if self.waypoint_found:
             self.waypoint_found = False
             self.state_msg.data = STATE.FIND_LINE
