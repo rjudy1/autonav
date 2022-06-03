@@ -2,8 +2,8 @@
 /**:
     ros__parameters:
         /FollowingDirection:        0   # 1  is right, 0 is left
-        /UseYellow: False
-        /InitialHeading:            -2.5132741228718345  # set before build
+        /UseYellow:                 False
+        /InitialHeading:            -2.530727415391778  # set before build
         /LineSpeed:                 33.0
         /ObjectSpeed:               33.0
         /GpsSpeed:                  25.0
@@ -43,14 +43,14 @@
 
 /gps:
     ros__parameters:
-        /WaypointLat1:              42.400927 # right
+        /WaypointLat1:              42.400927 # south practice
         /WaypointLon1:              -83.131075
         /WaypointLat2:              42.4008601 # center
         /WaypointLon2:              -83.1310840
-        /WaypointLat3:              42.400726
+        /WaypointLat3:              42.400726 # north practice
         /WaypointLon3:              -83.131063
-        /WaypointLat4:              0.0
-        /WaypointLon4:              0.0
+        /WaypointLat4:              42.4007760
+        /WaypointLon4:              -83.1310596
         /GPSFollowGoal:             1.5
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
