@@ -8,6 +8,7 @@ import cmath
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
+import math
 import numpy as np
 
 
@@ -114,3 +115,9 @@ def sub_angles(x, y):
     if a > cmath.pi:
         a -= 2 * cmath.pi
     return a
+
+def degrees_to_radians(degrees):
+    heading = degrees * math.pi / 180.0
+    if degrees > 180:
+        heading -= math.pi * 2
+

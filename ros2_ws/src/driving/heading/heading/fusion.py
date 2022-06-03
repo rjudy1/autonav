@@ -33,7 +33,7 @@ class Fusion(Node):
         self.state = STATE.LINE_FOLLOWING
         self.curr_heading = self.get_parameter('/InitialHeading').value
         self.target_heading = 0.0
-        self.encoder_curr_heading = self.get_parameter('/InitialHeading').value
+        self.encoder_curr_heading = degrees_to_radians(self.get_parameter('/InitialHeading').value)
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
@@ -53,8 +53,6 @@ class Fusion(Node):
             self.encoder_curr_heading += (((enc_msg.left - enc_msg.right) / .64) % (math.pi * 2))
             if self.encoder_curr_heading > math.pi:
                 self.encoder_curr_heading += -2*math.pi
-            if self.get_parameter('/Debug').value:
-                self.get_logger().info(f'encoder report: {enc_msg}, {self.encoder_curr_heading}')
 
         if self.state == STATE.GPS_NAVIGATION:
             encoder_weight = self.get_parameter('/EncoderWeight').value

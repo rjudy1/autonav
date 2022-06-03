@@ -77,7 +77,7 @@ class GPS(Node):
         self.state = STATE.LINE_FOLLOWING
 
         # process GPS data at 2 Hz
-        self.timer = self.create_timer(.5, self.process_gps_data)
+        self.timer = self.create_timer(.45, self.process_gps_data)
 
         self.ser = serial.Serial(self.get_parameter('/Port').value, baudrate=115200)
         self.ser.readline()  # read one junk line to achieve line synchronization
