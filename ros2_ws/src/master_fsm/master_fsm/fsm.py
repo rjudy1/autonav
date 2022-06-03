@@ -157,15 +157,21 @@ class MainRobot(Node):
     def gps_navigation_state(self):
         # self.get_logger().info("GPS Navigation State")
         # After looking for an obstacle, see if we have arrived
-        # buzz if object seen
-
+        # turn light off so should blink at first waypoint
+        # light_msg = LightCmd()
+        # light_msg.type = 'G'
+        # light_msg.on = False
+        # self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
             self.waypoint_found = False
             self.state_msg.data = STATE.FIND_LINE
-            self.state_pub.publish(self.state_msg)
-            self.state = STATE.FIND_LINE
-            self.find_line_state()
+            self.get_logger().info("WAYPOINT FOUND IN FSM!!")
+
+            # RESTORE THIS
+            # self.state_pub.publish(self.state_msg)
+            # self.state = STATE.FIND_LINE
+            # self.find_line_state()
 
         # First look for a potential obstacle
         elif self.obj_seen:

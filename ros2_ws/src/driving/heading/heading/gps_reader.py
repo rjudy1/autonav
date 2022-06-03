@@ -63,7 +63,7 @@ class GPS(Node):
 
         self.target_loc = []
         self.target_loc.append(complex(self.WP_LAT1, self.WP_LON1))
-        # self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
+        self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
         self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
         # self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
 
