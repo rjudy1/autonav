@@ -7,6 +7,7 @@
 # Purpose: robot big brain based on 2021 brain
 # Date Modified: 21 May 2022
 ################################
+import math
 
 import rclpy
 from rclpy.node import Node
@@ -61,10 +62,13 @@ class MainRobot(Node):
         self.path_clear = False
         self.follow_dir = self.get_parameter('/FollowingDirection').value
         self.TURN_SPEED = 20
-        self.SLIGHT_TURN = 15
+        self.SLIGHT_TURN = 18
         self.heading = 0.0
+        self.heading_restoration = False
         self.prev_heading = 0.0
         self.exit_heading = 0.0
+        self.heading_overflow = False
+        self.exit_angle = math.pi/6
         self.look_for_line = False
         self.waypoints_done = False
 
@@ -95,11 +99,17 @@ class MainRobot(Node):
             self.state = STATE.LINE_TO_OBJECT
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
+            self.heading_restoration = True
 
             self.prev_heading = self.heading
-            # if self.follow_dir == DIRECTION.LEFT:
 
-            # else:
+            direction_var = (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT))
+
+            if abs(self.prev_heading + direction_var*self.exit_angle) > math.pi:
+                self.exit_heading = self.prev_heading + direction_var * (self.exit_angle - 2*math.pi)
+                self.heading_overflow = True
+            else:
+                self.exit_heading = self.prev_heading + direction_var * self.exit_angle
 
             self.line_to_object_state()  # enter the transition state
 
@@ -120,10 +130,12 @@ class MainRobot(Node):
             self.state = STATE.LINE_TO_OBJECT
             self.line_to_object_state()  # enter the transition state
 
-        elif self.found_line: # and self.heading_restored:  # and self.look_for_line
+        elif self.found_line and self.heading_restored:  # and self.look_for_line
             self.look_for_line = False
             self.found_line = False
             self.heading_restored = False
+            self.heading_restoration = False
+            self.heading_overflow = False
             self.state_msg.data = STATE.OBJECT_TO_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_TO_LINE
@@ -143,6 +155,7 @@ class MainRobot(Node):
 
         elif self.heading_restored:  # Otherwise see if have a clear path to the waypoint
             self.heading_restored = False
+            self.heading_restoration = False
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_NAVIGATION
@@ -206,7 +219,7 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 1/2)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 2 / 3)}"
         self.wheel_pub.publish(self.wheel_msg)
         self.get_logger().info("In object to line state publishing:")
         self.get_logger().info(self.wheel_msg.data)
@@ -232,6 +245,7 @@ class MainRobot(Node):
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
+            self.heading_restoration = True
 
             self.object_avoidance_from_gps_state()
 
@@ -297,6 +311,24 @@ class MainRobot(Node):
     # Beginning of Callback Methods
     def heading_callback(self, heading_msg):
         self.heading = heading_msg.current_heading
+        direction_var = (-1+2*int(self.follow_dir==DIRECTION.RIGHT))
+        exit = self.exit_heading*direction_var
+        curr = self.heading*direction_var
+        if not self.heading_overflow:
+            # basically, if left following we want curr to be less than exit
+            # right following curr greater than exit
+            # so we flip over the 0 point so that we want curr to be greater for both
+            if curr >= exit:
+                self.get_logger().info(f"Heading restored with heading {curr*direction_var} and goal {exit*direction_var}")
+                self.heading_restored = True
+        elif curr >= exit and curr <= -math.pi/3:
+            # in this case, we must have jumped the pi to -pi boundary
+            # a left following case has a positive exit which has been flipped to negative
+            # a right following case has a negative exit and a positive base heading
+            # we need to confirm that both values are in the exit direction from 0
+            self.get_logger().info(f"Heading restored with heading {curr*direction_var} and goal {exit*direction_var}")
+            self.heading_restored = True
+            
 
     # Callback for information coming from the line following node
     def line_callback(self, line_event):

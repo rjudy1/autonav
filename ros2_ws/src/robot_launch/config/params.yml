@@ -1,8 +1,8 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /FollowingDirection:        0   # 1  is right, 0 is left
-        /InitialHeading:            -1.937315469713706  # set before build
+        /FollowingDirection:        1   # 1  is right, 0 is left
+        /InitialHeading:            0.9250245035569946  # set before build
         /LineSpeed:                 33.0
         /ObjectSpeed:               33.0
         /GpsSpeed:                  25.0

@@ -2,11 +2,14 @@
 This repository contains the code used for the Cedarville AutoNav 2022 robot. The robot is run through ROS2 nodes and takes a behavioral approach through a state machine.
 
 ## Quick Start
-1. Navigate to `cd ros2_ws` and build with `colcon build`
-2. Source ROS2 and your build with `. /opt/ros/ros2_distro/setup.bash && . /install/setup.bash`
-3. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors when prompted.
-4. Run `ros2 launch robot_launch robot.launch.py`. If this doesn't run or throws errors, view the robot.launch.py file to modify the port parameters.
-5. (Optional) if you want to see the laser scan, run the following commands in new terminals:
+1. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors when prompted.
+2. Enter the GPS heading given by the phone compass. Change this value in the params.yaml.
+3. Source ROS2 `. /opt/ros/ros2_distro/setup.bash`
+4. Navigate to `cd ros2_ws` and build with `colcon build`
+5. Source the workspace in all relevant terminals with `. install/setup.bash`
+6. Run `ros2 launch robot_launch robot.launch.py`. If this doesn't run or throws errors, view the robot.launch.py file to modify the port parameters.
+7. Alternatively to step 8, run `ros2 launch robot_launch vision.launch.py` and `ros2 launch robot_launch control.launch.py`. Seperating these may avoid odd jumps at initialization.
+8. (Optional) if you want to see the laser scan, run the following commands in new terminals:
 - `ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 world laser_frame`
 - `rviz2 ./install/rplidar_ros/share/rplidar_ros/rviz/rplidar.rviz`
 
@@ -38,29 +41,27 @@ The GPS node `gps_publisher` belongs to the `heading` package which monitors the
 - `/Port` which is the port the GPS is on 
 
 ### Teensy/Encoders
-The encoders publish to the `encoder_data` topic. They can track the distance the wheels travel to the centimeter and report the change since last message. This node is extremely important it actually sends the motor messages to the wheels and also manages the lights. 
+The encoders publish to the `encoder_data` topic. They can track the distance the wheels travel to the centimeter and report the change since last message. This node is extremely important it actually sends the motor messages to the wheels and also manages the lights. This was merged with the motor controller to save resources and time
 - `/TeensyEncodersPort`
 - `/TeensyBaudrate`
-- `TeensyUpdateDelay`
+- `TeensyUpdateDelay` - sets the time between collection data from the encoders
 - `/Debug`
+- `FollowingDirection` - generic parameter
+- `/LineDist` - manages desired distance from line
+- `/SideObjectDist` - manages desired distance from object
+- `/DefaultSpeed` - sets to simple speed when clear path or straight. This is being modified to include varied speed for different states
+- `/BoostIncrease'`
+- `/BoostCountThreshold`
+- `/LineBoostMargin`
+- `/GPSBoostMargin`
+- `/Port`
+
 
 ### Fusion for Heading
 The fusion node publishes to the wheels and can publish its own `gps_event` messages. It basically weights the encoder and GPS provided headings to maintain on course.
 - `/InitialHeading'` sets the initial angle relative to lat/long
 - `/EncoderWeight` which weights the encoder versus the gps heading
 - `/Debug`
-
-### Wheels Controller
-The wheels controller receives the wheel_distance commands and obstacles events and then publishes a message that changes the speeds accordingly. This message is received by the teensy node in the heading package.
-- `FollowingDirection`
-- `/LineDist`
-- `/SideObjectDist`
-- `/DefaultSpeed': 25`
-- `/BoostIncrease'`
-- `/BoostCountThreshold`
-- `/LineBoostMargin`
-- `/GPSBoostMargin`
-- `/Port`
 
 ### Lines
 The lines node belongs to the path_detection package. It detects and maintains line following. The line parameters modify the camera cropping, color to follow, and following direction.
@@ -94,3 +95,4 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 ## Helpful Tools/Tips
 - If wanting to use ROS1 versions of packages or rosbags see the helpful ros1 to ros2 bridge at [https://github.com/ros2/ros1_bridge](RosBridge)
 - To change parameters while running see `ros2 param set <node> <parameter> <parameter_value>
+- Some of these parameters may have been moved into the general parameter section.
