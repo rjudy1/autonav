@@ -15,7 +15,7 @@
         /TimerRate:                 0.05  # rate at which to check and do state specified behavior
         /StartState:                0
         /TurnSpeed:                 20
-        /SlightTurn:                18
+        /SlightTurn:                20
         /ExitAngle:                 1.0
 
 /rplidar_node:
