@@ -41,7 +41,7 @@ class MainRobot(Node):
         self.line_sub = self.create_subscription(String, "line_events", self.line_callback, 10)
         self.gps_sub = self.create_subscription(String, "gps_events", self.gps_callback, 10)
         self.depth_sub = self.create_subscription(String, "/mod_lidar", self.lidar_callback, 10)
-        self.heading_sub = self.create_subscription(HeadingStatus, 'gps_heading', self.heading_callback, 10)
+        self.heading_sub = self.create_subscription(HeadingStatus, 'fused_heading', self.heading_callback, 10)
 
         # already declared messages to save a couple lines
         self.state_msg = Int32()
@@ -67,8 +67,7 @@ class MainRobot(Node):
         self.heading_restoration = False
         self.prev_heading = 0.0
         self.exit_heading = 0.0
-        self.heading_overflow = False
-        self.exit_angle = math.pi/6
+        self.exit_angle = math.pi/8
         self.look_for_line = False
         self.waypoints_done = False
 
@@ -102,14 +101,9 @@ class MainRobot(Node):
             self.heading_restoration = True
 
             self.prev_heading = self.heading
+            self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*self.exit_angle)
 
-            direction_var = (-1 + 2*int(self.follow_dir==DIRECTION.RIGHT))
-
-            if abs(self.prev_heading + direction_var*self.exit_angle) > math.pi:
-                self.exit_heading = self.prev_heading + direction_var * (self.exit_angle - 2*math.pi)
-                self.heading_overflow = True
-            else:
-                self.exit_heading = self.prev_heading + direction_var * self.exit_angle
+            self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
 
             self.line_to_object_state()  # enter the transition state
 
@@ -135,7 +129,6 @@ class MainRobot(Node):
             self.found_line = False
             self.heading_restored = False
             self.heading_restoration = False
-            self.heading_overflow = False
             self.state_msg.data = STATE.OBJECT_TO_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_TO_LINE
@@ -155,7 +148,6 @@ class MainRobot(Node):
 
         elif self.heading_restored:  # Otherwise see if have a clear path to the waypoint
             self.heading_restored = False
-            self.heading_restoration = False
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_NAVIGATION
@@ -178,6 +170,7 @@ class MainRobot(Node):
         # First look for a potential obstacle
         elif self.obj_seen:
             self.obj_seen = False
+            # self.heading_restoration = True
             self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
@@ -219,10 +212,10 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 2 / 3)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN)}"
         self.wheel_pub.publish(self.wheel_msg)
-        self.get_logger().info("In object to line state publishing:")
-        self.get_logger().info(self.wheel_msg.data)
+        # self.get_logger().info("In object to line state publishing:")
+        # self.get_logger().info(self.wheel_msg.data)
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
@@ -242,10 +235,10 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
         if self.path_clear:
             self.path_clear = False
+            self.heading_restoration = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
-            self.heading_restoration = True
 
             self.object_avoidance_from_gps_state()
 
@@ -311,23 +304,19 @@ class MainRobot(Node):
     # Beginning of Callback Methods
     def heading_callback(self, heading_msg):
         self.heading = heading_msg.current_heading
-        direction_var = (-1+2*int(self.follow_dir==DIRECTION.RIGHT))
-        exit = self.exit_heading*direction_var
-        curr = self.heading*direction_var
-        if not self.heading_overflow:
-            # basically, if left following we want curr to be less than exit
-            # right following curr greater than exit
-            # so we flip over the 0 point so that we want curr to be greater for both
-            if curr >= exit:
+        # self.get_logger().info(f"Current heading in FSM: {self.heading}")
+        if self.heading_restoration:
+            direction_var = (-1+2*int(self.follow_dir==DIRECTION.RIGHT))
+            exit = self.exit_heading*direction_var
+            curr = self.heading*direction_var
+            diff_angle = sub_angles(curr, exit)
+            if diff_angle >= 0:
+                # in this case, we must have jumped the pi to -pi boundary
+                # a left following case has a positive exit which has been flipped to negative
+                # a right following case has a negative exit and a positive base heading
+                # we need to confirm that both values are in the exit direction from 0
                 self.get_logger().info(f"Heading restored with heading {curr*direction_var} and goal {exit*direction_var}")
                 self.heading_restored = True
-        elif curr >= exit and curr <= -math.pi/3:
-            # in this case, we must have jumped the pi to -pi boundary
-            # a left following case has a positive exit which has been flipped to negative
-            # a right following case has a negative exit and a positive base heading
-            # we need to confirm that both values are in the exit direction from 0
-            self.get_logger().info(f"Heading restored with heading {curr*direction_var} and goal {exit*direction_var}")
-            self.heading_restored = True
             
 
     # Callback for information coming from the line following node

@@ -73,6 +73,7 @@ class TransformPublisher(Node):
 
         self.BUFF_SIZE = self.get_parameter('/PotholeBufferSize').value
 
+
         # camera/obstacle detection
         self.circles = []  # recent circle history
         self.window_handle = []

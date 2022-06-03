@@ -29,7 +29,7 @@ class Lines(Node):
 
         self.count = 0
 
-        self.state = STATE.OBJECT_TO_LINE
+        self.state = STATE.LINE_FOLLOWING
         self.LINE_CODE = "LIN,"
 
         # Subscribe to the camera color image

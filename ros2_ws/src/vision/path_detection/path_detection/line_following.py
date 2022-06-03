@@ -65,7 +65,7 @@ class LineFollowing():
                                             (int((7.0 / 1280.0) * grey.shape[0]), int((20.0 / 720.0) * grey.shape[1])))
         mask = cv2.morphologyEx(grey, cv2.MORPH_OPEN, element)
 
-        # cv_display(mask, 'filter result', self.window_handle)
+        cv_display(mask, 'filter result', self.window_handle)
         return mask
 
     # returns the value in pixels that an assumed line is from the center of the image

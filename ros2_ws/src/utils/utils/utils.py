@@ -4,6 +4,7 @@
 # Purpose: store the different states used in the state machine
 # Date Modified: 24 May 2022
 ################################
+import cmath
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -65,8 +66,8 @@ def hsv_filter(image, use_white=True):
         lower = np.array([18, 150, 100])
         upper = np.array([60, 255, 255])
     else:  # for white line following
-        lower = np.array([0, 0, 210])
-        upper = np.array([179, 50, 255])
+        lower = np.array([0, 0, 200])
+        upper = np.array([179, 55, 255])
     return cv2.inRange(hsv, lower, upper)
 
 
@@ -107,3 +108,9 @@ def cv_display(image, handle, handleArr):
     cv2.waitKey(2)
     if handle not in handleArr:
         handleArr.append(handle)
+
+def sub_angles(x, y):
+    a = (x - y + 2 * cmath.pi) % (2 * cmath.pi)
+    if a > cmath.pi:
+        a -= 2 * cmath.pi
+    return a

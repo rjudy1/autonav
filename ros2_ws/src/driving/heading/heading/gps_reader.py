@@ -64,7 +64,7 @@ class GPS(Node):
         self.target_loc = []
         self.target_loc.append(complex(self.WP_LAT1, self.WP_LON1))
         # self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
-        # self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
+        self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
         # self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
 
         # Publish new events that may change the overall state of the robot
@@ -88,7 +88,7 @@ class GPS(Node):
         # position in gps rounds
         self.waypoint_itr = 0
         self.past_loc = self.take_reading()
-        self.target_loc.append(self.past_loc)  # set initial position as end goal
+        # self.target_loc.append(self.past_loc)  # set initial position as end goal
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
@@ -100,13 +100,6 @@ class GPS(Node):
         self.moving_avg = np.roll(self.moving_avg, 1)
         self.moving_avg[0] = new_val
         return sum(self.moving_avg) / self.moving_avg.size
-
-    # subtracts the angles (x - y) and gives the answer between (-pi, pi]
-    def sub_angles(self, x, y):
-        a = (x - y + 2 * cmath.pi) % (2 * cmath.pi)
-        if a > cmath.pi:
-            a -= 2 * cmath.pi
-        return a
 
     # this function calculates the heading in radians from 2 points
     def calc_heading(self, past, curr):
@@ -121,7 +114,6 @@ class GPS(Node):
         dist_meters = distance.distance(current_point, target_point).m
         self.get_logger().info(f"distance from waypoint: {dist_meters}")
 
-        # if we are not currently navigating with GPS data
         if dist_meters <= self.DISTANCE_GOAL:
             msg = String()
             msg.data = STATUS.WAYPOINT_FOUND
@@ -145,6 +137,7 @@ class GPS(Node):
         # Check if we are at the waypoint
         self.check_waypoint(loc)
         if self.get_parameter('/Debug').value:
+            # pass
             self.get_logger().info(f"loc {loc}")
 
         # calculate our current heading and the heading we need to have and publish these
