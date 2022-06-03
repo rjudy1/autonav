@@ -28,6 +28,9 @@ class MainRobot(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/TimerRate', .05)
         self.declare_parameter('/StartState', STATE.LINE_FOLLOWING)
+        self.declare_parameter('/TurnSpeed', 20)
+        self.declare_parameter('/SlightTurn', 18)
+        self.declare_parameter('/ExitAngle', math.pi/8)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -61,13 +64,13 @@ class MainRobot(Node):
         self.heading_restored = False
         self.path_clear = False
         self.follow_dir = self.get_parameter('/FollowingDirection').value
-        self.TURN_SPEED = 20
-        self.SLIGHT_TURN = 18
+        self.TURN_SPEED = self.get_parameter('/TurnSpeed').value
+        self.SLIGHT_TURN = self.get_parameter('/SlightTurn').value
+        self.exit_angle = self.get_parameter('/ExitAngle').value
         self.heading = 0.0
         self.heading_restoration = False
         self.prev_heading = 0.0
         self.exit_heading = 0.0
-        self.exit_angle = math.pi/8
         self.look_for_line = False
         self.waypoints_done = False
 
