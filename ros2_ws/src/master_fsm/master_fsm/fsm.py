@@ -28,6 +28,9 @@ class MainRobot(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/TimerRate', .05)
         self.declare_parameter('/StartState', STATE.LINE_FOLLOWING)
+        self.declare_parameter('/TurnSpeed', 20)
+        self.declare_parameter('/SlightTurn', 18)
+        self.declare_parameter('/ExitAngle', math.pi/8)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -61,13 +64,13 @@ class MainRobot(Node):
         self.heading_restored = False
         self.path_clear = False
         self.follow_dir = self.get_parameter('/FollowingDirection').value
-        self.TURN_SPEED = 20
-        self.SLIGHT_TURN = 20
+        self.TURN_SPEED = self.get_parameter('/TurnSpeed').value
+        self.SLIGHT_TURN = self.get_parameter('/SlightTurn').value
+        self.exit_angle = self.get_parameter('/ExitAngle').value
         self.heading = 0.0
         self.heading_restoration = False
         self.prev_heading = 0.0
         self.exit_heading = 0.0
-        self.exit_angle = 5*math.pi/6
         self.look_for_line = False
         self.waypoints_done = False
 
@@ -218,7 +221,7 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 2/5)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 1/4)}"
         self.wheel_pub.publish(self.wheel_msg)
         # self.get_logger().info("In object to line state publishing:")
         # self.get_logger().info(self.wheel_msg.data)
