@@ -43,12 +43,12 @@
 
 /gps:
     ros__parameters:
-        /WaypointLat1:              42.400921667 # right
-        /WaypointLon1:              -83.131084197
-        /WaypointLat2:              42.4008554667 # center
-        /WaypointLon2:              -83.13106783
-        /WaypointLat3:              42.4007779
-        /WaypointLon3:              -83.1310773
+        /WaypointLat1:              42.400978 # right
+        /WaypointLon1:              -83.131089
+        /WaypointLat2:              42.400852 # center
+        /WaypointLon2:              -83.131076
+        /WaypointLat3:              42.400726
+        /WaypointLon3:              -83.131063
         /WaypointLat4:              0.0
         /WaypointLon4:              0.0
         /GPSFollowGoal:             1.5
