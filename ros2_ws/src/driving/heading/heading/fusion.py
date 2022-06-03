@@ -49,7 +49,7 @@ class Fusion(Node):
     # encoder must be sufficiently faster than GPS to be considered updated
     def enc_callback(self, enc_msg):
         # 64 cm gap between wheel centers
-        self.encoder_curr_heading = ((enc_msg.right - enc_msg.left) / .32) % (math.pi * 2)
+        self.encoder_curr_heading += (((enc_msg.left - enc_msg.right) / .64) % (math.pi * 2))
         if self.encoder_curr_heading > math.pi:
             self.encoder_curr_heading += -2*math.pi
         if self.get_parameter('/Debug').value:
@@ -81,7 +81,7 @@ class Fusion(Node):
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
         self.curr_heading = (1-encoder_weight) * gps_msg.current_heading + encoder_weight * self.encoder_curr_heading
-
+        self.encoder_curr_heading = self.curr_heading
         # calculate and filter the error in the angle of the two headings
         error_angle = self.sub_angles(self.target_heading, self.curr_heading)
         # filtered_error_angle = self.filter_angle(error_angle)

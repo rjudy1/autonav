@@ -42,7 +42,7 @@ class Teensy(Node):
         self.declare_parameter('/Port', '/dev/ttyUSB0')
 
         self.serialPort = serial.Serial(self.get_parameter('/TeensyEncodersPort').value,
-                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.005)
+                                        self.get_parameter('/TeensyBaudrate').value, timeout=0.01)
         self.serialPort.flushInput()
         self.serialPort.flushOutput()
 
@@ -68,7 +68,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.1, 0.0, -0.14, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.0, 15, -15)   # for object avoidance
-        self.pid_gps = PIDController(7.0, 0.0, 3.5, 30, -30)   # for during gps navigation
+        self.pid_gps = PIDController(10.0, 0.0, 3.5, 25, -25)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -179,6 +179,8 @@ class Teensy(Node):
             # GPS sends the error as - for left turns and + for right turns
             linear = round(self.gps_speed)
             angular = round(delta)
+            if abs(angular) < 6:
+                linear += 5
             self.get_logger().info(f"GPS directed speed/angle: {linear} {angular}")
             if abs(position) <= self.gps_boost_margin:
                 self.boost_count += 1

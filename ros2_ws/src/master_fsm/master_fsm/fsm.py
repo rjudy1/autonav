@@ -80,6 +80,8 @@ class MainRobot(Node):
         light_msg = LightCmd()
         light_msg.type = 'G'
         light_msg.on = False
+        self.lights_pub.publish(light_msg)
+
         if self.waypoint_found and not self.waypoints_done:  # reached gps waypoint - switch to gps navigation
             self.waypoint_found = False
             self.state = STATE.GPS_NAVIGATION
@@ -151,10 +153,7 @@ class MainRobot(Node):
         # self.get_logger().info("GPS Navigation State")
         # After looking for an obstacle, see if we have arrived
         # buzz if object seen
-        light_msg = LightCmd()
-        light_msg.type = 'G'
-        light_msg.on = False
-        self.lights_pub.publish(light_msg)
+
 
         if self.waypoint_found:
             self.waypoint_found = False
@@ -207,7 +206,7 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 2 / 3)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 1/2)}"
         self.wheel_pub.publish(self.wheel_msg)
         self.get_logger().info("In object to line state publishing:")
         self.get_logger().info(self.wheel_msg.data)
