@@ -221,7 +221,7 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 2/5)}"
         self.wheel_pub.publish(self.wheel_msg)
         # self.get_logger().info("In object to line state publishing:")
         # self.get_logger().info(self.wheel_msg.data)
@@ -255,7 +255,9 @@ class MainRobot(Node):
     def find_line_state(self):
         # self.get_logger().info("Find Line Transition State")
         # Just keep going until we find the line
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(20) + "," + str(8)
+
+        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(25) + "," \
+                              + str((1-2*int(self.follow_dir))*self.SLIGHT_TURN)
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.found_line:
@@ -271,7 +273,7 @@ class MainRobot(Node):
         # directly controls the motors
         # Just keep turning until we are parallel with the line
         self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(20) \
-                              + "," + str(20*(1-2*int(self.follow_dir)))
+                              + "," + str(20*(1-2*int(self.follow_dir))*3/4)
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.aligned:
