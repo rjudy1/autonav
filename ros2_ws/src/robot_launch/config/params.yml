@@ -3,12 +3,12 @@
     ros__parameters:
         /FollowingDirection:        0   # 1  is right, 0 is left
         /UseYellow: False
-        /InitialHeading:            -2.8623399732707004  # set before build
+        /InitialHeading:            -2.5132741228718345  # set before build
         /LineSpeed:                 33.0
         /ObjectSpeed:               33.0
         /GpsSpeed:                  25.0
         /LineDist:                  0.22
-        /EncoderWeight:             .8
+        /EncoderWeight:             .6
 
 /fsm:
     ros__parameters:
@@ -43,12 +43,12 @@
 
 /gps:
     ros__parameters:
-        /WaypointLat1:              42.668212 # right
-        /WaypointLon1:              -83.131084197
-        /WaypointLat2:              42.4008554667 # center
-        /WaypointLon2:              -83.13106783
-        /WaypointLat3:              42.4007779
-        /WaypointLon3:              -83.1310773
+        /WaypointLat1:              42.400927 # right
+        /WaypointLon1:              -83.131075
+        /WaypointLat2:              42.4008601 # center
+        /WaypointLon2:              -83.1310840
+        /WaypointLat3:              42.400726
+        /WaypointLon3:              -83.131063
         /WaypointLat4:              0.0
         /WaypointLon4:              0.0
         /GPSFollowGoal:             1.5

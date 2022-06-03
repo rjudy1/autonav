@@ -355,11 +355,12 @@ class MainRobot(Node):
                 self.waypoint_found = True
                 # flash green light if waypoint found
                 light_msg = LightCmd()
-                light_msg.type = 'G'
+                light_msg.type = 'B'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
-                # light_msg.on = False
-                # self.lights_pub.publish(light_msg)
+                time.sleep(.25)
+                light_msg.on = False
+                self.lights_pub.publish(light_msg)
 
             elif gps_event.data == STATUS.WAYPOINTS_DONE:
                 self.waypoints_done = True

@@ -64,7 +64,8 @@ class GPS(Node):
         self.target_loc = []
         self.target_loc.append(complex(self.WP_LAT1, self.WP_LON1))
         self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
-        self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
+
+        # self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
         # self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
 
         # Publish new events that may change the overall state of the robot
@@ -127,7 +128,7 @@ class GPS(Node):
                 self.gps_event_pub.publish(msg)
                 msg.data = STATUS.WAYPOINTS_DONE
                 self.gps_event_pub.publish(msg)
-                self.waypoint_itr = 0
+                self.waypoint_itr = 1
                 self.get_logger().warning("FINISHED GPS")
 
     # this function takes a measurement and calculates all of the necessary
@@ -168,11 +169,11 @@ class GPS(Node):
                     lon = float(message[5]) / 100 * (-1 + 2 * int(message[6] == 'E'))
                     # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
                     return complex(lat, lon)
-                elif message[0] == "$GNGLL":
-                    lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
-                    lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
-                    # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
-                    return complex(lat, lon)
+                # elif message[0] == "$GNGLL":
+                #     lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
+                #     lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
+                #     # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
+                #     return complex(lat, lon)
             except Exception as e:
                 # self.get_logger().warning(f"ERROR IN READING: {e}. Take robot outside")
                 pass
