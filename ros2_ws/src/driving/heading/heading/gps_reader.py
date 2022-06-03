@@ -63,10 +63,10 @@ class GPS(Node):
 
         self.target_loc = []
         self.target_loc.append(complex(self.WP_LAT1, self.WP_LON1))
-        self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
+        # self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
 
         # self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
-        # self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
+        self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
 
         # Publish new events that may change the overall state of the robot
         self.gps_event_pub = self.create_publisher(String, "gps_events", 10)
@@ -128,7 +128,7 @@ class GPS(Node):
                 self.gps_event_pub.publish(msg)
                 msg.data = STATUS.WAYPOINTS_DONE
                 self.gps_event_pub.publish(msg)
-                self.waypoint_itr = 1
+                self.waypoint_itr = 0
                 self.get_logger().warning("FINISHED GPS")
 
     # this function takes a measurement and calculates all of the necessary

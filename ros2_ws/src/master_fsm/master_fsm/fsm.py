@@ -169,9 +169,9 @@ class MainRobot(Node):
             self.get_logger().info("WAYPOINT FOUND IN FSM!!")
 
             # RESTORE THIS
-            # self.state_pub.publish(self.state_msg)
-            # self.state = STATE.FIND_LINE
-            # self.find_line_state()
+            self.state_pub.publish(self.state_msg)
+            self.state = STATE.FIND_LINE
+            self.find_line_state()
 
         # First look for a potential obstacle
         elif self.obj_seen:
