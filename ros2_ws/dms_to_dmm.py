@@ -13,4 +13,3 @@ def dms_to_dmm(dms):
 
 lat, lon = (input("Enter provided coordinates, comma separated: ")).split(',')
 print(dms_to_dmm(lat), dms_to_dmm(lon))
-

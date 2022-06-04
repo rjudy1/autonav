@@ -128,10 +128,10 @@ class MainRobot(Node):
             self.line_to_object_state()  # enter the transition state
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
-            light_msg = LightCmd()
-            light_msg.type = 'B'
-            light_msg.on = True
-            self.lights_pub.publish(light_msg)
+            # light_msg = LightCmd()
+            # light_msg.type = 'B'
+            # light_msg.on = True
+            # self.lights_pub.publish(light_msg)
             # time.sleep(.15)
             # light_msg.on = False
             # self.lights_pub.publish(light_msg)
@@ -159,6 +159,7 @@ class MainRobot(Node):
 
         elif self.heading_restored:  # Otherwise see if have a clear path to the waypoint
             self.heading_restored = False
+            self.heading_restoration = False
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_NAVIGATION
@@ -173,6 +174,10 @@ class MainRobot(Node):
         # light_msg.type = 'G'
         # light_msg.on = False
         # self.lights_pub.publish(light_msg)
+        light_msg = LightCmd()
+        light_msg.type = 'B'
+        light_msg.on = False
+        self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
             self.waypoint_found = False
@@ -191,6 +196,12 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
+            self.heading_restoration = True
+
+            self.prev_heading = self.heading
+            self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*pi/12)
+
+            self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
     # End of Major States
@@ -237,10 +248,6 @@ class MainRobot(Node):
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
-            light_msg = LightCmd()
-            light_msg.type = 'B'
-            light_msg.on = False
-            self.lights_pub.publish(light_msg)
 
             self.aligned = False
             self.state_msg.data = STATE.LINE_FOLLOWING
@@ -253,12 +260,11 @@ class MainRobot(Node):
         # self.get_logger().info("GPS to Object Transition State")
 
         # Just keep turning until the object is not in front of us
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(20) + "," \
-                              + str((1 - int(self.follow_dir) * 2) * self.TURN_SPEED)
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.TURN_SPEED}," \
+                              f"{(-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.TURN_SPEED}"
         self.wheel_pub.publish(self.wheel_msg)
         if self.path_clear:
             self.path_clear = False
-            self.heading_restoration = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
@@ -374,6 +380,12 @@ class MainRobot(Node):
         try:
             if gps_event.data == STATUS.WAYPOINT_FOUND:
                 self.waypoint_found = True
+
+                light_msg = LightCmd()
+                light_msg.type = 'B'
+                light_msg.on = True
+                self.lights_pub.publish(light_msg)
+                time.sleep(.10)
             elif gps_event.data == STATUS.WAYPOINTS_DONE:
                 self.waypoints_done = True
             else:

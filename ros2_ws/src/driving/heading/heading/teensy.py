@@ -48,7 +48,6 @@ class Teensy(Node):
 
         #  publish for right and left encoder distances
         self.rate = self.get_parameter('/TeensyUpdateDelay').value
-        self.get_logger().info(f"self.rate {self.rate}")
         self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
         self.timer = self.create_timer(self.rate, self.timer_callback)
         self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 5)
@@ -170,7 +169,7 @@ class Teensy(Node):
             delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
             linear = round(self.object_speed)
             angular = round(delta * 3 / 4)
-            self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
+            # self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
