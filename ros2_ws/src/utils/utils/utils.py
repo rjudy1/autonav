@@ -5,6 +5,7 @@
 # Date Modified: 24 May 2022
 ################################
 import cmath
+import math
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -114,3 +115,10 @@ def sub_angles(x, y):
     if a > cmath.pi:
         a -= 2 * cmath.pi
     return a
+
+def dms_to_dmm(dms):
+    minp = dms.split('.')
+    degrees = math.trunc(float(dms))
+    minutes = int(minp[1][:2])
+    seconds = str(float(f'{minp[1][2:4]}.{minp[1][4:]}')/60)[2:]
+    return float(f'{degrees}.{minutes}{seconds}')

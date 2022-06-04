@@ -317,7 +317,6 @@ class MainRobot(Node):
                 # we need to confirm that both values are in the exit direction from 0
                 self.get_logger().info(f"Heading restored with heading {curr*direction_var} and goal {exit*direction_var}")
                 self.heading_restored = True
-            
 
     # Callback for information coming from the line following node
     def line_callback(self, line_event):

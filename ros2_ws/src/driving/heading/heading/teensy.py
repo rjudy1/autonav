@@ -85,8 +85,13 @@ class Teensy(Node):
         self.state = STATE.LINE_FOLLOWING
         self.MAX_CHANGE = 5
         self.MAX_ANGULAR_CHANGE = 5
-        # self.get_logger().info("Enable power to motors")
-        sleep(3)
+
+
+        # CHECK THIS CODE
+        self.serialPort.write("M,89,89,**".encode())
+        self.get_logger().info("WAIT: Enable power to motors")
+        x = input("Hit enter when ready to proceed")
+        sleep(2)
         self.get_logger().info("Launching motors")
 
     def __del__(self):

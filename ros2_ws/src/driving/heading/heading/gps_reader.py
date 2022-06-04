@@ -10,6 +10,7 @@
 ################################
 
 import cmath
+import csv
 from dataclasses import dataclass
 from geopy import distance
 import numpy as np
@@ -92,6 +93,12 @@ class GPS(Node):
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
+        # needs to run once at beginning of script
+        name = 'gps-log-' + str(round(time.time())) + '.csv'
+        self.logfile = open(name, 'w')
+        self.writer = csv.writer(logfile)
+
+
         self.done = False
         self.get_logger().info("GPS Node configured")
 
@@ -162,6 +169,7 @@ class GPS(Node):
                     lat = float(message[2]) / 100 * (-1 + 2 * int(message[3] == 'N'))
                     lon = float(message[4]) / 100 * (-1 + 2 * int(message[5] == 'E'))
                     # self.get_logger().warning(f"FOUND GNGGA FIX {lat}, {lon}")
+                    self.log_gps(message)
                     return complex(lat, lon)
                 elif message[0] == "$GNRMC":
                     lat = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'N'))
@@ -178,13 +186,21 @@ class GPS(Node):
                 pass
                 # time.sleep(1)
 
+
     def state_callback(self, new_state):
         # self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = new_state.data
 
+    def log_gps(self, nmeastring):
+        # call "log_gps(GNGGA_string)" each time new GPS data is received
+        nmealist = nmeastring.split(',')
+        self.writer.writerow(nmealist)
+
     def __del__(self):
         # self.get_logger().info("Deleting GPS Node")
         # self.get_logger().info("Closing GPS Connection")
+        # needs to run once at end of script
+        self.logfile.close()
 
         # close serial port
         self.ser.close()

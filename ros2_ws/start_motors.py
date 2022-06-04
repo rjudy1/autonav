@@ -16,14 +16,3 @@ SP.write("B,0,**".encode())
 time.sleep(.25)
 input('press enter when done')
 time.sleep(1)
-
-if len(sys.argv) > 1:
-  angle = float(sys.argv[1])
-else:
-  angle = int(input("compass reported heading: "))
-
-heading = angle * math.pi / 180
-if angle > 180:
-  heading -= math.pi * 2
-
-print(f"initial_heading: {heading}")
