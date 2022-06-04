@@ -66,8 +66,8 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.13, 0.0, -0.14, 25, -25)  # for line following
-        self.pid_obj = PIDController(12.0, 0.0, 2.0, 25, -25)   # for object avoidance
+        self.pid_line = PIDController(-0.13, 0.0, -0.14, 15, -15)  # for line following
+        self.pid_obj = PIDController(12.0, 0.0, 2.5, 25, -25)   # for object avoidance
         self.pid_gps = PIDController(14.0, 0.0, 2.0, 25, -25)   # for during gps navigation
 
         # encoder parameters
@@ -89,9 +89,9 @@ class Teensy(Node):
 
         # CHECK THIS CODE
         self.serialPort.write("M,89,89,**".encode())
-        self.get_logger().info("WAIT: Enable power to motors")
-        x = input("Hit enter when ready to proceed")
-        sleep(2)
+        # self.get_logger().info("WAIT: Enable power to motors")
+        # x = input("Hit enter when ready to proceed")
+        # sleep(5)
         self.get_logger().info("Launching motors")
 
     def __del__(self):

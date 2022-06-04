@@ -189,10 +189,14 @@ class TransformPublisher(Node):
         msg = String()
         msg.data = STATUS.PATH_CLEAR
         count1 = 0
+        if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
+            follow_dist = self.get_parameter("/ObstacleDetectDistance").value *3/4
+        else:
+            follow_dist = self.get_parameter("/ObstacleDetectDistance").value
         for i in range(len(scan.ranges)):
             if i * scan.angle_increment < self.get_parameter('/ObstacleFOV').value/2 \
                     or i * scan.angle_increment > 2 * math.pi - self.get_parameter('/ObstacleFOV').value / 2:
-                if scan.ranges[i] < self.get_parameter("/ObstacleDetectDistance").value:
+                if scan.ranges[i] < follow_dist: #self.get_parameter("/ObstacleDetectDistance").value:
                     if count1 > 1: # get at least two points of obstacle in front to trigger found
                         msg.data = STATUS.OBJECT_SEEN
                     count1+=1

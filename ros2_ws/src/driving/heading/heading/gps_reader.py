@@ -97,7 +97,7 @@ class GPS(Node):
         # needs to run once at beginning of script
         name = 'gps-log-' + str(round(time.time())) + '.csv'
         self.logfile = open(name, 'w')
-        self.writer = csv.writer(logfile)
+        self.writer = csv.writer(self.logfile)
 
 
         self.done = False

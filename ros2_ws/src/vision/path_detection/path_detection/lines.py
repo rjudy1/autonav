@@ -51,7 +51,7 @@ class Lines(Node):
         self.declare_parameter('/LineDetectCropBottom', 0.2)
         self.declare_parameter('/LineDetectCropSide', 0.2)
         self.declare_parameter('/LineDetectMaxWhite', 0.5)
-        self.declare_parameter('/LineDetectMinSlope', 1.5)
+        self.declare_parameter('/LineDetectMinSlope', .98)
         self.declare_parameter('/LineDetectMinLineLength', 0.35)
         self.declare_parameter('/LineDetectLineDistance', 1.75)
         self.declare_parameter('/Debug', True)

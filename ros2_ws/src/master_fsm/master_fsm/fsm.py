@@ -128,6 +128,14 @@ class MainRobot(Node):
             self.line_to_object_state()  # enter the transition state
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
+            light_msg = LightCmd()
+            light_msg.type = 'Y'
+            light_msg.on = True
+            self.lights_pub.publish(light_msg)
+            # time.sleep(.15)
+            # light_msg.on = False
+            # self.lights_pub.publish(light_msg)
+
             self.look_for_line = False
             self.found_line = False
             self.heading_restored = False
@@ -212,6 +220,8 @@ class MainRobot(Node):
             self.obj_seen = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},0,0"
+            self.wheel_pub.publish(self.wheel_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.object_avoidance_from_line_state()
 
@@ -219,15 +229,21 @@ class MainRobot(Node):
     def object_to_line_state(self):
         # self.get_logger().info("Object to Line Transition State")
 
+
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 5/12)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN)}"
         self.wheel_pub.publish(self.wheel_msg)
         # self.get_logger().info("In object to line state publishing:")
         # self.get_logger().info(self.wheel_msg.data)
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
+            light_msg = LightCmd()
+            light_msg.type = 'Y'
+            light_msg.on = False
+            self.lights_pub.publish(light_msg)
+
             self.aligned = False
             self.state_msg.data = STATE.LINE_FOLLOWING
             self.state_pub.publish(self.state_msg)
@@ -261,6 +277,7 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.found_line:
+            self.found_line = False
             self.state_msg.data = STATE.LINE_ORIENT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_ORIENT
@@ -336,10 +353,11 @@ class MainRobot(Node):
         # Get the lock before proceeding
         self.lock.acquire()
         try:
-            if line_event.data == STATUS.FOUND_LINE:
-                # self.get_logger().warning("FOUND LINE!!")
+            if line_event.data == STATUS.FOUND_LINE and (self.state == STATE.FIND_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE):
+                self.get_logger().warning("FOUND LINE!!")
                 self.found_line = True
-            elif line_event.data == STATUS.ALIGNED:
+            elif line_event.data == STATUS.ALIGNED \
+                    and (self.state == STATE.OBJECT_TO_LINE or self.state==STATE.LINE_ORIENT):
                 self.aligned = True
             else:
                 self.get_logger().info("UNKNOWN MESSAGE on line_events")
@@ -357,15 +375,6 @@ class MainRobot(Node):
         try:
             if gps_event.data == STATUS.WAYPOINT_FOUND:
                 self.waypoint_found = True
-                # flash green light if waypoint found
-                light_msg = LightCmd()
-                light_msg.type = 'B'
-                light_msg.on = True
-                self.lights_pub.publish(light_msg)
-                time.sleep(.25)
-                light_msg.on = False
-                self.lights_pub.publish(light_msg)
-
             elif gps_event.data == STATUS.WAYPOINTS_DONE:
                 self.waypoints_done = True
             else:
@@ -384,7 +393,7 @@ class MainRobot(Node):
             if lidar_event.data == STATUS.OBJECT_SEEN:
                 self.obj_seen = True
 
-                # buzz if object seen
+                # # buzz if object seen
                 light_msg = LightCmd()
                 light_msg.type = 'B'
                 light_msg.on = True
