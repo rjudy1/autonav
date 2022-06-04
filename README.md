@@ -2,8 +2,10 @@
 This repository contains the code used for the Cedarville AutoNav 2022 robot. The robot is run through ROS2 nodes and takes a behavioral approach through a state machine.
 
 ## Quick Start
-1. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors when prompted.
-2. Enter the GPS heading given by the phone compass. Change this value in the params.yaml.
+1. Set the GPS waypoint locations in the yaml. These will assume to be first an exit point from lines, then an entrance, and repeat.
+   Set these by running the dms_to_dmm.py script to convert the judge provided values to our Degrees Minutes Minutes Decimal format.
+2. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors when prompted.
+2. Enter the GPS heading given by the phone compass. Change this value in the params.yaml in degrees.
 3. Source ROS2 `. /opt/ros/ros2_distro/setup.bash`
 4. Navigate to `cd ros2_ws` and build with `colcon build`
 5. Source the workspace in all relevant terminals with `. install/setup.bash`
