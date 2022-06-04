@@ -108,7 +108,7 @@ class Fusion(Node):
                                       "Error: " + str(error_angle))
         # publish
         msg = String()
-        msg.data = CODE.GPS_SENDER + ',' + str(error_angle)
+        msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint)
         # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
         self.wheel_pub.publish(msg)
 

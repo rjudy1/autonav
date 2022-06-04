@@ -12,3 +12,4 @@ ros1_ws/*/
 !ros1_ws/src/
 ros1_ws/src/.catkin_workspace
 !ros1_ws/params/
+ros2_ws/*.csv

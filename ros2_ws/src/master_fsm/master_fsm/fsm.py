@@ -199,7 +199,7 @@ class MainRobot(Node):
             self.heading_restoration = True
 
             self.prev_heading = self.heading
-            self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*pi/12)
+            self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*math.pi/12)
 
             self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()

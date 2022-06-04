@@ -163,18 +163,22 @@ class Teensy(Node):
         elif self.following_mode == FollowMode.eeObject and msg[:3] == CODE.OBJECT_SENDER:
             # self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
-
             # delta is negative if we need to go toward object
             delta = self.pid_obj.control(self.target_obj_dist - position)
             delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
             linear = round(self.object_speed)
-            angular = round(delta * 3 / 4)
+            angular = round(delta * 3/4)
             # self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
-            position = float(msg[4:])
-            # delta is still negative if we need to go toward whatever
-            delta = self.pid_gps.control(position)
+            parts = msg.split(',')
+            position = float(parts[1])
+            gps_distance = float(parts[2])
+            # delta is still negative if we need to go toward
+            #             parts = msg.split(',')
+            #             position = float(parts[1])
+            #             gps_distance = float(parts[2]) whatever
+            delta = self.pid_gps.control(position * gps_distance**(1./4))
             # GPS sends the error as - for left turns and + for right turns
             linear = round(self.gps_speed)
             angular = round(delta)

@@ -1,11 +1,11 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /RealCourse:                True
+        /RealCourse:                False
         /FollowingDirection:        0   # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            55.0  # set before build to degrees!!
-        /NorthPointFirst:           True
+        /InitialHeading:            189.0  # set before build to degrees!!
+        /NorthPointFirst:           False
         /LineSpeed:                 33.0
         /ObjectSpeed:               32.0
         /GpsSpeed:                  25.0
@@ -29,7 +29,7 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /LineDetectDistance:        1.1
+        /LineDetectDistance:        0.9
         /Debug:                     True
 
 
@@ -42,14 +42,16 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.1  # meters
+        /ObstacleDetectDistance:    1.2  # meters
         /Debug:                     False
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
     ros__parameters:
-        /PracticeWaypointLat1:      42.40092709166667   # north practice
-        /PracticeWaypointLon1:      -83.13107524
+        /PracticeWaypointLat1: 42.40094919999999   # north practice
+        /PracticeWaypointLon1: -83.1307195
+#        /PracticeWaypointLat1:      42.40092709166667   # north practice
+#        /PracticeWaypointLon1:      -83.13107524
         /PracticeWaypointLat2:      42.400776035        # south practice
         /PracticeWaypointLon2:      -83.13108550000001
         # their provided north point = 42.400961833333334 + -83.13160418166666j
@@ -61,7 +63,7 @@
         /WaypointLat3:              42.40084598           # center south
         /WaypointLon3:              -83.131615495
         # their provided south point = 42.400756623333336 + -83.131596585j
-        /WaypointLat4:              42.40075600   # south real -- adjusted about 73 cm south
+        /WaypointLat4:              42.400756623333336   # south real -- adjusted about 73 cm south
         /WaypointLon4:              -83.131596585
         /GPSFollowGoal:             1.5
         /LineToGPSTrans:            5.0
