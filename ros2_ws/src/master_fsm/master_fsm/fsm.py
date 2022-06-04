@@ -128,6 +128,14 @@ class MainRobot(Node):
             self.line_to_object_state()  # enter the transition state
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
+            # light_msg = LightCmd()
+            # light_msg.type = 'B'
+            # light_msg.on = True
+            # self.lights_pub.publish(light_msg)
+            # time.sleep(.15)
+            # light_msg.on = False
+            # self.lights_pub.publish(light_msg)
+
             self.look_for_line = False
             self.found_line = False
             self.heading_restored = False
@@ -151,6 +159,7 @@ class MainRobot(Node):
 
         elif self.heading_restored:  # Otherwise see if have a clear path to the waypoint
             self.heading_restored = False
+            self.heading_restoration = False
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_NAVIGATION
@@ -165,6 +174,10 @@ class MainRobot(Node):
         # light_msg.type = 'G'
         # light_msg.on = False
         # self.lights_pub.publish(light_msg)
+        light_msg = LightCmd()
+        light_msg.type = 'B'
+        light_msg.on = False
+        self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
             self.waypoint_found = False
@@ -183,6 +196,12 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
+            self.heading_restoration = True
+
+            self.prev_heading = self.heading
+            self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*math.pi/12)
+
+            self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
     # End of Major States
@@ -219,15 +238,17 @@ class MainRobot(Node):
     def object_to_line_state(self):
         # self.get_logger().info("Object to Line Transition State")
 
+
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 5/12)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN)}"
         self.wheel_pub.publish(self.wheel_msg)
         # self.get_logger().info("In object to line state publishing:")
         # self.get_logger().info(self.wheel_msg.data)
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
+
             self.aligned = False
             self.state_msg.data = STATE.LINE_FOLLOWING
             self.state_pub.publish(self.state_msg)
@@ -239,12 +260,11 @@ class MainRobot(Node):
         # self.get_logger().info("GPS to Object Transition State")
 
         # Just keep turning until the object is not in front of us
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(20) + "," \
-                              + str((1 - int(self.follow_dir) * 2) * self.TURN_SPEED)
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.TURN_SPEED}," \
+                              f"{(-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.TURN_SPEED}"
         self.wheel_pub.publish(self.wheel_msg)
         if self.path_clear:
             self.path_clear = False
-            self.heading_restoration = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
@@ -261,6 +281,7 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.found_line:
+            self.found_line = False
             self.state_msg.data = STATE.LINE_ORIENT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_ORIENT
@@ -336,13 +357,15 @@ class MainRobot(Node):
         # Get the lock before proceeding
         self.lock.acquire()
         try:
-            if line_event.data == STATUS.FOUND_LINE:
-                # self.get_logger().warning("FOUND LINE!!")
+            if self.heading_restored and line_event.data == STATUS.FOUND_LINE and (self.state == STATE.FIND_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE):
+                self.get_logger().warning("FOUND LINE!!")
                 self.found_line = True
-            elif line_event.data == STATUS.ALIGNED:
+            elif line_event.data == STATUS.ALIGNED \
+                    and (self.state == STATE.OBJECT_TO_LINE or self.state==STATE.LINE_ORIENT):
                 self.aligned = True
             else:
-                self.get_logger().info("UNKNOWN MESSAGE on line_events")
+                pass
+                # self.get_logger().info("UNKNOWN MESSAGE on line_events")
         finally:
             # Release the lock
             self.lock.release()
@@ -357,15 +380,12 @@ class MainRobot(Node):
         try:
             if gps_event.data == STATUS.WAYPOINT_FOUND:
                 self.waypoint_found = True
-                # flash green light if waypoint found
+
                 light_msg = LightCmd()
                 light_msg.type = 'B'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
-                time.sleep(.25)
-                light_msg.on = False
-                self.lights_pub.publish(light_msg)
-
+                time.sleep(.10)
             elif gps_event.data == STATUS.WAYPOINTS_DONE:
                 self.waypoints_done = True
             else:
@@ -384,9 +404,9 @@ class MainRobot(Node):
             if lidar_event.data == STATUS.OBJECT_SEEN:
                 self.obj_seen = True
 
-                # buzz if object seen
+                # # buzz if object seen
                 light_msg = LightCmd()
-                light_msg.type = 'B'
+                light_msg.type = 'Y'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
 
@@ -394,7 +414,7 @@ class MainRobot(Node):
                 self.path_clear = True
                 self.obj_seen = False
                 light_msg = LightCmd()
-                light_msg.type = 'B'
+                light_msg.type = 'Y'
                 light_msg.on = False
                 self.lights_pub.publish(light_msg)
 

@@ -48,7 +48,6 @@ class Teensy(Node):
 
         #  publish for right and left encoder distances
         self.rate = self.get_parameter('/TeensyUpdateDelay').value
-        self.get_logger().info(f"self.rate {self.rate}")
         self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
         self.timer = self.create_timer(self.rate, self.timer_callback)
         self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 5)
@@ -66,8 +65,8 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.13, 0.0, -0.14, 25, -25)  # for line following
-        self.pid_obj = PIDController(12.0, 0.0, 2.0, 25, -25)   # for object avoidance
+        self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
+        self.pid_obj = PIDController(12.0, 0.0, 2.5, 25, -25)   # for object avoidance
         self.pid_gps = PIDController(14.0, 0.0, 2.0, 25, -25)   # for during gps navigation
 
         # encoder parameters
@@ -89,9 +88,9 @@ class Teensy(Node):
 
         # CHECK THIS CODE
         self.serialPort.write("M,89,89,**".encode())
-        self.get_logger().info("WAIT: Enable power to motors")
-        x = input("Hit enter when ready to proceed")
-        sleep(2)
+        # self.get_logger().info("WAIT: Enable power to motors")
+        # x = input("Hit enter when ready to proceed")
+        # sleep(5)
         self.get_logger().info("Launching motors")
 
     def __del__(self):
@@ -164,18 +163,22 @@ class Teensy(Node):
         elif self.following_mode == FollowMode.eeObject and msg[:3] == CODE.OBJECT_SENDER:
             # self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
-
             # delta is negative if we need to go toward object
             delta = self.pid_obj.control(self.target_obj_dist - position)
             delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
             linear = round(self.object_speed)
-            angular = round(delta * 3 / 4)
-            self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
+            angular = round(delta * 3/4)
+            # self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
-            position = float(msg[4:])
-            # delta is still negative if we need to go toward whatever
-            delta = self.pid_gps.control(position)
+            parts = msg.split(',')
+            position = float(parts[1])
+            gps_distance = float(parts[2])
+            # delta is still negative if we need to go toward
+            #             parts = msg.split(',')
+            #             position = float(parts[1])
+            #             gps_distance = float(parts[2]) whatever
+            delta = self.pid_gps.control(position * gps_distance**(1./4))
             # GPS sends the error as - for left turns and + for right turns
             linear = round(self.gps_speed)
             angular = round(delta)

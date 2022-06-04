@@ -36,6 +36,7 @@ class Fusion(Node):
         self.encoder_curr_heading = degrees_to_radians(self.get_parameter('/InitialHeading').value)
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
+        self.distance_from_waypoint = 100.0
 
         self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.enc_callback, 10)
         self.gps_heading_sub = self.create_subscription(HeadingStatus, "gps_heading", self.gps_callback, 10)
@@ -65,6 +66,7 @@ class Fusion(Node):
         heading_msg = HeadingStatus()
         heading_msg.current_heading = self.curr_heading
         heading_msg.target_heading = self.target_heading
+        heading_msg.distance = self.distance_from_waypoint
         self.fused_pub.publish(heading_msg)
 
     # a 5 point moving average filter
@@ -91,6 +93,8 @@ class Fusion(Node):
         heading_msg = HeadingStatus()
         heading_msg.current_heading = self.curr_heading
         heading_msg.target_heading = self.target_heading
+        self.distance_from_waypoint = gps_msg.distance
+        heading_msg.distance = gps_msg.distance
         self.fused_pub.publish(heading_msg)
 
         # calculate and filter the error in the angle of the two headings
@@ -104,7 +108,7 @@ class Fusion(Node):
                                       "Error: " + str(error_angle))
         # publish
         msg = String()
-        msg.data = CODE.GPS_SENDER + ',' + str(error_angle)
+        msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint)
         # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
         self.wheel_pub.publish(msg)
 

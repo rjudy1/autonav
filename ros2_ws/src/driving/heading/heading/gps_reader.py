@@ -5,8 +5,7 @@
 # Package: gps
 # File: gps_reader.py
 # Purpose: publish the gps messages needed by the master fsm
-# Date Modified: 22 May 2022
-# Adapted from Joshua Kortje 2021 competition GPS code
+# Date Modified: 3 June 2022
 ################################
 
 import cmath
@@ -50,24 +49,43 @@ class GPS(Node):
         self.declare_parameter('/Port', '/dev/ttyACM0')
         self.declare_parameter('/Debug', False)
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
+        self.declare_parameter('/NorthPointFirst', False)
+        self.declare_parameter('/RealCourse', False)
+        self.declare_parameter('/PracticeWaypointLat1', 0.0)
+        self.declare_parameter('/PracticeWaypointLon1', 0.0)
+        self.declare_parameter('/PracticeWaypointLat2', 0.0)
+        self.declare_parameter('/PracticeWaypointLon2', 0.0)
 
-        self.WP_LAT1 = self.get_parameter('/WaypointLat1').value
-        self.WP_LON1 = self.get_parameter('/WaypointLon1').value
-        self.WP_LAT2 = self.get_parameter('/WaypointLat2').value
-        self.WP_LON2 = self.get_parameter('/WaypointLon2').value
-        self.WP_LAT3 = self.get_parameter('/WaypointLat3').value
-        self.WP_LON3 = self.get_parameter('/WaypointLon3').value
-        self.WP_LAT4 = self.get_parameter('/WaypointLat4').value
-        self.WP_LON4 = self.get_parameter('/WaypointLon4').value
         self.DISTANCE_GOAL = self.get_parameter('/GPSFollowGoal').value
         self.line_to_gps = self.get_parameter('/LineToGPSTrans').value
 
         self.target_loc = []
-        self.target_loc.append(complex(self.WP_LAT1, self.WP_LON1))
-        # self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
+        if self.get_parameter('/RealCourse').value:
+            WP_LAT1 = self.get_parameter('/WaypointLat1').value
+            WP_LON1 = self.get_parameter('/WaypointLon1').value
+            WP_LAT2 = self.get_parameter('/WaypointLat2').value
+            WP_LON2 = self.get_parameter('/WaypointLon2').value
+            WP_LAT3 = self.get_parameter('/WaypointLat3').value
+            WP_LON3 = self.get_parameter('/WaypointLon3').value
+            WP_LAT4 = self.get_parameter('/WaypointLat4').value
+            WP_LON4 = self.get_parameter('/WaypointLon4').value
 
-        # self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
-        self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
+            self.target_loc.append(complex(WP_LAT1, WP_LON1))
+            self.target_loc.append(complex(WP_LAT2, WP_LON2))
+            self.target_loc.append(complex(WP_LAT3, WP_LON3))
+            self.target_loc.append(complex(WP_LAT4, WP_LON4))
+        else:
+            WP_LAT1 = self.get_parameter('/PracticeWaypointLat1').value
+            WP_LON1 = self.get_parameter('/PracticeWaypointLon1').value
+            WP_LAT2 = self.get_parameter('/PracticeWaypointLat2').value
+            WP_LON2 = self.get_parameter('/PracticeWaypointLon2').value
+
+            self.target_loc.append(complex(WP_LAT1, WP_LON1))
+            self.target_loc.append(complex(WP_LAT2, WP_LON2))
+
+        # flip if
+        if not self.get_parameter('/NorthPointFirst').value:
+            self.target_loc.reverse()
 
         # Publish new events that may change the overall state of the robot
         self.gps_event_pub = self.create_publisher(String, "gps_events", 10)
@@ -96,8 +114,10 @@ class GPS(Node):
 
         # needs to run once at beginning of script
         name = 'gps-log-' + str(round(time.time())) + '.csv'
+        if self.get_parameter('/RealCourse').value:
+            name = 'gps-log-real-' + str(round(time.time())) + '.csv'
         self.logfile = open(name, 'w')
-        self.writer = csv.writer(logfile)
+        self.writer = csv.writer(self.logfile)
 
 
         self.done = False
@@ -137,16 +157,18 @@ class GPS(Node):
                 self.gps_event_pub.publish(msg)
                 self.waypoint_itr = 0
                 self.get_logger().warning("FINISHED GPS")
+        return dist_meters
 
     # this function takes a measurement and calculates all of the necessary
     # information from the location to send to the motor controller
     def process_gps_data(self):
         loc = self.take_reading()  # get the new reading
         # Check if we are at the waypoint
-        self.check_waypoint(loc)
+        distance = self.check_waypoint(loc)
         if self.get_parameter('/Debug').value:
             # pass
-            self.get_logger().info(f"loc {loc}")
+            self.get_logger().info(f"loc {loc}\n"
+                                   f"Desired location: {self.target_loc[self.waypoint_itr]}")
 
         # calculate our current heading and the heading we need to have and publish these
         curr_heading = self.calc_heading(self.past_loc, loc)
@@ -154,6 +176,7 @@ class GPS(Node):
         heading_msg = HeadingStatus()
         heading_msg.current_heading = curr_heading
         heading_msg.target_heading = target_heading
+        heading_msg.distance = distance
         self.heading_pub.publish(heading_msg)
 
         # save off the location
@@ -194,8 +217,8 @@ class GPS(Node):
 
     def log_gps(self, nmeastring):
         # call "log_gps(GNGGA_string)" each time new GPS data is received
-        nmealist = nmeastring.split(',')
-        self.writer.writerow(nmealist)
+        # nmealist = nmeastring.split(',')
+        self.writer.writerow(nmeastring)
 
     def __del__(self):
         # self.get_logger().info("Deleting GPS Node")
