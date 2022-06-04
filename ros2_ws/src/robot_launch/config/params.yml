@@ -1,9 +1,9 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /FollowingDirection:        0   # 1  is right, 0 is left
+        /FollowingDirection:        1   # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            20  # set before build to degrees!!
+        /InitialHeading:            264.0  # set before build to degrees!!
         /LineSpeed:                 33.0
         /ObjectSpeed:               33.0
         /GpsSpeed:                  25.0
@@ -15,8 +15,8 @@
         /TimerRate:                 0.05  # rate at which to check and do state specified behavior
         /StartState:                0
         /TurnSpeed:                 20
-        /SlightTurn:                20
-        /ExitAngle:                 1.0
+        /SlightTurn:                22
+        /ExitAngle:                 0.9
 
 /rplidar_node:
     ros__parameters:

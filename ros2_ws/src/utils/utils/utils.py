@@ -120,4 +120,4 @@ def degrees_to_radians(degrees):
     heading = degrees * math.pi / 180.0
     if degrees > 180:
         heading -= math.pi * 2
-
+    return heading

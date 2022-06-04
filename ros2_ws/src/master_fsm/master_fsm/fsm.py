@@ -221,7 +221,7 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 1/4)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 5/12)}"
         self.wheel_pub.publish(self.wheel_msg)
         # self.get_logger().info("In object to line state publishing:")
         # self.get_logger().info(self.wheel_msg.data)
@@ -257,7 +257,7 @@ class MainRobot(Node):
         # Just keep going until we find the line
 
         self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(25) + "," \
-                              + str((1-2*int(self.follow_dir))*self.SLIGHT_TURN)
+                              + str((-1+2*int(self.follow_dir))*self.SLIGHT_TURN)
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.found_line:
