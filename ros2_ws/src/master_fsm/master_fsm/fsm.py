@@ -28,6 +28,9 @@ class MainRobot(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/TimerRate', .05)
         self.declare_parameter('/StartState', STATE.LINE_FOLLOWING)
+        self.declare_parameter('/TurnSpeed', 20)
+        self.declare_parameter('/SlightTurn', 18)
+        self.declare_parameter('/ExitAngle', math.pi/8)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -61,13 +64,13 @@ class MainRobot(Node):
         self.heading_restored = False
         self.path_clear = False
         self.follow_dir = self.get_parameter('/FollowingDirection').value
-        self.TURN_SPEED = 20
-        self.SLIGHT_TURN = 18
+        self.TURN_SPEED = self.get_parameter('/TurnSpeed').value
+        self.SLIGHT_TURN = self.get_parameter('/SlightTurn').value
+        self.exit_angle = self.get_parameter('/ExitAngle').value
         self.heading = 0.0
         self.heading_restoration = False
         self.prev_heading = 0.0
         self.exit_heading = 0.0
-        self.exit_angle = math.pi/8
         self.look_for_line = False
         self.waypoints_done = False
 
@@ -157,12 +160,18 @@ class MainRobot(Node):
     def gps_navigation_state(self):
         # self.get_logger().info("GPS Navigation State")
         # After looking for an obstacle, see if we have arrived
-        # buzz if object seen
-
+        # turn light off so should blink at first waypoint
+        # light_msg = LightCmd()
+        # light_msg.type = 'G'
+        # light_msg.on = False
+        # self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
             self.waypoint_found = False
             self.state_msg.data = STATE.FIND_LINE
+            self.get_logger().info("WAYPOINT FOUND IN FSM!!")
+
+            # RESTORE THIS
             self.state_pub.publish(self.state_msg)
             self.state = STATE.FIND_LINE
             self.find_line_state()
@@ -212,7 +221,7 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN)}"
+                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN * 5/12)}"
         self.wheel_pub.publish(self.wheel_msg)
         # self.get_logger().info("In object to line state publishing:")
         # self.get_logger().info(self.wheel_msg.data)
@@ -246,7 +255,9 @@ class MainRobot(Node):
     def find_line_state(self):
         # self.get_logger().info("Find Line Transition State")
         # Just keep going until we find the line
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(20) + "," + str(8)
+
+        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(25) + "," \
+                              + str((-1+2*int(self.follow_dir))*self.SLIGHT_TURN)
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.found_line:
@@ -262,7 +273,7 @@ class MainRobot(Node):
         # directly controls the motors
         # Just keep turning until we are parallel with the line
         self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(20) \
-                              + "," + str(20*(1-2*int(self.follow_dir)))
+                              + "," + str(20*(1-2*int(self.follow_dir))*3/4)
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.aligned:
@@ -348,11 +359,12 @@ class MainRobot(Node):
                 self.waypoint_found = True
                 # flash green light if waypoint found
                 light_msg = LightCmd()
-                light_msg.type = 'G'
+                light_msg.type = 'B'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
-                # light_msg.on = False
-                # self.lights_pub.publish(light_msg)
+                time.sleep(.25)
+                light_msg.on = False
+                self.lights_pub.publish(light_msg)
 
             elif gps_event.data == STATUS.WAYPOINTS_DONE:
                 self.waypoints_done = True

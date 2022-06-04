@@ -65,8 +65,9 @@ class GPS(Node):
         self.target_loc = []
         self.target_loc.append(complex(self.WP_LAT1, self.WP_LON1))
         # self.target_loc.append(complex(self.WP_LAT2, self.WP_LON2))
-        self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
-        # self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
+
+        # self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
+        self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
 
         # Publish new events that may change the overall state of the robot
         self.gps_event_pub = self.create_publisher(String, "gps_events", 10)
@@ -77,7 +78,7 @@ class GPS(Node):
         self.state = STATE.LINE_FOLLOWING
 
         # process GPS data at 2 Hz
-        self.timer = self.create_timer(.5, self.process_gps_data)
+        self.timer = self.create_timer(.45, self.process_gps_data)
 
         self.ser = serial.Serial(self.get_parameter('/Port').value, baudrate=115200)
         self.ser.readline()  # read one junk line to achieve line synchronization
@@ -176,11 +177,11 @@ class GPS(Node):
                     lon = float(message[5]) / 100 * (-1 + 2 * int(message[6] == 'E'))
                     # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
                     return complex(lat, lon)
-                elif message[0] == "$GNGLL":
-                    lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
-                    lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
-                    # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
-                    return complex(lat, lon)
+                # elif message[0] == "$GNGLL":
+                #     lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
+                #     lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
+                #     # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
+                #     return complex(lat, lon)
             except Exception as e:
                 # self.get_logger().warning(f"ERROR IN READING: {e}. Take robot outside")
                 pass

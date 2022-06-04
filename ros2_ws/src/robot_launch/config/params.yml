@@ -1,19 +1,22 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /FollowingDirection:        0   # 1  is right, 0 is left
-        /UseYellow: False
-        /InitialHeading:            -2.8623399732707004  # set before build
-        /LneSpeed:                 33.0
+        /FollowingDirection:        1   # 1  is right, 0 is left
+        /UseYellow:                 False
+        /InitialHeading:            264.0  # set before build to degrees!!
+        /LineSpeed:                 33.0
         /ObjectSpeed:               33.0
         /GpsSpeed:                  25.0
         /LineDist:                  0.22
-        /EncoderWeight:             .8
+        /EncoderWeight:             .6
 
 /fsm:
     ros__parameters:
         /TimerRate:                 0.05  # rate at which to check and do state specified behavior
         /StartState:                0
+        /TurnSpeed:                 20
+        /SlightTurn:                22
+        /ExitAngle:                 0.9
 
 /rplidar_node:
     ros__parameters:
@@ -43,14 +46,14 @@
 
 /gps:
     ros__parameters:
-        /WaypointLat1:              42.400921667 # right
-        /WaypointLon1:              -83.131084197
-        /WaypointLat2:              42.4008554667 # center
-        /WaypointLon2:              -83.13106783
-        /WaypointLat3:              42.4007779
-        /WaypointLon3:              -83.1310773
-        /WaypointLat4:              0.0
-        /WaypointLon4:              0.0
+        /WaypointLat1:              42.400927 # south practice
+        /WaypointLon1:              -83.131075
+        /WaypointLat2:              42.4008601 # center
+        /WaypointLon2:              -83.1310840
+        /WaypointLat3:              42.400726 # north practice
+        /WaypointLon3:              -83.131063
+        /WaypointLat4:              42.4007760
+        /WaypointLon4:              -83.1310596
         /GPSFollowGoal:             1.5
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'

@@ -68,7 +68,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.13, 0.0, -0.14, 25, -25)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.0, 25, -25)   # for object avoidance
-        self.pid_gps = PIDController(16.0, 0.0, 3.5, 25, -25)   # for during gps navigation
+        self.pid_gps = PIDController(14.0, 0.0, 2.0, 25, -25)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -118,12 +118,8 @@ class Teensy(Node):
                 self.state == STATE.LINE_ORIENT:
             self.following_mode = FollowMode.eeTransition
             self.boost_count = 0
-            # self.get_logger().info("SWITCHED TO TRANSITION STATE")
 
     def wheel_callback(self, msg):
-        # self.get_logger().info(f"follow mode: {self.following_mode}, {msg}")
-        # self.get_logger().info(f"sending {msg.data}")
-        # x = msg
         msg = msg.data
         linear = self.curr_linear
         angular = self.curr_angular
@@ -178,7 +174,6 @@ class Teensy(Node):
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             position = float(msg[4:])
-            self.get_logger().info(f"GPS position error: {position}")
             # delta is still negative if we need to go toward whatever
             delta = self.pid_gps.control(position)
             # GPS sends the error as - for left turns and + for right turns
@@ -186,16 +181,12 @@ class Teensy(Node):
             angular = round(delta)
             if abs(angular) < 10:
                 linear += 6
-            self.get_logger().info(f"GPS directed speed/angle: {linear} {angular}")
             if abs(position) <= self.gps_boost_margin:
                 self.boost_count += 1
             else:
                 self.boost_count = 0
-            self.get_logger().info(f"IN GPS MODE, message{position}")
 
         else:
-            # if self.get_parameter('/Debug').value:
-            #     self.get_logger().info(f"Received MESSAGE out of use: {msg}\n\n")
             message_valid = False
 
         if self.boost_count > self.boost_count_threshold and message_valid:

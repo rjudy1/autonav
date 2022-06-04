@@ -9,6 +9,7 @@ import math
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
+import math
 import numpy as np
 
 
@@ -122,3 +123,9 @@ def dms_to_dmm(dms):
     minutes = int(minp[1][:2])
     seconds = str(float(f'{minp[1][2:4]}.{minp[1][4:]}')/60)[2:]
     return float(f'{degrees}.{minutes}{seconds}')
+
+def degrees_to_radians(degrees):
+    heading = degrees * math.pi / 180.0
+    if degrees > 180:
+        heading -= math.pi * 2
+    return heading

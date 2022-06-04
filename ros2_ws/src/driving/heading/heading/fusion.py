@@ -33,7 +33,7 @@ class Fusion(Node):
         self.state = STATE.LINE_FOLLOWING
         self.curr_heading = self.get_parameter('/InitialHeading').value
         self.target_heading = 0.0
-        self.encoder_curr_heading = self.get_parameter('/InitialHeading').value
+        self.encoder_curr_heading = degrees_to_radians(self.get_parameter('/InitialHeading').value)
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
@@ -53,8 +53,19 @@ class Fusion(Node):
             self.encoder_curr_heading += (((enc_msg.left - enc_msg.right) / .64) % (math.pi * 2))
             if self.encoder_curr_heading > math.pi:
                 self.encoder_curr_heading += -2*math.pi
-            if self.get_parameter('/Debug').value:
-                self.get_logger().info(f'encoder report: {enc_msg}, {self.encoder_curr_heading}')
+
+        if self.state == STATE.GPS_NAVIGATION:
+            encoder_weight = self.get_parameter('/EncoderWeight').value
+        else:
+        # if -0.01 < gps_msg.current_heading < 0.01:
+            encoder_weight = 1.0
+        # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
+        self.curr_heading = (1-encoder_weight) * self.curr_heading + encoder_weight * self.encoder_curr_heading
+        self.encoder_curr_heading = self.curr_heading
+        heading_msg = HeadingStatus()
+        heading_msg.current_heading = self.curr_heading
+        heading_msg.target_heading = self.target_heading
+        self.fused_pub.publish(heading_msg)
 
     # a 5 point moving average filter
     def filter_angle(self, new_val):
