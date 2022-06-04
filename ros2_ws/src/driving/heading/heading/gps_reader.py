@@ -50,6 +50,7 @@ class GPS(Node):
         self.declare_parameter('/Port', '/dev/ttyACM0')
         self.declare_parameter('/Debug', False)
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
+        self.declare_parameter('/NorthPointFirst', False)
 
         self.WP_LAT1 = self.get_parameter('/WaypointLat1').value
         self.WP_LON1 = self.get_parameter('/WaypointLon1').value
@@ -68,6 +69,10 @@ class GPS(Node):
 
         # self.target_loc.append(complex(self.WP_LAT3, self.WP_LON3))
         self.target_loc.append(complex(self.WP_LAT4, self.WP_LON4))
+
+        # flip if
+        if not self.get_parameter('/NorthPointFirst').value:
+            self.target_loc.reverse()
 
         # Publish new events that may change the overall state of the robot
         self.gps_event_pub = self.create_publisher(String, "gps_events", 10)

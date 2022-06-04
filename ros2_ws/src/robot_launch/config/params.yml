@@ -3,12 +3,13 @@
     ros__parameters:
         /FollowingDirection:        0   # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            29.0  # set before build to degrees!!
+        /InitialHeading:            69.0  # set before build to degrees!!
         /LineSpeed:                 33.0
         /ObjectSpeed:               32.0
         /GpsSpeed:                  25.0
-        /LineDist:                  0.22
+        /LineDist:                  0.25
         /EncoderWeight:             .6
+        /NorthPointFirst:           False
 
 /fsm:
     ros__parameters:
@@ -27,7 +28,7 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /LineDetectDistance:        0.5
+        /LineDetectDistance:        0.1
         /Debug:                     True
 
 
@@ -46,14 +47,14 @@
 
 /gps:
     ros__parameters:
-        /WaypointLat1:              42.400927 # south practice
-        /WaypointLon1:              -83.131075
+        /WaypointLat1:              42.400766299999994 #42.400776035 # south practice  #42.400766299999994-83.13108550000001j
+        /WaypointLon1:              -83.13108550000001 #-83.13105959333333
         /WaypointLat2:              42.4008601 # center
         /WaypointLon2:              -83.1310840264
         /WaypointLat3:              42.400726 # north practice
         /WaypointLon3:              -83.131063
-        /WaypointLat4:              42.4007760
-        /WaypointLon4:              -83.1310596
+        /WaypointLat4:              42.40092709166667
+        /WaypointLon4:              -83.13107524
         /GPSFollowGoal:             1.5
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
@@ -63,7 +64,7 @@
     ros__parameters:
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
-        /TeensyUpdateDelay:         .2
+        /TeensyUpdateDelay:         .1
         /SideObjectDist:            0.85
         /BoostIncrease:             2
         /BoostCountThreshold:       20

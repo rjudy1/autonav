@@ -129,7 +129,7 @@ class MainRobot(Node):
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
             light_msg = LightCmd()
-            light_msg.type = 'Y'
+            light_msg.type = 'B'
             light_msg.on = True
             self.lights_pub.publish(light_msg)
             # time.sleep(.15)
@@ -220,8 +220,6 @@ class MainRobot(Node):
             self.obj_seen = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},0,0"
-            self.wheel_pub.publish(self.wheel_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.object_avoidance_from_line_state()
 
@@ -240,7 +238,7 @@ class MainRobot(Node):
         # Just keep turning until we are parallel with the line
         if self.aligned:
             light_msg = LightCmd()
-            light_msg.type = 'Y'
+            light_msg.type = 'B'
             light_msg.on = False
             self.lights_pub.publish(light_msg)
 
@@ -353,14 +351,15 @@ class MainRobot(Node):
         # Get the lock before proceeding
         self.lock.acquire()
         try:
-            if line_event.data == STATUS.FOUND_LINE and (self.state == STATE.FIND_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE):
+            if self.heading_restored and line_event.data == STATUS.FOUND_LINE and (self.state == STATE.FIND_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE):
                 self.get_logger().warning("FOUND LINE!!")
                 self.found_line = True
             elif line_event.data == STATUS.ALIGNED \
                     and (self.state == STATE.OBJECT_TO_LINE or self.state==STATE.LINE_ORIENT):
                 self.aligned = True
             else:
-                self.get_logger().info("UNKNOWN MESSAGE on line_events")
+                pass
+                # self.get_logger().info("UNKNOWN MESSAGE on line_events")
         finally:
             # Release the lock
             self.lock.release()
@@ -395,7 +394,7 @@ class MainRobot(Node):
 
                 # # buzz if object seen
                 light_msg = LightCmd()
-                light_msg.type = 'B'
+                light_msg.type = 'Y'
                 light_msg.on = True
                 self.lights_pub.publish(light_msg)
 
@@ -403,7 +402,7 @@ class MainRobot(Node):
                 self.path_clear = True
                 self.obj_seen = False
                 light_msg = LightCmd()
-                light_msg.type = 'B'
+                light_msg.type = 'Y'
                 light_msg.on = False
                 self.lights_pub.publish(light_msg)
 
