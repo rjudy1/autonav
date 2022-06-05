@@ -32,6 +32,7 @@ class MainRobot(Node):
         self.declare_parameter('/SlightTurn', 18)
         self.declare_parameter('/ExitAngle', math.pi/8)
         self.declare_parameter('/GpsExitHeading', 0.0)
+        self.declare_parameter('/CrossRampInGps', True)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -98,6 +99,7 @@ class MainRobot(Node):
             self.state = STATE.ORIENT_TO_GPS
             self.state_msg.data = STATE.ORIENT_TO_GPS
             self.state_pub.publish(self.state_msg)
+            self.orient_to_gps_state()
 
         elif self.obj_seen:  # object sighted - switch to obstacle avoidance
             # We check for an object second because if we have already hit the
@@ -183,11 +185,12 @@ class MainRobot(Node):
         # self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
-            self.waypoints_found += 1
+            self.waypoint_count += 1
             self.waypoint_found = False
             self.get_logger().info("WAYPOINT FOUND IN FSM!!")
 
-            if self.waypoint_count == 4: # just take this step if not using nav across ramp
+            if self.waypoint_count == 4 or not self.get_parameter('/CrossRampInGps').value:
+                # just take this step if not using nav across ramp
                 self.state_msg.data = STATE.GPS_EXIT
                 self.state_pub.publish(self.state_msg)
                 self.state = STATE.GPS_EXIT
@@ -199,6 +202,7 @@ class MainRobot(Node):
                 self.state = STATE.ORIENT_TO_GPS
                 self.state_msg.data = STATE.ORIENT_TO_GPS
                 self.state_pub.publish(self.state_msg)
+                self.orient_to_gps_state()
 
         # First look for a potential obstacle
         elif self.obj_seen:
@@ -229,7 +233,7 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.waypoint_found:
-            self.waypoints_found += 1
+            self.waypoint_count += 1
 
             self.waypoint_found = False
             self.state = STATE.GPS_TO_OBJECT

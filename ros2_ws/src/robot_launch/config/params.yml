@@ -7,9 +7,7 @@
         /InitialHeading:            143.0  # set before build to degrees!!
         /NorthPointFirst:           True
         /GpsExitHeading:            2.740165     # N, R: -2.49582; N, L: 2.740165; S, R: -0.401425; S, L: 0.64577
-        /LineSpeed:                 33.0
-        /ObjectSpeed:               32.0
-        /GpsSpeed:                  25.0
+        /CrossRampInGps:            True
         /LineDist:                  0.25
         /EncoderWeight:             .6
 
@@ -88,6 +86,9 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .1
         /SideObjectDist:            0.85
+        /LineSpeed:                 33.0
+        /ObjectSpeed:               32.0
+        /GpsSpeed:                  25.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
         /LineBoostMargin:           30.0
