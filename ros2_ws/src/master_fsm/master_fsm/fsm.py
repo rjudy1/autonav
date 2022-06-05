@@ -31,6 +31,7 @@ class MainRobot(Node):
         self.declare_parameter('/TurnSpeed', 20)
         self.declare_parameter('/SlightTurn', 18)
         self.declare_parameter('/ExitAngle', math.pi/8)
+        self.declare_parameter('/GpsExitHeading', 0.0)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -73,7 +74,7 @@ class MainRobot(Node):
         self.target_heading = 0.0
         self.look_for_line = False
         self.waypoints_done = False
-
+        self.gps_exit_heading = self.get_parameter('/GpsExitHeading').value
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
 
@@ -90,6 +91,7 @@ class MainRobot(Node):
 
         if self.waypoint_found and not self.waypoints_done:  # reached gps waypoint - switch to gps navigation
             self.waypoint_found = False
+            # TODO: make this orient to a specific heading before anything else
             self.state = STATE.GPS_NAVIGATION
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
@@ -180,6 +182,8 @@ class MainRobot(Node):
             self.waypoint_found = False
             self.state_msg.data = STATE.FIND_LINE
             self.get_logger().info("WAYPOINT FOUND IN FSM!!")
+            # TODO: this needs to iterate through the array
+            # TODO: if last point in the array, orient to a specific heading
 
             # RESTORE THIS
             self.state_pub.publish(self.state_msg)
@@ -310,6 +314,8 @@ class MainRobot(Node):
             self.state = STATE.LINE_FOLLOWING
             self.line_following_state()
 
+    def line_to_gps_state(self):
+        pass
     # End of Transition States
 
     # This function is essentially a big state machine handling transitions
@@ -334,6 +340,8 @@ class MainRobot(Node):
             self.find_line_state()
         elif self.state == STATE.LINE_ORIENT:
             self.line_orientation_state()
+        elif self.state == STATE.LINE_TO_GPS:
+            self.line_to_gps_state()
         else:
             self.get_logger().info("Error: Invalid State")
 
@@ -348,21 +356,24 @@ class MainRobot(Node):
             direction_var = (-1+2*int(self.follow_dir==DIRECTION.RIGHT))
             obj_curr = self.heading*direction_var
             obj_exit = self.exit_heading*direction_var
-            diff_angle = sub_angles(obj_curr, obj_exit)
-            if diff_angle >= 0:
+            if sub_angles(obj_curr, obj_exit) >= 0:
                 # in this case, we must have jumped the pi to -pi boundary
                 # a left following case has a positive exit which has been flipped to negative
                 # a right following case has a negative exit and a positive base heading
                 # we need to confirm that both values are in the exit direction from 0
-                self.get_logger().info(f"Heading restored with heading {obj_curr*direction_var} and goal {obj_exit*direction_var}")
+                self.get_logger().info(
+                    f"Heading restored with heading {obj_curr * direction_var} and goal {obj_exit * direction_var}")
                 self.heading_restored = True
         elif self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
+            direction_var = (-1 + 2 * int(self.follow_dir == DIRECTION.RIGHT))
             self.exit_heading = self.target_heading
-            gps_curr = self.heading
-            gps_exit = self.exit_heading
-            if abs(sub_angles(gps_curr, gps_exit)) <= math.pi/9 and not self.heading_restored:
+            gps_curr = self.heading*direction_var
+            gps_exit = self.exit_heading*direction_var
+            if sub_angles(gps_curr, gps_exit) >= 0:
                 self.get_logger().info(f"Heading restored with heading {gps_curr} and goal {gps_exit}")
                 self.heading_restored = True
+            elif self.heading_restored:
+                self.heading_restored = False
 
 
     # Callback for information coming from the line following node

@@ -1,7 +1,0 @@
-<launch>
-    <rosparam file="/home/autonav/autonav/ros1_ws/params/params.yaml" />
-<!--     <node pkg="lights" name="lights_ctr" type="lights_node" required="true"/> -->
-<!--     <node pkg="gps_connection" name="gps_following" type="gps_reader.py" required="true"/> -->
-    <node pkg="wheels_controller" name="wheel_controller" type="wheels_controller_node" required="true"/>
-<!--     <node pkg="main" name="main_robot" type="main.py" required="true"/> -->
-</launch>

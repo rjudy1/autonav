@@ -6,6 +6,7 @@
         /UseYellow:                 False
         /InitialHeading:            77.0  # set before build to degrees!!
         /NorthPointFirst:           False
+        /GpsExitHeading:            -0.401425     # N, R: -2.49582; N, L: 2.740165; S, R: -0.401425; S, L: 0.64577
         /LineSpeed:                 33.0
         /ObjectSpeed:               32.0
         /GpsSpeed:                  25.0
