@@ -142,20 +142,22 @@ class GPS(Node):
         dist_meters = distance.distance(current_point, target_point).m
         self.get_logger().info(f"distance from waypoint: {dist_meters}")
 
-        if dist_meters <= self.DISTANCE_GOAL:
+        if self.state == STATE.GPS_NAVIGATION or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
+            dist_limit = self.DISTANCE_GOAL*2/3  # 1 meter currently
+        else:
+            dist_limit = self.DISTANCE_GOAL
+
+        if dist_meters <= dist_limit:
             msg = String()
             msg.data = STATUS.WAYPOINT_FOUND
-            self.waypoint_itr += 1  # go to next waypoint goal
+            self.waypoint_itr = (self.waypoint_itr + 1) % len(self.target_loc)  # go to next waypoint goal
             self.gps_event_pub.publish(msg)
             self.get_logger().info(f"WAYPOINT FOUND - SWITCH POINTS to {self.target_loc[self.waypoint_itr]}")
 
             if self.waypoint_itr >= len(self.target_loc):
                 msg = String()
-                msg.data = STATUS.WAYPOINT_FOUND
-                self.gps_event_pub.publish(msg)
                 msg.data = STATUS.WAYPOINTS_DONE
                 self.gps_event_pub.publish(msg)
-                self.waypoint_itr = 0
                 self.get_logger().warning("FINISHED GPS")
         return dist_meters
 

@@ -68,9 +68,9 @@ class MainRobot(Node):
         self.SLIGHT_TURN = self.get_parameter('/SlightTurn').value
         self.exit_angle = self.get_parameter('/ExitAngle').value
         self.heading = 0.0
-        self.heading_restoration = False
         self.prev_heading = 0.0
         self.exit_heading = 0.0
+        self.target_heading = 0.0
         self.look_for_line = False
         self.waypoints_done = False
 
@@ -101,7 +101,6 @@ class MainRobot(Node):
             self.state = STATE.LINE_TO_OBJECT
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
-            self.heading_restoration = True
 
             self.prev_heading = self.heading
             self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*self.exit_angle)
@@ -116,8 +115,10 @@ class MainRobot(Node):
         # Check for another object in front of the robot
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
             self.waypoint_found = False
-            self.state = STATE.GPS_NAVIGATION
-            self.state_msg.data = STATE.GPS_NAVIGATION
+            self.exit_heading = self.target_heading
+            self.heading_restored = False
+            self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
+            self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
 
         elif self.obj_seen:
@@ -132,14 +133,11 @@ class MainRobot(Node):
             # light_msg.type = 'B'
             # light_msg.on = True
             # self.lights_pub.publish(light_msg)
-            # time.sleep(.15)
-            # light_msg.on = False
-            # self.lights_pub.publish(light_msg)
 
+            self.lights_pub.publish(light_msg)
             self.look_for_line = False
             self.found_line = False
             self.heading_restored = False
-            self.heading_restoration = False
             self.state_msg.data = STATE.OBJECT_TO_LINE
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_TO_LINE
@@ -159,7 +157,6 @@ class MainRobot(Node):
 
         elif self.heading_restored:  # Otherwise see if have a clear path to the waypoint
             self.heading_restored = False
-            self.heading_restoration = False
             self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_NAVIGATION
@@ -192,14 +189,12 @@ class MainRobot(Node):
         # First look for a potential obstacle
         elif self.obj_seen:
             self.obj_seen = False
-            # self.heading_restoration = True
             self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
-            self.heading_restoration = True
 
             self.prev_heading = self.heading
-            self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*math.pi/12)
+            self.exit_heading = self.target_heading
 
             self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
@@ -254,6 +249,17 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_FOLLOWING
             self.line_following_state()
+
+        elif self.obj_seen:  # object sighted - switch to obstacle avoidance
+            # We check for an object second because if we have already hit the
+            # GPS waypoint we want the robot to record that first.
+            self.obj_seen = False
+            self.state = STATE.LINE_TO_OBJECT
+            self.state_msg.data = STATE.LINE_TO_OBJECT
+            self.state_pub.publish(self.state_msg)
+
+            self.line_to_object_state()  # enter the transition state
+
 
     # GPS Navigation to Object Avoidance Transition State
     def gps_to_object_state(self):
@@ -336,19 +342,28 @@ class MainRobot(Node):
     # Beginning of Callback Methods
     def heading_callback(self, heading_msg):
         self.heading = heading_msg.current_heading
+        self.target_heading = heading_msg.target_heading
         # self.get_logger().info(f"Current heading in FSM: {self.heading}")
-        if self.heading_restoration:
+        if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE and not self.heading_restored:
             direction_var = (-1+2*int(self.follow_dir==DIRECTION.RIGHT))
-            exit = self.exit_heading*direction_var
-            curr = self.heading*direction_var
-            diff_angle = sub_angles(curr, exit)
+            obj_curr = self.heading*direction_var
+            obj_exit = self.exit_heading*direction_var
+            diff_angle = sub_angles(obj_curr, obj_exit)
             if diff_angle >= 0:
                 # in this case, we must have jumped the pi to -pi boundary
                 # a left following case has a positive exit which has been flipped to negative
                 # a right following case has a negative exit and a positive base heading
                 # we need to confirm that both values are in the exit direction from 0
-                self.get_logger().info(f"Heading restored with heading {curr*direction_var} and goal {exit*direction_var}")
+                self.get_logger().info(f"Heading restored with heading {obj_curr*direction_var} and goal {obj_exit*direction_var}")
                 self.heading_restored = True
+        elif self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
+            self.exit_heading = self.target_heading
+            gps_curr = self.heading
+            gps_exit = self.exit_heading
+            if abs(sub_angles(gps_curr, gps_exit)) <= math.pi/9 and not self.heading_restored:
+                self.get_logger().info(f"Heading restored with heading {gps_curr} and goal {gps_exit}")
+                self.heading_restored = True
+
 
     # Callback for information coming from the line following node
     def line_callback(self, line_event):
@@ -360,6 +375,7 @@ class MainRobot(Node):
             if self.heading_restored and line_event.data == STATUS.FOUND_LINE and (self.state == STATE.FIND_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE):
                 self.get_logger().warning("FOUND LINE!!")
                 self.found_line = True
+
             elif line_event.data == STATUS.ALIGNED \
                     and (self.state == STATE.OBJECT_TO_LINE or self.state==STATE.LINE_ORIENT):
                 self.aligned = True

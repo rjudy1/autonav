@@ -4,7 +4,7 @@
         /RealCourse:                False
         /FollowingDirection:        0   # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            189.0  # set before build to degrees!!
+        /InitialHeading:            77.0  # set before build to degrees!!
         /NorthPointFirst:           False
         /LineSpeed:                 33.0
         /ObjectSpeed:               32.0
@@ -29,7 +29,7 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /LineDetectDistance:        0.9
+        /LineDetectDistance:        0.85
         /Debug:                     True
 
 
@@ -48,12 +48,15 @@
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
     ros__parameters:
-        /PracticeWaypointLat1: 42.40094919999999   # north practice
-        /PracticeWaypointLon1: -83.1307195
-#        /PracticeWaypointLat1:      42.40092709166667   # north practice
-#        /PracticeWaypointLon1:      -83.13107524
-        /PracticeWaypointLat2:      42.400776035        # south practice
-        /PracticeWaypointLon2:      -83.13108550000001
+#        /PracticeWaypointLat1:     42.40094919999999   # tent
+#        /PracticeWaypointLon1:     -83.1307195
+        /PracticeWaypointLat1:      42.4009412          # our north practice point
+        /PracticeWaypointLon1:      -83.13108700000001
+#        /PracticeWaypointLat2:      42.400776035        # south practice
+#        /PracticeWaypointLon2:      -83.13108550000001
+        /PracticeWaypointLat2:      42.4007917          # south point from us
+        /PracticeWaypointLon2:      -83.1310758
+
         # their provided north point = 42.400961833333334 + -83.13160418166666j
         # our nearest recorded point = 42.4009776 + -83.1315994j
         /WaypointLat1:              42.40096900         # north real -- adjusted about 83 cm north
