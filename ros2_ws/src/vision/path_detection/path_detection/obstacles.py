@@ -49,7 +49,7 @@ class TransformPublisher(Node):
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
 
         # Subscribe to the camera color image and unaltered laser scan
-        self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
+        # self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
         self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
 
         # Subscribe to state updates for the robot
@@ -101,6 +101,7 @@ class TransformPublisher(Node):
         try:
             return distances / count
         except ZeroDivisionError:
+            self.get_logger().info("ZERO DIVISION ERROR")
             return max_distance + .75  # parameterize later
 
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
@@ -172,16 +173,16 @@ class TransformPublisher(Node):
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
-        # insert pothole additions to lidar here - can compensate with constants for the camera angle
-        for circle in self.circles:
-            # front part of lidar scan 0 to pi/2 radians
-            for i in range(len(scan.ranges)):
-                if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
-                    dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
-                                                self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
-                    if dist < scan.ranges[i] and hit:
-                        scan.ranges[i] = dist
-                        scan.intensities[i] = 47
+        # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES
+        # for circle in self.circles:
+        #     # front part of lidar scan 0 to pi/2 radians
+        #     for i in range(len(scan.ranges)):
+        #         if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
+        #             dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
+        #                                         self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
+        #             if dist < scan.ranges[i] and hit:
+        #                 scan.ranges[i] = dist
+        #                 scan.intensities[i] = 47
 
         self.lidar_pub.publish(scan)
 
@@ -222,6 +223,7 @@ class TransformPublisher(Node):
             if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
                 if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
                     distance_msg.data = "OBJ," + str(self.check_range(scan, 70*math.pi/180, 80*math.pi/180, 2.0))
+                    self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)
                 elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT:
                     distance_msg.data = "OBJ," + str(self.check_range(scan, 280*math.pi/180, 290*math.pi/180, 2.0))
