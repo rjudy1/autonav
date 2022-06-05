@@ -23,7 +23,7 @@ class STATE:
     GPS_TO_OBJECT = 6
     FIND_LINE = 7
     LINE_ORIENT = 8
-    LINE_TO_GPS = 9
+    ORIENT_TO_GPS = 9
     GPS_EXIT = 10
 
 
