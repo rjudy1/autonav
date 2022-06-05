@@ -115,7 +115,7 @@ class Teensy(Node):
             self.boost_count = 0
             # self.get_logger().info("SWITCHED TO GPS NAVIGATION")
         elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or \
-                self.state == STATE.LINE_ORIENT:
+                self.state == STATE.LINE_ORIENT or self.state == STATE.ORIENT_TO_GPS or self.state == STATE.GPS_EXIT:
             self.following_mode = FollowMode.eeTransition
             self.boost_count = 0
 
@@ -183,6 +183,8 @@ class Teensy(Node):
             #             gps_distance = float(parts[2]) whatever
             delta = self.pid_gps.control(position*(gps_distance**(1./3)))
             # GPS sends the error as - for left turns and + for right turns
+            if gps_distance <= 2.0:
+                linear -= 6*(2.0 - gps_distance)
             linear = round(self.gps_speed)
             angular = round(delta)
             if abs(position*(gps_distance**(1./3))) <= self.gps_boost_margin:

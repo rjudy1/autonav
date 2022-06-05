@@ -365,7 +365,7 @@ class MainRobot(Node):
 
     def gps_exit_state(self):
 
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{18},{18*(1-2*int(self.follow_dir==DIRECTION.RIGHT))}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{18},{18*3/2*(1-2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.heading_restored:
