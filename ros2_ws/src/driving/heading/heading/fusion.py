@@ -84,6 +84,8 @@ class Fusion(Node):
         msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint)
         # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
         self.wheel_pub.publish(msg)
+        if self.get_parameter('/Debug').value:
+            self.get_logger().warning("Error: " + str(error_angle))
 
     def gps_callback(self, gps_msg):
         if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:
@@ -104,18 +106,19 @@ class Fusion(Node):
         self.fused_pub.publish(heading_msg)
 
         # calculate and filter the error in the angle of the two headings
-#        error_angle = sub_angles(self.target_heading, self.curr_heading)
+#       error_angle = sub_angles(self.target_heading, self.curr_heading)
         self.publish_to_motors()
         # filtered_error_angle = self.filter_angle(error_angle)
         if self.get_parameter('/Debug').value:
             self.get_logger().warning("Current GPS HEADING: " + str(gps_msg.current_heading) + '\n' +
                                       "Current Encoder Heading: " + str(self.encoder_curr_heading) + '\n' +
                                       "Current Weighted Heading " + str(self.curr_heading) + '\n' +
-                                      "Target Heading: " + str(gps_msg.target_heading) + '\n' +
-                                      "Error: " + str(error_angle))
+                                      "Target Heading: " + str(gps_msg.target_heading) + '\n')
+        self.encoder_curr_heading = self.curr_heading
         # publish
         # msg = String()
-        # msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint)
+        # msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint) +
+        #                               "Error: " + str(error_angle)
         # # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
         # self.wheel_pub.publish(msg)
 

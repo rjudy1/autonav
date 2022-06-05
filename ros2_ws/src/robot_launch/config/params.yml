@@ -1,12 +1,12 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /RealCourse:                True
-        /FollowingDirection:        0           # 1  is right, 0 is left
+        /RealCourse:                False
+        /FollowingDirection:        0          # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            188.0       # set before build to degrees!!
-        /NorthPointFirst:           False
-        /GpsExitHeading:            0.820304     # N, R: -2.321286; N, L: 2.5656318; S, R: -0.575958; S, L: 0.820304
+        /InitialHeading:            179.0       # set before build to degrees!!
+        /NorthPointFirst:           True
+        /GpsExitHeading:            2.5656318     # N, R: -2.321286; N, L: 2.5656318; S, R: -0.575958; S, L: 0.820304
         /CrossRampInGps:            True
         /LineDist:                  0.25
         /EncoderWeight:             .6
@@ -28,7 +28,7 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /LineDetectDistance:        1.0
+        /LineDetectDistance:        1.05
         /Debug:                     True
 
 
@@ -41,7 +41,7 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.35  # meters
+        /ObstacleDetectDistance:    1.1  # meters
         /Debug:                     False
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
@@ -91,15 +91,13 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .1
         /SideObjectDist:            0.85
-        /LineSpeed:                 33.0
-        /ObjectSpeed:               32.0
-        /GpsSpeed:                  27.0
-        /BoostIncrease:             2
-        /BoostCountThreshold:       20
+        /LineSpeed:                 24.0
+        /ObjectSpeed:               24.0
+        /GpsSpeed:                  24.0
+        /BoostIncrease:             7
+        /BoostCountThreshold:       10
         /GPSBoostCountThreshold:    10
-        /LineBoostMargin:           30.0
-        /GPSBoostMargin:            0.1745
-        /Debug:                     True
+        /LineBoostMargin:           50.0
 
 /fusion:
     ros__parameters:
