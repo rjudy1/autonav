@@ -24,6 +24,8 @@ class STATE:
     FIND_LINE = 7
     LINE_ORIENT = 8
     LINE_TO_GPS = 9
+    GPS_EXIT = 10
+
 
 
 class DIRECTION:

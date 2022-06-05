@@ -55,6 +55,10 @@ class GPS(Node):
         self.declare_parameter('/PracticeWaypointLon1', 0.0)
         self.declare_parameter('/PracticeWaypointLat2', 0.0)
         self.declare_parameter('/PracticeWaypointLon2', 0.0)
+        self.declare_parameter('/PracticeWaypointLat3', 0.0)
+        self.declare_parameter('/PracticeWaypointLon3', 0.0)
+        self.declare_parameter('/PracticeWaypointLat4', 0.0)
+        self.declare_parameter('/PracticeWaypointLon4', 0.0)
 
         self.DISTANCE_GOAL = self.get_parameter('/GPSFollowGoal').value
         self.line_to_gps = self.get_parameter('/LineToGPSTrans').value
@@ -77,11 +81,20 @@ class GPS(Node):
         else:
             WP_LAT1 = self.get_parameter('/PracticeWaypointLat1').value
             WP_LON1 = self.get_parameter('/PracticeWaypointLon1').value
+
+            # get middle
             WP_LAT2 = self.get_parameter('/PracticeWaypointLat2').value
             WP_LON2 = self.get_parameter('/PracticeWaypointLon2').value
+            WP_LAT3 = self.get_parameter('/PracticeWaypointLat3').value
+            WP_LON3 = self.get_parameter('/PracticeWaypointLon3').value
+
+            WP_LAT4 = self.get_parameter('/PracticeWaypointLat4').value
+            WP_LON4 = self.get_parameter('/PracticeWaypointLon4').value
 
             self.target_loc.append(complex(WP_LAT1, WP_LON1))
             self.target_loc.append(complex(WP_LAT2, WP_LON2))
+            self.target_loc.append(complex(WP_LAT3, WP_LON3))
+            self.target_loc.append(complex(WP_LAT4, WP_LON4))
 
         # flip if
         if not self.get_parameter('/NorthPointFirst').value:

@@ -67,7 +67,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.5, 25, -25)   # for object avoidance
-        self.pid_gps = PIDController(14.0, 0.0, 2.0, 25, -25)   # for during gps navigation
+        self.pid_gps = PIDController(14.0, 0.2, 2.0, 22, -22)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -95,7 +95,6 @@ class Teensy(Node):
 
     def __del__(self):
         self.serialPort.write("M,89,89,**".encode())
-        self.close()
 
     def state_callback(self, new_state):
         self.get_logger().info("New State Received: {}".format(new_state.data))

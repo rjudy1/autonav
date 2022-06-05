@@ -69,6 +69,8 @@ class Fusion(Node):
         heading_msg.distance = self.distance_from_waypoint
         self.fused_pub.publish(heading_msg)
 
+        self.publish_to_motors()
+
     # a 5 point moving average filter
     def filter_angle(self, new_val):
         self.moving_avg = np.roll(self.moving_avg, 1)
@@ -79,6 +81,22 @@ class Fusion(Node):
     # return true if we can switch back from obstacle avoidance to GPS nav
     def is_heading_restored(self, error_angle):
         return abs(error_angle) < self.exit_angle
+
+    def publish_to_motors(self):
+        # calculate and filter the error in the angle of the two headings
+        error_angle = sub_angles(self.target_heading, self.curr_heading)
+        # filtered_error_angle = self.filter_angle(error_angle)
+        # if self.get_parameter('/Debug').value:
+        #     self.get_logger().warning("Current GPS HEADING: " + str(gps_msg.current_heading) + '\n' +
+        #                               "Current Encoder Heading: " + str(self.encoder_curr_heading) + '\n' +
+        #                               "Current Weighted Heading " + str(self.curr_heading) + '\n' +
+        #                               "Target Heading: " + str(gps_msg.target_heading) + '\n' +
+        #                               "Error: " + str(error_angle))
+        # publish
+        msg = String()
+        msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint)
+        # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
+        self.wheel_pub.publish(msg)
 
     def gps_callback(self, gps_msg):
         if self.state == STATE.GPS_NAVIGATION:
