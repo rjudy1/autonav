@@ -96,10 +96,14 @@ class MainRobot(Node):
             self.waypoint_count += 1
             self.waypoint_found = False
             self.exit_heading = self.target_heading
-            self.state = STATE.ORIENT_TO_GPS
-            self.state_msg.data = STATE.ORIENT_TO_GPS
+            # self.state = STATE.ORIENT_TO_GPS
+            # self.state_msg.data = STATE.ORIENT_TO_GPS
+            # self.state_pub.publish(self.state_msg)
+            # self.orient_to_gps_state()
+            self.state = STATE.GPS_NAVIGATION
+            self.state_msg.data = STATE.GPS_NAVIGATION
             self.state_pub.publish(self.state_msg)
-            self.orient_to_gps_state()
+            self.gps_navigation_state()
 
         elif self.obj_seen:  # object sighted - switch to obstacle avoidance
             # We check for an object second because if we have already hit the
@@ -402,7 +406,7 @@ class MainRobot(Node):
         elif self.state == STATE.LINE_ORIENT:
             self.line_orientation_state()
         elif self.state == STATE.ORIENT_TO_GPS:
-            self.line_to_gps_state()
+            self.orient_to_gps_state()
         elif self.state == STATE.GPS_EXIT:
             self.gps_exit_state()
         else:
@@ -442,7 +446,7 @@ class MainRobot(Node):
                 self.exit_heading = self.target_heading
             orient_curr = self.heading
             orient_exit = self.exit_heading
-            if abs(sub_angles(orient_curr, orient_exit)) <= math.pi/6 or abs(sub_angles(orient_exit, orient_curr)) <= math.pi/6:
+            if min(abs(sub_angles(orient_curr, orient_exit)), abs(sub_angles(orient_exit, orient_curr))) <= math.pi/12:
                 self.get_logger().info(f"Heading restored with heading {orient_curr} and goal {orient_exit}")
                 self.heading_restored = True
             elif self.heading_restored:

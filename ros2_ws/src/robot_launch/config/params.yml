@@ -1,10 +1,10 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /RealCourse:                False
-        /FollowingDirection:        0   # 1  is right, 0 is left
+        /RealCourse:                True
+        /FollowingDirection:        0           # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            143.0  # set before build to degrees!!
+        /InitialHeading:            56.0       # set before build to degrees!!
         /NorthPointFirst:           True
         /GpsExitHeading:            2.740165     # N, R: -2.49582; N, L: 2.740165; S, R: -0.401425; S, L: 0.64577
         /CrossRampInGps:            True
@@ -17,7 +17,7 @@
         /StartState:                0
         /TurnSpeed:                 20
         /SlightTurn:                20
-        /ExitAngle:                 0.4
+        /ExitAngle:                 0.3
 
 /rplidar_node:
     ros__parameters:
@@ -28,7 +28,7 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /LineDetectDistance:        0.85
+        /LineDetectDistance:        0.95
         /Debug:                     True
 
 
@@ -41,7 +41,7 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.2  # meters
+        /ObstacleDetectDistance:    1.35  # meters
         /Debug:                     False
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
@@ -60,7 +60,7 @@
 
 
 #        /PracticeWaypointLat2:      42.400776035        # south practice
-#        /PracticeWaypointLon2:      -83.13108550000001
+#        /PracticeWaypointLon2:      -83.13108550000001 #42.4009412-83.13108260000001
         /PracticeWaypointLat4:      42.4007917          # south point from us
         /PracticeWaypointLon4:      -83.1310758
 
@@ -75,7 +75,7 @@
         # their provided south point = 42.400756623333336 + -83.131596585j
         /WaypointLat4:              42.400756623333336   # south real -- adjusted about 73 cm south
         /WaypointLon4:              -83.131596585
-        /GPSFollowGoal:             1.5
+        /GPSFollowGoal:             1.0
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
         /Debug:                     True
@@ -88,9 +88,10 @@
         /SideObjectDist:            0.85
         /LineSpeed:                 33.0
         /ObjectSpeed:               32.0
-        /GpsSpeed:                  25.0
+        /GpsSpeed:                  27.0
         /BoostIncrease:             2
         /BoostCountThreshold:       20
+        /GPSBoostCountThreshold:    10
         /LineBoostMargin:           30.0
         /GPSBoostMargin:            0.1745
         /Debug:                     True

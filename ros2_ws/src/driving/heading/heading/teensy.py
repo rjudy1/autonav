@@ -37,6 +37,7 @@ class Teensy(Node):
         self.declare_parameter('/GpsSpeed', 30.0)
         self.declare_parameter('/BoostIncrease', 1)
         self.declare_parameter('/BoostCountThreshold', 20)
+        self.declare_parameter('/GPSBoostCountThreshold', 10)
         self.declare_parameter('/LineBoostMargin', 30.0)
         self.declare_parameter('/GPSBoostMargin', 0.1745)
         self.declare_parameter('/Port', '/dev/ttyUSB0')
@@ -62,12 +63,13 @@ class Teensy(Node):
         self.gps_speed = self.get_parameter('/GpsSpeed').value
         self.speed_boost = self.get_parameter('/BoostIncrease').value
         self.boost_count_threshold = self.get_parameter('/BoostCountThreshold').value
+        self.gps_boost_count_threshold = self.get_parameter('/GPSBoostCountThreshold').value
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
         self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.5, 25, -25)   # for object avoidance
-        self.pid_gps = PIDController(9.0, 0.2, 2.0, 22, -22)   # for during gps navigation
+        self.pid_gps = PIDController(14.0, 0, 2.0, 20, -20)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -159,6 +161,8 @@ class Teensy(Node):
                     self.boost_count += 1
                 else:
                     self.boost_count = 0
+                if self.boost_count > self.boost_count_threshold and message_valid:
+                    linear += self.speed_boost
         elif self.following_mode == FollowMode.eeObject and msg[:3] == CODE.OBJECT_SENDER:
             # self.get_logger().info(f"sending motor commands {msg}")
             position = float(msg[4:])
@@ -177,22 +181,21 @@ class Teensy(Node):
             #             parts = msg.split(',')
             #             position = float(parts[1])
             #             gps_distance = float(parts[2]) whatever
-            delta = self.pid_gps.control(position * gps_distance**(1./4))
+            delta = self.pid_gps.control(position*(gps_distance**(1./3)))
             # GPS sends the error as - for left turns and + for right turns
             linear = round(self.gps_speed)
             angular = round(delta)
-            if abs(angular) < 10:
-                linear += 6
-            if abs(position) <= self.gps_boost_margin:
+            if abs(position*(gps_distance**(1./3))) <= self.gps_boost_margin:
                 self.boost_count += 1
             else:
                 self.boost_count = 0
+            if self.boost_count > self.gps_boost_count_threshold and message_valid:
+                linear += self.speed_boost * 2
 
         else:
             message_valid = False
 
-        if self.boost_count > self.boost_count_threshold and message_valid:
-            linear += self.speed_boost
+
 
         # send speed command to wheels
 

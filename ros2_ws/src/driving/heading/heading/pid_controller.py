@@ -14,7 +14,7 @@ class PIDController:
 
     def control(self, curr_error):
         curr_time = time.time_ns()
-        iteration_time = (curr_time - self.last_time) * 1000000  # get into seconds
+        iteration_time = (curr_time - self.last_time) * 1000000000  # get into seconds
 
         prev_int_error = 0.0
         for error in self.prev_integral_errors:
@@ -26,8 +26,8 @@ class PIDController:
         output = self.kp * curr_error + self.ki * integral_term + self.kd * derivative_term
 
         self.prev_error = curr_error
-
-        self.prev_integral_errors.pop(0)
+        if len(self.prev_integral_errors) == 0:
+            self.prev_integral_errors.pop(0)
         self.prev_integral_errors.append(curr_error)
 
         self.last_time = curr_time

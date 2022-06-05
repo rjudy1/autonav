@@ -182,8 +182,8 @@ class GPS(Node):
         distance = self.check_waypoint(loc)
         if self.get_parameter('/Debug').value:
             # pass
-            self.get_logger().info(f"loc {loc}\n"
-                                   f"Desired location: {self.target_loc[self.waypoint_itr]}")
+            self.get_logger().info(f"loc {loc}\n")
+                                   # f"Desired location: {self.target_loc[self.waypoint_itr]}")
 
         # calculate our current heading and the heading we need to have and publish these
         curr_heading = self.calc_heading(self.past_loc, loc)
