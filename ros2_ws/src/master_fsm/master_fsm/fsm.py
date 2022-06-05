@@ -73,6 +73,7 @@ class MainRobot(Node):
         self.exit_heading = 0.0
         self.look_for_line = False
         self.waypoints_done = False
+        self.waypoint_count = 0
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
@@ -88,7 +89,8 @@ class MainRobot(Node):
         light_msg.on = False
         self.lights_pub.publish(light_msg)
 
-        if self.waypoint_found and not self.waypoints_done:  # reached gps waypoint - switch to gps navigation
+        if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
+            self.waypoint_count += 1
             self.waypoint_found = False
             self.state = STATE.GPS_NAVIGATION
             self.state_msg.data = STATE.GPS_NAVIGATION
@@ -115,6 +117,7 @@ class MainRobot(Node):
         # self.get_logger().info("Object Avoidance From Line Following State")
         # Check for another object in front of the robot
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
+            self.waypoint_count += 1
             self.waypoint_found = False
             self.state = STATE.GPS_NAVIGATION
             self.state_msg.data = STATE.GPS_NAVIGATION
@@ -165,6 +168,8 @@ class MainRobot(Node):
             self.state = STATE.GPS_NAVIGATION
             self.gps_navigation_state()  # enter the gps navigation state
 
+        # might need a waypoint found here
+
     # GPS Navigation State
     def gps_navigation_state(self):
         # self.get_logger().info("GPS Navigation State")
@@ -180,14 +185,21 @@ class MainRobot(Node):
         self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
+            self.waypoints_found += 1
             self.waypoint_found = False
-            self.state_msg.data = STATE.FIND_LINE
             self.get_logger().info("WAYPOINT FOUND IN FSM!!")
 
-            # RESTORE THIS
-            self.state_pub.publish(self.state_msg)
-            self.state = STATE.FIND_LINE
-            self.find_line_state()
+            if self.waypoint_count == 4: # just take this step if not using nav across ramp
+                self.state_msg.data = STATE.FIND_LINE
+                # RESTORE THIS
+                self.state_pub.publish(self.state_msg)
+                self.state = STATE.FIND_LINE
+                self.find_line_state()
+            else:
+                # stay in gps state on to next object - redundant but for clarity
+                self.state_msg.data = STATE.GPS_NAVIGATION
+                self.state_pub.publish(self.state_msg)
+                self.state = STATE.GPS_NAVIGATION
 
         # First look for a potential obstacle
         elif self.obj_seen:
@@ -220,11 +232,13 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.waypoint_found:
+            self.waypoints_found += 1
+
             self.waypoint_found = False
-            self.state = STATE.GPS_NAVIGATION
-            self.state_msg.data = STATE.GPS_NAVIGATION
+            self.state = STATE.GPS_TO_OBJECT
+            self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
-            self.gps_navigation_state()
+            self.gps_to_object_state()
 
         elif self.path_clear:
             self.path_clear = False
