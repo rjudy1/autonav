@@ -1,12 +1,12 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /RealCourse:                True
+        /RealCourse:                False
         /FollowingDirection:        0           # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            56.0       # set before build to degrees!!
+        /InitialHeading:            107.0       # set before build to degrees!!
         /NorthPointFirst:           True
-        /GpsExitHeading:            2.740165     # N, R: -2.49582; N, L: 2.740165; S, R: -0.401425; S, L: 0.64577
+        /GpsExitHeading:            2.5656318     # N, R: -2.321286; N, L: 2.5656318; S, R: -0.575958; S, L: 0.820304
         /CrossRampInGps:            True
         /LineDist:                  0.25
         /EncoderWeight:             .6
@@ -28,7 +28,7 @@
         /LineDetectCropTop:         0.0         # fraction to remove
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /LineDetectDistance:        0.95
+        /LineDetectDistance:        1.0
         /Debug:                     True
 
 
@@ -65,13 +65,18 @@
         /PracticeWaypointLon4:      -83.1310758
 
         # their provided north point = 42.400961833333334 + -83.13160418166666j
-        # our nearest recorded point = 42.4009776 + -83.1315994j
+        # our nearest recorded point = 42.400974399999996-83.1315972
         /WaypointLat1:              42.40096900         # north real -- adjusted about 83 cm north
         /WaypointLon1:              -83.13160418166666
+
+        # our nearest recorded point = 42.400873600000004-83.13161260000001
         /WaypointLat2:              42.40087238666667          # center north
-        /WaypointLon2:              -83.131616365
+        /WaypointLon2:              -83.131617365  # SHIFTED ONE DECIMETER
+
+        # 42.4008482-83.1316123 OUR RECORDED POINT
         /WaypointLat3:              42.40084598           # center south
-        /WaypointLon3:              -83.131615495
+        /WaypointLon3:              -83.131616495
+
         # their provided south point = 42.400756623333336 + -83.131596585j
         /WaypointLat4:              42.400756623333336   # south real -- adjusted about 73 cm south
         /WaypointLon4:              -83.131596585

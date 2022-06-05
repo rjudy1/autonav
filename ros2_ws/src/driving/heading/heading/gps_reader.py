@@ -156,7 +156,7 @@ class GPS(Node):
         self.get_logger().info(f"distance from waypoint: {dist_meters}")
 
         if self.state == STATE.GPS_NAVIGATION or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
-            dist_limit = self.DISTANCE_GOAL*2/3  # 1 meter currently
+            dist_limit = 0.5
         else:
             dist_limit = self.DISTANCE_GOAL
 

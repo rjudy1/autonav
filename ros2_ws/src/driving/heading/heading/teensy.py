@@ -69,7 +69,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
         self.pid_obj = PIDController(12.0, 0.0, 2.5, 25, -25)   # for object avoidance
-        self.pid_gps = PIDController(14.0, 0, 2.0, 20, -20)   # for during gps navigation
+        self.pid_gps = PIDController(21.0, 0, 2.0, 20, -20)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -106,17 +106,21 @@ class Teensy(Node):
         if self.state == STATE.GPS_TO_OBJECT or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS or \
                 self.state == STATE.LINE_TO_OBJECT or self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
             self.following_mode = FollowMode.eeObject
+            self.MAX_CHANGE = 4
         elif self.state == STATE.LINE_FOLLOWING:
             self.following_mode = FollowMode.eeLine
             self.boost_count = 0
+            self.MAX_CHANGE = 4
             # self.get_logger().info("SWITCHED TO LINE FOLLOWING")
         elif self.state == STATE.GPS_NAVIGATION:
             self.following_mode = FollowMode.eeGps
             self.boost_count = 0
+            self.MAX_CHANGE = 5
             # self.get_logger().info("SWITCHED TO GPS NAVIGATION")
         elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or \
                 self.state == STATE.LINE_ORIENT or self.state == STATE.ORIENT_TO_GPS or self.state == STATE.GPS_EXIT:
             self.following_mode = FollowMode.eeTransition
+            self.MAX_CHANGE = 2
             self.boost_count = 0
 
     def wheel_callback(self, msg):
@@ -183,8 +187,8 @@ class Teensy(Node):
             #             gps_distance = float(parts[2]) whatever
             delta = self.pid_gps.control(position*(gps_distance**(1./3)))
             # GPS sends the error as - for left turns and + for right turns
-            if gps_distance <= 2.0:
-                linear -= 6*(2.0 - gps_distance)
+            if gps_distance <= 2.5:
+                linear -= 4.5*(2.0 - gps_distance)
             linear = round(self.gps_speed)
             angular = round(delta)
             if abs(position*(gps_distance**(1./3))) <= self.gps_boost_margin:
