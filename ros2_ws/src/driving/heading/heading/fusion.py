@@ -55,19 +55,14 @@ class Fusion(Node):
             if self.encoder_curr_heading > math.pi:
                 self.encoder_curr_heading += -2*math.pi
 
-        if self.state == STATE.GPS_NAVIGATION:
-            encoder_weight = self.get_parameter('/EncoderWeight').value
-        else:
-        # if -0.01 < gps_msg.current_heading < 0.01:
-            encoder_weight = 1.0
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
-        self.curr_heading = (1-encoder_weight) * self.curr_heading + encoder_weight * self.encoder_curr_heading
-        self.encoder_curr_heading = self.curr_heading
+        self.curr_heading = self.encoder_curr_heading
         heading_msg = HeadingStatus()
         heading_msg.current_heading = self.curr_heading
         heading_msg.target_heading = self.target_heading
         heading_msg.distance = self.distance_from_waypoint
         self.fused_pub.publish(heading_msg)
+        self.get_logger().info(f"Current heading: {heading_msg.current_heading}, target: {heading_msg.target_heading}")
 
         self.publish_to_motors()
 
@@ -99,10 +94,11 @@ class Fusion(Node):
         self.wheel_pub.publish(msg)
 
     def gps_callback(self, gps_msg):
-        if self.state == STATE.GPS_NAVIGATION:
+        if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:
             encoder_weight = self.get_parameter('/EncoderWeight').value
+        elif self.state == STATE.LINE_FOLLOWING and not -0.01 < gps_msg.current_heading < 0.01:
+            encoder_weight = 0.7
         else:
-        # if -0.01 < gps_msg.current_heading < 0.01:
             encoder_weight = 1.0
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading

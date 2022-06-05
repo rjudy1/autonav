@@ -1,12 +1,12 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
 /**:
     ros__parameters:
-        /RealCourse:                False
+        /RealCourse:                True
         /FollowingDirection:        0           # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            107.0       # set before build to degrees!!
-        /NorthPointFirst:           True
-        /GpsExitHeading:            2.5656318     # N, R: -2.321286; N, L: 2.5656318; S, R: -0.575958; S, L: 0.820304
+        /InitialHeading:            188.0       # set before build to degrees!!
+        /NorthPointFirst:           False
+        /GpsExitHeading:            0.820304     # N, R: -2.321286; N, L: 2.5656318; S, R: -0.575958; S, L: 0.820304
         /CrossRampInGps:            True
         /LineDist:                  0.25
         /EncoderWeight:             .6
@@ -69,16 +69,16 @@
         /WaypointLat1:              42.40096900         # north real -- adjusted about 83 cm north
         /WaypointLon1:              -83.13160418166666
 
-        # our nearest recorded point = 42.400873600000004-83.13161260000001
-        /WaypointLat2:              42.40087238666667          # center north
-        /WaypointLon2:              -83.131617365  # SHIFTED ONE DECIMETER
+        # actual point on ramp = 42.400875400000004-83.13161829999999 north
+        /WaypointLat2:              42.40088038666667          # center north - shifted north slightly
+        /WaypointLon2:              -83.131620365               # shift west
 
         # 42.4008482-83.1316123 OUR RECORDED POINT
-        /WaypointLat3:              42.40084598           # center south
-        /WaypointLon3:              -83.131616495
+        /WaypointLat3:              42.40084398           # center south - shifted south 2 decimeters
+        /WaypointLon3:              -83.131618495
 
         # their provided south point = 42.400756623333336 + -83.131596585j
-        /WaypointLat4:              42.400756623333336   # south real -- adjusted about 73 cm south
+        /WaypointLat4:              42.400752623333336   # south real -- adjusted about 113 cm south
         /WaypointLon4:              -83.131596585
         /GPSFollowGoal:             1.0
         /LineToGPSTrans:            5.0
