@@ -4,12 +4,12 @@
         /RealCourse:                False
         /FollowingDirection:        0          # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            179.0       # set before build to degrees!!
+        /InitialHeading:            212.0       # set before build to degrees!!
         /NorthPointFirst:           True
         /GpsExitHeading:            2.5656318     # N, R: -2.321286; N, L: 2.5656318; S, R: -0.575958; S, L: 0.820304
         /CrossRampInGps:            True
         /LineDist:                  0.25
-        /EncoderWeight:             .6
+#        /EncoderWeight:             .75
 
 /fsm:
     ros__parameters:
@@ -80,7 +80,7 @@
         # their provided south point = 42.400756623333336 + -83.131596585j
         /WaypointLat4:              42.400752623333336   # south real -- adjusted about 113 cm south
         /WaypointLon4:              -83.131596585
-        /GPSFollowGoal:             1.0
+        /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
         /Debug:                     True

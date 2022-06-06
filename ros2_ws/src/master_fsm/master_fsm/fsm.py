@@ -431,17 +431,17 @@ class MainRobot(Node):
                 self.get_logger().info(
                     f"Heading restored with heading {obj_curr * direction_var} and goal {obj_exit * direction_var}")
                 self.heading_restored = True
-        # elif self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
-        #     direction_var = (-1 + 2 * int(self.follow_dir == DIRECTION.RIGHT))
-        #     self.exit_heading = self.target_heading
-        #     gps_curr = self.heading*direction_var
-        #     gps_exit = self.exit_heading*direction_var
-        #     if sub_angles(gps_curr, gps_exit) >= 0:
-        #         self.get_logger().info(f"Heading restored with heading {gps_curr*direction_var}"
-        #                                f" and goal {gps_exit*direction_var}")
-        #         self.heading_restored = True
-        #     elif self.heading_restored:
-        #         self.heading_restored = False
+        elif self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS and self.waypoint_count == 1:
+            direction_var = (-1 + 2 * int(self.follow_dir == DIRECTION.RIGHT))
+            self.exit_heading = self.target_heading
+            gps_curr = self.heading*direction_var
+            gps_exit = self.exit_heading*direction_var
+            if sub_angles(gps_curr, gps_exit) >= 0 or sub_angles(gps_exit, gps_curr) < math.pi/6:
+                self.get_logger().info(f"Heading restored with heading {gps_curr*direction_var}"
+                                       f" and goal {gps_exit*direction_var}")
+                self.heading_restored = True
+            elif self.heading_restored:
+                self.heading_restored = False
         elif self.state == STATE.ORIENT_TO_GPS or self.state == STATE.GPS_EXIT \
                 or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
             if self.state == STATE.ORIENT_TO_GPS or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:

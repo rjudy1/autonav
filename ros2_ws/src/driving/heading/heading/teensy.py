@@ -68,8 +68,8 @@ class Teensy(Node):
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
         self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
-        self.pid_obj = PIDController(9.0, 0.0, 2.5, 16, -16)   # for object avoidance
-        self.pid_gps = PIDController(17.0, 0, 2.0, 17, -17)   # for during gps navigation
+        self.pid_obj = PIDController(9.0, 0.0, 2.5, 19, -19)   # for object avoidance
+        self.pid_gps = PIDController(10.0, 0, 2.0, 17, -17)   # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -193,7 +193,7 @@ class Teensy(Node):
                 self.get_logger().info(f"adjusted linear by {adjustment}")
 
             linear = round(self.gps_speed - adjustment)
-            angular = round(delta)
+            angular = round(delta + (1-2*int(delta > 0.0)*1/2))
             if abs(position*(gps_distance**(1./3))) <= self.gps_boost_margin:
                 self.boost_count += 1
             else:

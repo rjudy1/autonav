@@ -89,15 +89,20 @@ class Fusion(Node):
 
     def gps_callback(self, gps_msg):
         if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:
-            encoder_weight = self.get_parameter('/EncoderWeight').value
+            encoder_weight = .75
         elif self.state == STATE.LINE_FOLLOWING and not -0.01 < gps_msg.current_heading < 0.01:
-            encoder_weight = 0.7
+            encoder_weight = 0.9
         else:
             encoder_weight = 1.0
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
-        self.curr_heading = (1-encoder_weight) * gps_msg.current_heading + encoder_weight * self.encoder_curr_heading
-        self.encoder_curr_heading = self.curr_heading
+
+        # new heading calculations
+        diff = sub_angles(self.encoder_curr_heading, gps_msg.current_heading)
+        self.curr_heading = (self.encoder_curr_heading - diff*(1-encoder_weight)) % (2*math.pi)
+        if self.curr_heading > math.pi:
+            self.curr_heading -= 2*math.pi
+
         heading_msg = HeadingStatus()
         heading_msg.current_heading = self.curr_heading
         heading_msg.target_heading = self.target_heading
@@ -115,6 +120,7 @@ class Fusion(Node):
                                       "Current Weighted Heading " + str(self.curr_heading) + '\n' +
                                       "Target Heading: " + str(gps_msg.target_heading) + '\n')
         self.encoder_curr_heading = self.curr_heading
+
         # publish
         # msg = String()
         # msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint) +
