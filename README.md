@@ -5,15 +5,25 @@ This repository contains the code used for the Cedarville AutoNav 2022 robot. Th
 1. Set the GPS waypoint locations in the yaml. These will assume to be first an exit point from lines, then an entrance, and repeat.
    Set these by running the dms_to_dmm.py script to convert the judge provided values to our Degrees Minutes Minutes Decimal format.
 2. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors when prompted.
-2. Enter the GPS heading given by the phone compass. Change this value in the params.yaml in degrees.
-3. Source ROS2 `. /opt/ros/ros2_distro/setup.bash`
+2. Enter the GPS heading given by the phone compass. Change this value in the params.yaml in degrees. Set the other parameters as appropriate.
+3. Source ROS2 `. /opt/ros/<ros2_distro>/setup.bash`
 4. Navigate to `cd ros2_ws` and build with `colcon build`
 5. Source the workspace in all relevant terminals with `. install/setup.bash`
 6. Run `ros2 launch robot_launch robot.launch.py`. If this doesn't run or throws errors, view the robot.launch.py file to modify the port parameters.
-7. Alternatively to step 8, run `ros2 launch robot_launch vision.launch.py` and `ros2 launch robot_launch control.launch.py`. Seperating these may avoid odd jumps at initialization.
+7. Alternatively to steps 4-5, run `./vision.sh` and `./control.sh` in the ros2_ws.
 8. (Optional) if you want to see the laser scan, run the following commands in new terminals:
 - `ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 world laser_frame`
 - `rviz2 ./install/rplidar_ros/share/rplidar_ros/rviz/rplidar.rviz`
+
+### Important Parameters (found at top of params.yaml)
+- /RealCourse:                True if on actual course, false if practice
+- /FollowingDirection:        1  is right, 0 is left
+- /UseYellow:                 False if following white lines
+- /InitialHeading:            154.0  set before build to degrees based on iphone compass
+- /NorthPointFirst:           set depending on direction going in course
+- /GpsExitHeading:            comment shows what value to set based on going north south, this will have to be tweaked at location for return to line
+- /CrossRampInGps:            True for cross in GPS or False for line following - line following untested
+- /LineDist:                  distance in meters to follow from line
 
 ## Packages and Nodes
 ### Master FSM
@@ -98,3 +108,10 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - If wanting to use ROS1 versions of packages or rosbags see the helpful ros1 to ros2 bridge at [https://github.com/ros2/ros1_bridge](RosBridge)
 - To change parameters while running see `ros2 param set <node> <parameter> <parameter_value>
 - Some of these parameters may have been moved into the general parameter section.
+- ROSbags have been taken on the actual course and can be found in the bags folder. These contain the camera, lidar, GPS, and other sensor inputs that can be run through modified systems
+- GPS points on actual course may be slightly off. We did some shifting of the waypoints that would vary by run
+- Units throughout are mostly in meters, exceptions being some of the line node reported data.
+- We strongly recommend redoing the ROS messages for state and motor commands so they are not stupid string messages that were inherited
+- Buy a new non SmartDriveDuo motor controller.
+- The heading package is technically more of the driving package as it controls the motors too.
+- See quick start for ways to start the nodes

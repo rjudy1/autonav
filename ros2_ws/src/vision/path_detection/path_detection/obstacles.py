@@ -222,11 +222,11 @@ class TransformPublisher(Node):
         try:
             if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
                 if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, 70*math.pi/180, 80*math.pi/180, 2.0))
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 70*math.pi/180, 84*math.pi/180, 2.0))
                     self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)
                 elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, 280*math.pi/180, 290*math.pi/180, 2.0))
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 276*math.pi/180, 290*math.pi/180, 2.0))
                     self.lidar_wheel_distance_pub.publish(distance_msg)
 
         except Exception as e:

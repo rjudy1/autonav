@@ -355,7 +355,7 @@ class MainRobot(Node):
             self.line_following_state()
 
     def orient_to_gps_state(self):
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{10},{14*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{10},{18*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.heading_restored:
