@@ -1,14 +1,15 @@
 # 1 on /FollowingDirection is right line following, 0 in state is line following
+# ros2 bag record -o bags/run06062200950 /camera/color/image_raw /gps_heading /scan /rosout
 /**:
     ros__parameters:
         /RealCourse:                False
         /FollowingDirection:        0          # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            212.0       # set before build to degrees!!
-        /NorthPointFirst:           True
-        /GpsExitHeading:            2.5656318     # N, R: -2.321286; N, L: 2.5656318; S, R: -0.575958; S, L: 0.820304
+        /InitialHeading:            31.0       # set before build to degrees!!
+        /NorthPointFirst:           False
+        /GpsExitHeading:            1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
         /CrossRampInGps:            True
-        /LineDist:                  0.25
+        /LineDist:                  0.27
 #        /EncoderWeight:             .75
 
 /fsm:
@@ -16,7 +17,7 @@
         /TimerRate:                 0.05  # rate at which to check and do state specified behavior
         /StartState:                0
         /TurnSpeed:                 20
-        /SlightTurn:                20
+        /SlightTurn:                18
         /ExitAngle:                 0.3
 
 /rplidar_node:
@@ -36,7 +37,7 @@
     ros__parameters:
         /LIDARTrimMin:              1.31  # radians
         /LIDARTrimMax:              4.97  # radians
-        /ObstacleFOV:               0.61  # radians
+        /ObstacleFOV:               0.7854  # radians = 45 degrees
         /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
@@ -61,8 +62,9 @@
 
 #        /PracticeWaypointLat2:      42.400776035        # south practice
 #        /PracticeWaypointLon2:      -83.13108550000001 #42.4009412-83.13108260000001
-        /PracticeWaypointLat4:      42.4007917          # south point from us
-        /PracticeWaypointLon4:      -83.1310758
+        # practice 4 retake = 42.400786-83.13106239999999
+        /PracticeWaypointLat4:      42.4007867          # south point from us
+        /PracticeWaypointLon4:      -83.13106239999999
 
         # their provided north point = 42.400961833333334 + -83.13160418166666j
         # our nearest recorded point = 42.400974399999996-83.1315972
@@ -78,8 +80,9 @@
         /WaypointLon3:              -83.131618495
 
         # their provided south point = 42.400756623333336 + -83.131596585j
-        /WaypointLat4:              42.400752623333336   # south real -- adjusted about 113 cm south
-        /WaypointLon4:              -83.131596585
+        # found south = 42.4007429-83.1316116
+        /WaypointLat4:              42.400749623333336   # south real -- adjusted about a meter south
+        /WaypointLon4:              -83.131593085  # adjusted slightly east
         /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
@@ -93,9 +96,9 @@
         /SideObjectDist:            0.85
         /LineSpeed:                 24.0
         /ObjectSpeed:               24.0
-        /GpsSpeed:                  24.0
-        /BoostIncrease:             7
-        /BoostCountThreshold:       10
+        /GpsSpeed:                  27.0
+        /BoostIncrease:             8
+        /BoostCountThreshold:       8
         /GPSBoostCountThreshold:    10
         /LineBoostMargin:           50.0
 

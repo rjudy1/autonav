@@ -89,7 +89,7 @@ class Fusion(Node):
 
     def gps_callback(self, gps_msg):
         if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:
-            encoder_weight = .75
+            encoder_weight = .55
         elif self.state == STATE.LINE_FOLLOWING and not -0.01 < gps_msg.current_heading < 0.01:
             encoder_weight = 0.9
         else:

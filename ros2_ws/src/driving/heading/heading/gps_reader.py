@@ -167,11 +167,11 @@ class GPS(Node):
             self.gps_event_pub.publish(msg)
             self.get_logger().info(f"WAYPOINT FOUND - SWITCH POINTS to {self.target_loc[self.waypoint_itr]}")
 
-            if self.waypoint_itr >= len(self.target_loc):
-                msg = String()
-                msg.data = STATUS.WAYPOINTS_DONE
-                self.gps_event_pub.publish(msg)
-                self.get_logger().warning("FINISHED GPS")
+            # if self.waypoint_itr >= len(self.target_loc):
+            #     msg = String()
+            #     msg.data = STATUS.WAYPOINTS_DONE
+            #     self.gps_event_pub.publish(msg)
+            #     self.get_logger().warning("FINISHED GPS")
         return dist_meters
 
     # this function takes a measurement and calculates all of the necessary

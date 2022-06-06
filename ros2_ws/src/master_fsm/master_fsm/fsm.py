@@ -173,6 +173,12 @@ class MainRobot(Node):
             self.gps_navigation_state()  # enter the gps navigation state
 
         # might need a waypoint found here
+        elif self.waypoint_found and self.waypoint_count == 4:
+            self.waypoint_found = False
+            self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
+            self.state_pub.publish(self.state_msg)
+            self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
+            self.object_avoidance_from_line_state()
 
     # GPS Navigation State
     def gps_navigation_state(self):
@@ -260,7 +266,7 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.SLIGHT_TURN)}"
+                            f"{round((1-2*int(self.follow_dir==DIRECTION.RIGHT)) * self.SLIGHT_TURN)}"
         self.wheel_pub.publish(self.wheel_msg)
         # self.get_logger().info("In object to line state publishing:")
         # self.get_logger().info(self.wheel_msg.data)
@@ -301,6 +307,13 @@ class MainRobot(Node):
 
             self.object_avoidance_from_gps_state()
 
+        elif self.waypoint_found and self.waypoint_count == 4:
+            self.waypoint_found = False
+            self.state_msg.data = STATE.LINE_TO_OBJECT
+            self.state_pub.publish(self.state_msg)
+            self.state = STATE.LINE_TO_OBJECT
+            self.line_to_object_state()
+
     # Transition State to find the line after GPS Navigation
     def find_line_state(self):
         # self.get_logger().info("Find Line Transition State")
@@ -330,8 +343,8 @@ class MainRobot(Node):
 
         # directly controls the motors
         # Just keep turning until we are parallel with the line
-        self.wheel_msg.data = CODE.TRANSITION_CODE + ',' + str(self.SLIGHT_TURN) \
-                              + "," + str(self.SLIGHT_TURN*(1-2*int(self.follow_dir))*3/4)
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
+                              f"{self.SLIGHT_TURN*(1-2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.aligned:
@@ -342,7 +355,7 @@ class MainRobot(Node):
             self.line_following_state()
 
     def orient_to_gps_state(self):
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{14},{14*(1-2*int(self.follow_dir==DIRECTION.RIGHT))}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{10},{14*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.heading_restored:
@@ -365,7 +378,7 @@ class MainRobot(Node):
 
     def gps_exit_state(self):
 
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{18},{18*3/2*(1-2*int(self.follow_dir==DIRECTION.RIGHT))}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{8},{15*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.heading_restored:
@@ -514,7 +527,7 @@ class MainRobot(Node):
         # Get the lock before proceeding
         self.lock.acquire()
         try:
-            if lidar_event.data == STATUS.OBJECT_SEEN:
+            if lidar_event.data == STATUS.OBJECT_SEEN and not self.waypoint_count == 2:
                 self.obj_seen = True
 
                 # # buzz if object seen
