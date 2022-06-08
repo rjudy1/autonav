@@ -4,13 +4,13 @@ This repository contains the code used for the Cedarville AutoNav 2022 robot. Th
 ## Quick Start
 1. Set the GPS waypoint locations in the yaml. These will assume to be first an exit point from lines, then an entrance, and repeat.
    Set these by running the dms_to_dmm.py script to convert the judge provided values to our Degrees Minutes Minutes Decimal format.
-2. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors when prompted.
-2. Enter the GPS heading given by the phone compass. Change this value in the params.yaml in degrees. Set the other parameters as appropriate.
+2. Run `python3 start_motors.py`. You will have to start the motors by enabling the motors (turn off estop) when prompted.
+2. Enter the GPS heading given by the phone compass. Change this value in the params.yaml in degrees. Set the other parameters as appropriate. Then start by either following step 7 or steps 3-6
 3. Source ROS2 `. /opt/ros/<ros2_distro>/setup.bash`
 4. Navigate to `cd ros2_ws` and build with `colcon build`
 5. Source the workspace in all relevant terminals with `. install/setup.bash`
 6. Run `ros2 launch robot_launch robot.launch.py`. If this doesn't run or throws errors, view the robot.launch.py file to modify the port parameters.
-7. Alternatively to steps 4-5, run `./vision.sh` and `./control.sh` in the ros2_ws.
+7. Alternatively to steps 3-6, run `./vision.sh` and `./control.sh` in the ros2_ws in separate terminals.
 8. (Optional) if you want to see the laser scan, run the following commands in new terminals:
 - `ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 world laser_frame`
 - `rviz2 ./install/rplidar_ros/share/rplidar_ros/rviz/rplidar.rviz`
@@ -53,7 +53,7 @@ The GPS node `gps_publisher` belongs to the `heading` package which monitors the
 - `/Port` which is the port the GPS is on 
 
 ### Teensy/Encoders
-The encoders publish to the `encoder_data` topic. They can track the distance the wheels travel to the centimeter and report the change since last message. This node is extremely important it actually sends the motor messages to the wheels and also manages the lights. This was merged with the motor controller to save resources and time
+The encoders publish to the `encoder_data` topic. They can track the distance the wheels travel to the centimeter and report the change since last message. This node is extremely important it actually sends the motor messages to the wheels and also manages the lights. This was merged with the motor controller to save resources and time. Additional params for separating speeds have been added
 - `/TeensyEncodersPort`
 - `/TeensyBaudrate`
 - `TeensyUpdateDelay` - sets the time between collection data from the encoders
@@ -61,7 +61,7 @@ The encoders publish to the `encoder_data` topic. They can track the distance th
 - `FollowingDirection` - generic parameter
 - `/LineDist` - manages desired distance from line
 - `/SideObjectDist` - manages desired distance from object
-- `/DefaultSpeed` - sets to simple speed when clear path or straight. This is being modified to include varied speed for different states
+- `/DefaultSpeed` - sets to simple speed when clear path or straight. This is being modified to include varied speed for different states - OUTDATED
 - `/BoostIncrease'`
 - `/BoostCountThreshold`
 - `/LineBoostMargin`
