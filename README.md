@@ -111,7 +111,7 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - ROSbags have been taken on the actual course and can be found in the bags folder. These contain the camera, lidar, GPS, and other sensor inputs that can be run through modified systems
 - GPS points on actual course may be slightly off. We did some shifting of the waypoints that would vary by run
 - Units throughout are mostly in meters, exceptions being some of the line node reported data.
-- We strongly recommend redoing the ROS messages for state and motor commands so they are not stupid string messages that were inherited
+- We strongly recommend redoing the ROS messages for state and motor commands so they are not stupid string messages that were inherited (see /ros2_ws/src/custom_msgs for examples)
 - Buy a new non SmartDriveDuo motor controller.
-- The heading package is technically more of the driving package as it controls the motors too.
+- The heading package is technically more of the driving package as it controls the motors too. (Only one node has access to the Teensy)
 - See quick start for ways to start the nodes
