@@ -112,6 +112,17 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - GPS points on actual course may be slightly off. We did some shifting of the waypoints that would vary by run
 - Units throughout are mostly in meters, exceptions being some of the line node reported data.
 - We strongly recommend redoing the ROS messages for state and motor commands so they are not stupid string messages that were inherited
-- Buy a new non SmartDriveDuo motor controller.
+- Buy a new non SmartDriveDuo motor controller as this one was finnicky and randomly glitched with overcurrent
+- Add rubber shielding around corners
+- Shift payload to sit between the wheels so jolts don't tip it
+- Get more batteries and a better interchangeablity so can charge cycle and test cycle at same time
 - The heading package is technically more of the driving package as it controls the motors too.
 - See quick start for ways to start the nodes
+
+## How the Robot Tried to Kill Us and Itself
+- poor manual fine control at low speeds - running us over out the gate
+- can't see white line in hallway with white walls - drove directly at wall and pinned to wall
+- slippage on ramp of encoder given heading - direct suicide off ramp attempt
+- following obstacles too closely - tail spun and hit us
+
+## [Complete Video](https://drive.google.com/file/d/1BnwrCk68dNjJJOYNAAvbYWItyapaKm5W/view?usp=sharing)
