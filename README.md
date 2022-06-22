@@ -108,7 +108,7 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - If wanting to use ROS1 versions of packages or rosbags see the helpful ros1 to ros2 bridge at [https://github.com/ros2/ros1_bridge](RosBridge)
 - To change parameters while running see `ros2 param set <node> <parameter> <parameter_value>
 - Some of these parameters may have been moved into the general parameter section.
-- ROSbags have been taken on the actual course and can be found in the bags folder. These contain the camera, lidar, GPS, and other sensor inputs that can be run through modified systems
+- ROSbags have been taken on the actual course and can be found in the bags folder. These contain the camera, lidar, GPS, and other sensor inputs that can be run through modified systems. They may be on a separate drive as they are very large.
 - GPS points on actual course may be slightly off. We did some shifting of the waypoints that would vary by run
 - Units throughout are mostly in meters, exceptions being some of the line node reported data.
 - We strongly recommend redoing the ROS messages for state and motor commands so they are not stupid string messages that were inherited
