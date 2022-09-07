@@ -1,5 +1,5 @@
-# Cedarville University AutoNav Competition Robot 2022
-This repository contains the code used for the Cedarville AutoNav 2022 robot. The robot is run through ROS2 nodes and takes a behavioral approach through a state machine.
+# Cedarville University AutoNav Competition Robot 2023
+This repository contains the code used for the Cedarville AutoNav 2023 robot. The robot is run through ROS2 nodes and takes a behavioral approach through a state machine.
 
 ## Quick Start
 1. Set the GPS waypoint locations in the yaml. These will assume to be first an exit point from lines, then an entrance, and repeat.
@@ -124,5 +124,6 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - can't see white line in hallway with white walls - drove directly at wall and pinned to wall
 - slippage on ramp of encoder given heading - direct suicide off ramp attempt
 - following obstacles too closely - tail spun and hit us
+- connecting the controller (which requires the joystick to be in the 6:00 position) without the e-stop on - fully engaging the motors and punching a hole through the wall
 
 ## [Complete Video](https://drive.google.com/file/d/1BnwrCk68dNjJJOYNAAvbYWItyapaKm5W/view?usp=sharing)
