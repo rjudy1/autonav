@@ -18,12 +18,12 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
-    logging_node = Node(
-        package = "logging",
-        executable="logger",
+    data_logging_node = Node(
+        package = "data_logging",
+        executable="data_logger",
         parameters=[]
     )
 
-    ld.add_action(logging_node)
+    ld.add_action(data_logging_node)
 
     return ld
