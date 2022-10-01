@@ -1,7 +1,7 @@
 ################################
 # AutoNav 2023 Competition Robot
-# Package: logging
-# File: logger.py
+# Package: data_logging
+# File: data_logger.py
 # Purpose: create a csv file with data from topics subscribed to
 # Date Created:  1 Oct 2023
 # Date Modified: 1 Oct 2023
@@ -18,12 +18,35 @@ from rclpy.node      import Node
 from custom_msgs.msg import *
 from std_msgs.msg    import *
 
-class Logger(Node):
+class Data_Logger(Node):
     def __init__(self):
-        super().__init__('logger')
+        super().__init__('data_logger')
 
         # Subscribe to nodes you'd like data from
         self.x_sub = self.create_subscription(datatype, "topic name", self.x_callback, 10)
+        self.x_sub = self.create_subscription(datatype, "/camera/color/camera_info"
+	self.x_sub = self.create_subscription(datatype, "/camera/color/image_raw"
+	self.x_sub = self.create_subscription(datatype, "/camera/color/metadata
+	self.x_sub = self.create_subscription(datatype, "/camera/depth/camera_info
+	self.x_sub = self.create_subscription(datatype, "/camera/depth/image_rect_raw
+	self.x_sub = self.create_subscription(datatype, "/camera/depth/metadata
+	/camera/extrinsics/depth_to_color
+	/camera/imu
+	/encoder_data
+	/fused_heading
+	/gps_events
+	/gps_heading
+	/laser_frame
+	/light_events
+	/line_events
+	/mod_lidar
+	/parameter_events
+	/rosout
+	/scan
+	/state_topic
+	/tf_static
+	/wheel_distance
+
 
         # create & open log file
         if hasattr(self, 'x_sub'):
@@ -39,11 +62,11 @@ class Logger(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    logger = Logger()
+    data_logger = Data_Logger()
     try:
-        rclpy.spin(logger)
+        rclpy.spin(data_logger)
     except KeyboardInterrupt:
-        logger.destroy_node()
+        data_logger.destroy_node()
         rclpy.shutdown()
 
 

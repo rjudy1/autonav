@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'logging'
+package_name = 'data_logging'
 
 setup(
     name=package_name,
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "logger=logging.logger:main",
+            "data_logger=data_logging.data_logger:main"
         ],
     },
 )
