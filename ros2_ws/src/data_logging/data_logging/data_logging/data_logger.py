@@ -26,10 +26,10 @@ class Data_Logger(Node):
 
         # Subscribe to nodes you'd like data from. comment out nodes you don't want.
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/camera_info",         self.callback, 10)
-        self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
+        #self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/metadata",            self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/depth/camera_info",         self.callback, 10)
-        self.depth_image_sub   = self.create_subscription(datatype,      "/camera/depth/image_rect_raw",      self.depth_image_callback,   10)
+        self.depth_image_sub   = self.create_subscription(Image,         "/camera/depth/image_rect_raw",      self.depth_image_callback,   10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/depth/metadata",            self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/extrinsics/depth_to_color", self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/imu",                       self.callback, 10)
@@ -131,17 +131,21 @@ class Data_Logger(Node):
     # encoder_callback function
     # logs encoder data to csv
     def encoder_callback(self, data):
-        self.image_writer.writerow(data)
+        self.get_logger().info(f"left: {data.left}, right: {data.right} ")
+        self.encoder_writer.writerow(np.array([data.left, data.right]))#f"left: {data.left}, right: {data.right} ")
 
     # lidar_frame_callback function
-    # logs lidar /scan data to csv
+    # logs lidar frame data to csv
     def lidar_frame_callback(self, data):
-        self.lidar_frame_writer.writerow(data)
+        self.lidar_frame_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec], data.ranges)))
 
     # lidar_scan_callback function
     # logs lidar /scan data to csv
     def lidar_scan_callback(self, data):
-        self.lidar_scan_writer.writerow(data)
+        self.lidar_scan_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec], data.ranges)))
+
+    def __del__(self):
+        self.encoder_logfile.close()
 
 
 def main(args=None):
