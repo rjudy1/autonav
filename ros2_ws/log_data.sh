@@ -8,4 +8,4 @@
 
 . install/setup.bash
 clear
-ros2 launch robot_launch log.launch.py
+ros2 launch robot_launch data_logging.launch.py

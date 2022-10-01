@@ -12,6 +12,7 @@ import csv
 from dataclasses import dataclass
 import time
 from utils.utils import *
+import numpy as np
 
 import rclpy
 from rclpy.node      import Node
@@ -63,7 +64,7 @@ class Data_Logger(Node):
     # image_callback function
     # logs image data to csv
     def image_callback(self, data):
-        self.image_writer.writerow([str(round(time.time())), data])
+        self.image_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec, data.height, data.width], data.data)))
 
 
 def main(args=None):

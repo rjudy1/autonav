@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "data_logger=data_logging.data_logger:main"
+            "data_logger=data_logging.data_logger:main",
         ],
     },
 )
