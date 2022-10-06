@@ -26,7 +26,7 @@ class Data_Logger(Node):
 
         # Subscribe to nodes you'd like data from. comment out nodes you don't want.
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/camera_info",         self.callback, 10)
-        #self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
+        self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/metadata",            self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/depth/camera_info",         self.callback, 10)
         self.depth_image_sub   = self.create_subscription(Image,         "/camera/depth/image_rect_raw",      self.depth_image_callback,   10)
@@ -131,8 +131,8 @@ class Data_Logger(Node):
     # encoder_callback function
     # logs encoder data to csv
     def encoder_callback(self, data):
-        self.get_logger().info(f"left: {data.left}, right: {data.right} ")
-        self.encoder_writer.writerow(np.array([data.left, data.right]))#f"left: {data.left}, right: {data.right} ")
+        # self.get_logger().info(f"left: {data.left}, right: {data.right} ")
+        self.encoder_writer.writerow(np.array([data.left, data.right]))
 
     # lidar_frame_callback function
     # logs lidar frame data to csv
@@ -144,8 +144,46 @@ class Data_Logger(Node):
     def lidar_scan_callback(self, data):
         self.lidar_scan_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec], data.ranges)))
 
+    # destructor
     def __del__(self):
-        self.encoder_logfile.close()
+        if hasattr(self, 'image_sub'):
+            self.image_logfile.close()
+
+        if hasattr(self, 'depth_image_sub'):
+            self.depth_image_logfile.close()
+
+        if hasattr(self, 'encoder_sub'):
+            self.encoder_logfile.close()
+
+        if hasattr(self, 'fused_heading_sub'):
+            self.fused_heading_logfile.close()
+
+        if hasattr(self, 'gps_events_sub'):
+            self.gps_events_logfile.close()
+
+        if hasattr(self, 'gps_heading_sub'):
+            self.gps_heading_logfile.close()
+
+        if hasattr(self, 'lidar_frame_sub'):
+            self.lidar_frame_logfile.close()
+
+        if hasattr(self, 'light_sub'):
+            self.light_logfile.close()
+
+        if hasattr(self, 'line_sub'):
+            self.line_logfile.close()
+
+        if hasattr(self, 'mod_lidar_sub'):
+            self.mod_lidar_logfile.close()
+
+        if hasattr(self, 'lidar_scan_sub'):
+            self.lidar_scan_logfile.close()
+
+        if hasattr(self, 'state_sub'):
+            self.state_logfile.close()
+
+        if hasattr(self, 'wheel_sub'):
+            self.wheel_logfile.close()
 
 
 def main(args=None):
