@@ -103,6 +103,8 @@ The RealSense camera is run through a provided package. It reports on the `/came
 The RPLIDAR also is controlled through a provided package. It spins and publishes the LIDAR scans. You may have to set the port with the parameters:
 - `serial_port` which is by default `/dev/ttyUSB0`
 
+### Data Logger
+The data_logger node can subscribe to any topic and save the data to a CSV. To run the data_logger node, run `./log_data.sh`. Right now choosing which topics to subscribe to happens by editing the node itself. Potential future work would be to create a section in the parameters file to have a cleaner topic selection interface.
 
 ## Helpful Tools/Tips
 - If wanting to use ROS1 versions of packages or rosbags see the helpful ros1 to ros2 bridge at [https://github.com/ros2/ros1_bridge](RosBridge)
