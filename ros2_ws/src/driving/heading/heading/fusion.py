@@ -62,7 +62,7 @@ class Fusion(Node):
         heading_msg.target_heading = self.target_heading
         heading_msg.distance = self.distance_from_waypoint
         self.fused_pub.publish(heading_msg)
-        self.get_logger().info(f"Current heading: {heading_msg.current_heading}, target: {heading_msg.target_heading}")
+        # self.get_logger().info(f"Current heading: {heading_msg.current_heading}, target: {heading_msg.target_heading}")
 
         self.publish_to_motors()
 
@@ -91,7 +91,7 @@ class Fusion(Node):
         if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:
             encoder_weight = .55
         elif self.state == STATE.LINE_FOLLOWING and not -0.01 < gps_msg.current_heading < 0.01:
-            encoder_weight = 0.9
+            encoder_weight = 1.0
         else:
             encoder_weight = 1.0
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")

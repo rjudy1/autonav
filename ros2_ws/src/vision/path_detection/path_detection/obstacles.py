@@ -101,7 +101,7 @@ class TransformPublisher(Node):
         try:
             return distances / count
         except ZeroDivisionError:
-            self.get_logger().info("ZERO DIVISION ERROR")
+            # self.get_logger().info("ZERO DIVISION ERROR")
             return max_distance + .75  # parameterize later
 
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
@@ -223,10 +223,13 @@ class TransformPublisher(Node):
             if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
                 if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
                     distance_msg.data = "OBJ," + str(self.check_range(scan, 70*math.pi/180, 84*math.pi/180, 2.0))
-                    self.get_logger().info(f"Distance message data: {distance_msg}")
+                    # self.get_logger().info("Publishing from obstacles.py:")
+                    # self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)
                 elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT:
                     distance_msg.data = "OBJ," + str(self.check_range(scan, 276*math.pi/180, 290*math.pi/180, 2.0))
+                    # self.get_logger().info("Publishing from obstacles.py:")
+                    # self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)
 
         except Exception as e:

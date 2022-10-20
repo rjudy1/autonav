@@ -67,9 +67,12 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
-        self.pid_obj = PIDController(9.0, 0.0, 2.5, 19, -19)   # for object avoidance
-        self.pid_gps = PIDController(16.0, 0, 2.0, 17, -17)   # for during gps navigation
+        #self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
+        self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6)
+        # self.pid_obj = PIDController(9.0, 0.0, 2.5, 19, -19)   # for object avoidance
+        self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
+        #self.pid_gps = PIDController(16.0, 0, 2.0, 17, -17)   # for during gps navigation
+        self.pid_gps = PIDController(13.0, 0, 1.0, 6, -6)  # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -149,7 +152,7 @@ class Teensy(Node):
                 self.boost_count = 0
             else:
                 position_error = self.target_line_dist - position
-                # self.get_logger().warning(f"POSITION ERROR {position_error}")
+                #self.get_logger().warning(f"POSITION ERROR {position_error}")
 
                 # Position error is negative if we need to turn toward the line
                 # delta will come out negative if you need to turn toward the line
@@ -175,7 +178,7 @@ class Teensy(Node):
             delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
             linear = round(self.object_speed)
             angular = round(delta * 3/4)
-            # self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
+            self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             parts = msg.split(',')
