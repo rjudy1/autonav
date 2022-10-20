@@ -8,14 +8,14 @@
         /InitialHeading:            162.0       # set before build to degrees!!
         /NorthPointFirst:           True
         /GpsExitHeading:            0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
-        /CrossRampInGps:            False # True
+        /CrossRampInGps:            True
         /LineDist:                  0.2  #0.27
 #        /EncoderWeight:             .75
 
 /fsm:
     ros__parameters:
         /TimerRate:                 0.05  # rate at which to check and do state specified behavior
-        /StartState:                0 #0
+        /StartState:                3 #0
         /TurnSpeed:                 5 #20
         /SlightTurn:                3 #18
         /ExitAngle:                 0.1
