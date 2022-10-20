@@ -26,27 +26,27 @@ class Data_Logger(Node):
 
         # Subscribe to nodes you'd like data from. comment out nodes you don't want.
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/camera_info",         self.callback, 10)
-        self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
+        #self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/metadata",            self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/depth/camera_info",         self.callback, 10)
-        self.depth_image_sub   = self.create_subscription(Image,         "/camera/depth/image_rect_raw",      self.depth_image_callback,   10)
+        #self.depth_image_sub   = self.create_subscription(Image,         "/camera/depth/image_rect_raw",      self.depth_image_callback,   10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/depth/metadata",            self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/extrinsics/depth_to_color", self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/imu",                       self.callback, 10)
-        self.encoder_sub       = self.create_subscription(EncoderData,   "/encoder_data",                     self.encoder_callback,       10)
+        #self.encoder_sub       = self.create_subscription(EncoderData,   "/encoder_data",                     self.encoder_callback,       10)
         #self.fused_heading_sub = self.create_subscription(HeadingStatus, "/fused_heading",                    self.fused_heading_callback, 10)
         #self.gps_events_sub    = self.create_subscription(String,        "/gps_events",                       self.gps_events_callback,    10)
         #self.gps_heading_sub   = self.create_subscription(HeadingStatus, "/gps_heading",                      self.gps_heading_callback,   10)
-        self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
+        #self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
         #self.light_sub         = self.create_subscription(LightCmd,      "/light_events",                     self.light_callback, 10)
         #self.line_sub          = self.create_subscription(String,        "/line_events",                      self.line_callback, 10)
         #self.mod_lidar_sub     = self.create_subscription(String,        "/mod_lidar",                        self.mod_lidar_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/parameter_events",                 self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/rosout",                           self.callback, 10)
-        self.lidar_scan_sub   = self.create_subscription(LaserScan,     "/scan",                             self.lidar_scan_callback, 10)
+        #self.lidar_scan_sub   = self.create_subscription(LaserScan,     "/scan",                             self.lidar_scan_callback, 10)
         #self.state_sub        = self.create_subscription(Int32,         "/state_topic",                      self.state_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
-        #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
+        self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
 
         t = str(round(time.time()))
 
@@ -143,6 +143,11 @@ class Data_Logger(Node):
     # logs lidar /scan data to csv
     def lidar_scan_callback(self, data):
         self.lidar_scan_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec], data.ranges)))
+
+    def wheel_callback(self, data):
+        msg = data.data.split(',')
+        self.wheel_writer.writerow(np.concatenate(([time.time()], np.array(msg))))
+        #self.get_logger().info("logged.")
 
     # destructor
     def __del__(self):
