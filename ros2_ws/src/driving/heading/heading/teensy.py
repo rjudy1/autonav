@@ -67,11 +67,8 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        #self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
-        self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6)
-        # self.pid_obj = PIDController(9.0, 0.0, 2.5, 19, -19)   # for object avoidance
+        self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6) # for line following
         self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
-        #self.pid_gps = PIDController(16.0, 0, 2.0, 17, -17)   # for during gps navigation
         self.pid_gps = PIDController(2.0, 0, 0.0, 6, -6)  # for during gps navigation
 
         # encoder parameters
@@ -184,11 +181,6 @@ class Teensy(Node):
             parts = msg.split(',')
             angle_error = float(parts[1])  # error angle
             gps_distance = float(parts[2])
-            # delta is still negative if we need to go toward
-            #             parts = msg.split(',')
-            #             angle_error = float(parts[1])
-            #             gps_distance = float(parts[2]) whatever
-            # delta = self.pid_gps.control(angle_error*(gps_distance**(1./3)))
             delta = self.pid_gps.control(angle_error)
             # GPS sends the error as - for left turns and + for right turns
             adjustment = 0.0
