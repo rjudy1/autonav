@@ -132,6 +132,7 @@ class MainRobot(Node):
             self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
+            self.object_avoidance_from_gps_state()
 
         elif self.obj_seen:
             self.obj_seen = False
@@ -141,10 +142,10 @@ class MainRobot(Node):
             self.line_to_object_state()  # enter the transition state
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
-            # light_msg = LightCmd()
-            # light_msg.type = 'B'
-            # light_msg.on = True
-            # self.lights_pub.publish(light_msg)
+            #light_msg = LightCmd()
+            #light_msg.type = 'B'
+            #light_msg.on = True
+            #self.lights_pub.publish(light_msg)
             self.look_for_line = False
             self.found_line = False
             self.heading_restored = False
@@ -242,6 +243,10 @@ class MainRobot(Node):
                               f"{(-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.TURN_SPEED}"
         self.wheel_pub.publish(self.wheel_msg)
 
+        self.get_logger().info("In line to object state publishing:")
+        self.get_logger().info(f"{CODE.TRANSITION_CODE},{self.TURN_SPEED}," \
+                              f"{(-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.TURN_SPEED}")
+
         if self.waypoint_found:
             self.waypoint_count += 1
 
@@ -266,10 +271,11 @@ class MainRobot(Node):
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((1-2*int(self.follow_dir==DIRECTION.RIGHT)) * self.SLIGHT_TURN)}"
+                            f"{round((1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}"
         self.wheel_pub.publish(self.wheel_msg)
-        # self.get_logger().info("In object to line state publishing:")
-        # self.get_logger().info(self.wheel_msg.data)
+        self.get_logger().info("In object to line state publishing:")
+        self.get_logger().info(f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
+                                    f"{round((1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}")
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
@@ -480,11 +486,19 @@ class MainRobot(Node):
                     (self.heading_restored and self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE)
                     or self.state == STATE.FIND_LINE):
                 self.get_logger().warning("FOUND LINE!!")
+                # light_msg = LightCmd()
+                # light_msg.type = 'B'
+                # light_msg.on = True
+                # self.lights_pub.publish(light_msg)
                 self.found_line = True
 
             elif line_event.data == STATUS.ALIGNED \
                     and (self.state == STATE.OBJECT_TO_LINE or self.state==STATE.LINE_ORIENT):
                 self.aligned = True
+                light_msg = LightCmd()
+                light_msg.type = 'G'
+                light_msg.on = True
+                self.get_logger().warning("ALIGNED TO LINE!!")
             else:
                 pass
                 # self.get_logger().info("UNKNOWN MESSAGE on line_events")

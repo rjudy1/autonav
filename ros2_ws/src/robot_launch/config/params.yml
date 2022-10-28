@@ -2,23 +2,23 @@
 # ros2 bag record -o bags/run06062200950 /camera/color/image_raw /gps_heading /scan /rosout
 /**:
     ros__parameters:
-        /RealCourse:                True
+        /RealCourse:                False
         /FollowingDirection:        0          # 1  is right, 0 is left
         /UseYellow:                 False
-        /InitialHeading:            187.0       # set before build to degrees!!
-        /NorthPointFirst:           False
-        /GpsExitHeading:            1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
+        /InitialHeading:            162.0       # set before build to degrees!!
+        /NorthPointFirst:           True
+        /GpsExitHeading:            0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
         /CrossRampInGps:            True
-        /LineDist:                  0.27
+        /LineDist:                  0.2  #0.27
 #        /EncoderWeight:             .75
 
 /fsm:
     ros__parameters:
         /TimerRate:                 0.05  # rate at which to check and do state specified behavior
-        /StartState:                0
-        /TurnSpeed:                 20
-        /SlightTurn:                18
-        /ExitAngle:                 0.3
+        /StartState:                0 #0
+        /TurnSpeed:                 5 #20
+        /SlightTurn:                3 #18
+        /ExitAngle:                 0.1
 
 /rplidar_node:
     ros__parameters:
@@ -51,19 +51,19 @@
 
 #        /PracticeWaypointLat1:     42.40094919999999   # tent
 #        /PracticeWaypointLon1:     -83.1307195
-        /PracticeWaypointLat1:      42.4009412          # our north practice point
-        /PracticeWaypointLon1:      -83.13108260000001
+        /PracticeWaypointLat1:      39.4477519 #42.4009412          # our north practice point
+        /PracticeWaypointLon1:      -83.4877888 #-83.13108260000001
 
-        /PracticeWaypointLat2:      42.4008838        # middle north practice
-        /PracticeWaypointLon2:      -83.1310741
-        /PracticeWaypointLat3:      42.4008475        # middle south practice
-        /PracticeWaypointLon3:      -83.131072
+        /PracticeWaypointLat2:      39.4477519 #39.4477635 #42.4008838        # middle north practice
+        /PracticeWaypointLon2:      -83.4877888 #-83.1310741
+        /PracticeWaypointLat3:      39.4477519 #39.447678599999996 #42.4008475        # middle south practice
+        /PracticeWaypointLon3:      -83.4877888 #-83.131072
 
 #        /PracticeWaypointLat2:      42.400776035        # south practice
 #        /PracticeWaypointLon2:      -83.13108550000001 #42.4009412-83.13108260000001
         # practice 4 retake = 42.400786-83.13106239999999
-        /PracticeWaypointLat4:      42.4007867          # south point from us
-        /PracticeWaypointLon4:      -83.13106239999999
+        /PracticeWaypointLat4:      39.4477519 #39.4477635 #42.4007867          # south point from us
+        /PracticeWaypointLon4:      -83.4877888 #-83.13106239999999
 
         # their provided north point = 42.400961833333334 + -83.13160418166666j
         # our nearest recorded point = 42.400974399999996-83.1315972
@@ -92,16 +92,16 @@
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .1
-        /SideObjectDist:            0.85
-        /LineSpeed:                 27.0
-        /ObjectSpeed:               24.0
-        /GpsSpeed:                  27.0
-        /BoostIncrease:             9
+        /SideObjectDist:            0.425 # 0.85
+        /LineSpeed:                 14.0 #27.0
+        /ObjectSpeed:               8.0 #24.0
+        /GpsSpeed:                  11.0 #27.0
+        /BoostIncrease:             1 #9
         /BoostCountThreshold:       8
         /GPSBoostCountThreshold:    10
-        /LineBoostMargin:           55.0
+        /LineBoostMargin:           10.0 #55.0
 
 /fusion:
     ros__parameters:
         /ExitAngle:                 0.4  # radians
-        /Debug:                     True
+        /Debug:                     False

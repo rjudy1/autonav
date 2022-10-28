@@ -67,9 +67,9 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.12, 0.0, -0.14, 15, -15)  # for line following
-        self.pid_obj = PIDController(9.0, 0.0, 2.5, 19, -19)   # for object avoidance
-        self.pid_gps = PIDController(16.0, 0, 2.0, 17, -17)   # for during gps navigation
+        self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6) # for line following
+        self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
+        self.pid_gps = PIDController(2.0, 0, 0.0, 6, -6)  # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -149,7 +149,7 @@ class Teensy(Node):
                 self.boost_count = 0
             else:
                 position_error = self.target_line_dist - position
-                # self.get_logger().warning(f"POSITION ERROR {position_error}")
+                #self.get_logger().warning(f"POSITION ERROR {position_error}")
 
                 # Position error is negative if we need to turn toward the line
                 # delta will come out negative if you need to turn toward the line
@@ -175,17 +175,13 @@ class Teensy(Node):
             delta = delta if self.following_direction == DIRECTION.LEFT else -1 * delta
             linear = round(self.object_speed)
             angular = round(delta * 3/4)
-            # self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
+            self.get_logger().info(f"FOLLOWING OBJECT with delta {delta}, speed {linear}")
 
         elif self.following_mode == FollowMode.eeGps and msg[:3] == CODE.GPS_SENDER:
             parts = msg.split(',')
-            position = float(parts[1])
+            angle_error = float(parts[1])  # error angle
             gps_distance = float(parts[2])
-            # delta is still negative if we need to go toward
-            #             parts = msg.split(',')
-            #             position = float(parts[1])
-            #             gps_distance = float(parts[2]) whatever
-            delta = self.pid_gps.control(position*(gps_distance**(1./3)))
+            delta = self.pid_gps.control(angle_error)
             # GPS sends the error as - for left turns and + for right turns
             adjustment = 0.0
             if gps_distance <= 2.5:
@@ -193,13 +189,15 @@ class Teensy(Node):
                 self.get_logger().info(f"adjusted linear by {adjustment}")
 
             linear = round(self.gps_speed - adjustment)
-            angular = round(delta) - 2
-            if abs(position*(gps_distance**(1./3))) <= self.gps_boost_margin:
+            angular = round(delta)
+            if abs(angle_error*(gps_distance**(1./3))) <= self.gps_boost_margin:
                 self.boost_count += 1
             else:
                 self.boost_count = 0
             if self.boost_count > self.gps_boost_count_threshold and message_valid:
                 linear += self.speed_boost
+
+            self.get_logger().info(f"setting speeds: ({linear, angular})")
 
         else:
             message_valid = False

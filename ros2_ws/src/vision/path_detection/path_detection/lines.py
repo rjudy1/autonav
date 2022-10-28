@@ -127,7 +127,7 @@ class Lines(Node):
             self.line_detection.reset()
 
     def state_callback(self, new_state):
-        # self.get_logger().info(f"New State Received {new_state.data}")
+        self.get_logger().info(f"New State Received {new_state.data}")
 
         self.state = new_state.data
 
