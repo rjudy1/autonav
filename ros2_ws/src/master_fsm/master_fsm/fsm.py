@@ -208,12 +208,12 @@ class MainRobot(Node):
                 self.exit_heading = self.gps_exit_heading
                 self.gps_exit_state()
             else:
-            # stay in gps state on to next object - redundant but for clarity
-            self.exit_heading = self.target_heading
-            self.state = STATE.ORIENT_TO_GPS
-            self.state_msg.data = STATE.ORIENT_TO_GPS
-            self.state_pub.publish(self.state_msg)
-            self.orient_to_gps_state()
+                # stay in gps state on to next object - redundant but for clarity
+                self.exit_heading = self.target_heading
+                self.state = STATE.ORIENT_TO_GPS
+                self.state_msg.data = STATE.ORIENT_TO_GPS
+                self.state_pub.publish(self.state_msg)
+                self.orient_to_gps_state()
 
         # First look for a potential obstacle
         elif self.obj_seen:
