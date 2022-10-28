@@ -200,14 +200,14 @@ class MainRobot(Node):
             self.waypoint_found = False
             self.get_logger().info("WAYPOINT FOUND IN FSM!!")
 
-            #if self.waypoint_count == 4 or not self.get_parameter('/CrossRampInGps').value:
-            #    # just take this step if not using nav across ramp
-            #    self.state_msg.data = STATE.GPS_EXIT
-            #    self.state_pub.publish(self.state_msg)
-            #    self.state = STATE.GPS_EXIT
-            #    self.exit_heading = self.gps_exit_heading
-            #    self.gps_exit_state()
-            #else:
+            if self.waypoint_count == 4 or not self.get_parameter('/CrossRampInGps').value:
+                # just take this step if not using nav across ramp
+                self.state_msg.data = STATE.GPS_EXIT
+                self.state_pub.publish(self.state_msg)
+                self.state = STATE.GPS_EXIT
+                self.exit_heading = self.gps_exit_heading
+                self.gps_exit_state()
+            else:
             # stay in gps state on to next object - redundant but for clarity
             self.exit_heading = self.target_heading
             self.state = STATE.ORIENT_TO_GPS
