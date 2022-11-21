@@ -15,7 +15,7 @@
 /fsm:
     ros__parameters:
         /TimerRate:                 0.05  # rate at which to check and do state specified behavior
-        /StartState:                0 #0
+        /StartState:                0 #3 GPS #0 Line
         /TurnSpeed:                 5 #20
         /SlightTurn:                3 #18
         /ExitAngle:                 0.1
@@ -35,15 +35,15 @@
 
 /obstacles:
     ros__parameters:
-        /LIDARTrimMin:              1.31  # radians
-        /LIDARTrimMax:              4.97  # radians
+        /LIDARTrimMin:              1.31  # radians (1.31 radians = 75.0575 degrees) 
+        /LIDARTrimMax:              4.97  # radians (4.97 radians = 284.7600 degrees)
         /ObstacleFOV:               0.8754  # radians = 50 degrees
         /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
         /ObstacleDetectDistance:    1.1  # meters
-        /Debug:                     False
+        /Debug:                     True # changed by james to true Oct 22
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
@@ -85,7 +85,7 @@
         /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
-        /Debug:                     True
+        /Debug:                     False
 
 /teensy:
     ros__parameters:
@@ -93,7 +93,7 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .1
         /SideObjectDist:            0.425 # 0.85
-        /LineSpeed:                 14.0 #27.0
+        /LineSpeed:                 15 #14.5 #14 #27.0  Use this to determine speed
         /ObjectSpeed:               8.0 #24.0
         /GpsSpeed:                  11.0 #27.0
         /BoostIncrease:             1 #9
@@ -104,4 +104,4 @@
 /fusion:
     ros__parameters:
         /ExitAngle:                 0.4  # radians
-        /Debug:                     False
+        /Debug:                     True
