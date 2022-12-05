@@ -84,8 +84,8 @@ class Fusion(Node):
         msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint)
         # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
         self.wheel_pub.publish(msg)
-        if self.get_parameter('/Debug').value:
-            self.get_logger().warning("Error: " + str(error_angle))
+        #if self.get_parameter('/Debug').value:
+        #    self.get_logger().warning("Error: " + str(error_angle))
 
     def gps_callback(self, gps_msg):
         if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:

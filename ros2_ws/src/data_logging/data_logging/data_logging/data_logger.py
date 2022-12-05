@@ -9,6 +9,7 @@
 
 import cmath
 import csv
+import this
 from dataclasses import dataclass
 import time
 from utils.utils import *
@@ -17,6 +18,7 @@ import numpy as np
 import rclpy
 from rclpy.node      import Node
 from custom_msgs.msg import *
+
 from std_msgs.msg    import *
 from sensor_msgs.msg import *
 
@@ -37,16 +39,16 @@ class Data_Logger(Node):
         #self.fused_heading_sub = self.create_subscription(HeadingStatus, "/fused_heading",                    self.fused_heading_callback, 10)
         #self.gps_events_sub    = self.create_subscription(String,        "/gps_events",                       self.gps_events_callback,    10)
         #self.gps_heading_sub   = self.create_subscription(HeadingStatus, "/gps_heading",                      self.gps_heading_callback,   10)
-        #self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
+        self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
         #self.light_sub         = self.create_subscription(LightCmd,      "/light_events",                     self.light_callback, 10)
         #self.line_sub          = self.create_subscription(String,        "/line_events",                      self.line_callback, 10)
         #self.mod_lidar_sub     = self.create_subscription(String,        "/mod_lidar",                        self.mod_lidar_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/parameter_events",                 self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/rosout",                           self.callback, 10)
-        #self.lidar_scan_sub   = self.create_subscription(LaserScan,     "/scan",                             self.lidar_scan_callback, 10)
+        self.lidar_scan_sub   = self.create_subscription(LaserScan,     "/scan",                             self.lidar_scan_callback, 10)
         #self.state_sub        = self.create_subscription(Int32,         "/state_topic",                      self.state_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
-        self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
+        #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
 
         t = str(round(time.time()))
 

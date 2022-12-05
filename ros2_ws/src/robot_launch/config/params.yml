@@ -93,7 +93,7 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .1
         /SideObjectDist:            0.425 # 0.85
-        /LineSpeed:                 15 #14.5 #14 #27.0  Use this to determine speed
+        /LineSpeed:                 14 #27.0  Use this to determine speed
         /ObjectSpeed:               8.0 #24.0
         /GpsSpeed:                  11.0 #27.0
         /BoostIncrease:             1 #9
