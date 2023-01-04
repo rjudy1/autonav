@@ -156,9 +156,11 @@ class GPS(Node):
         self.get_logger().info(f"distance from waypoint: {dist_meters}")
 
         if self.state == STATE.GPS_NAVIGATION or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
-            dist_limit = 0.65
+            #dist_limit = 0.65
+            dist_limit = 0.75
         else:
-            dist_limit = self.DISTANCE_GOAL
+            #dist_limit = self.DISTANCE_GOAL
+            dist_limit = 0.75
 
         if dist_meters <= dist_limit:
             msg = String()
@@ -233,7 +235,7 @@ class GPS(Node):
     def log_gps(self, nmeastring):
         # call "log_gps(GNGGA_string)" each time new GPS data is received
         # nmealist = nmeastring.split(',')
-        self.writer.writerow(nmeastring)
+        self.writer.writerow(np.concatenate(([time.time()],nmeastring)))
 
     def __del__(self):
         # self.get_logger().info("Deleting GPS Node")

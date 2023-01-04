@@ -5,7 +5,7 @@
 # Date Created:  1 Oct 2023
 # Date Modified: 1 Oct 2023
 ################################
-
+#colcon build
 . install/setup.bash
 clear
 ros2 launch robot_launch data_logging.launch.py
