@@ -43,7 +43,7 @@
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
         /ObstacleDetectDistance:    1.1  # meters
-        /Debug:                     True # changed by james to true Oct 22
+        /Debug:                     True 
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
@@ -93,7 +93,7 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .1
         /SideObjectDist:            0.425 # 0.85
-        /LineSpeed:                 14 #27.0  Use this to determine speed
+        /LineSpeed:                 14.0 #27.0  
         /ObjectSpeed:               8.0 #24.0
         /GpsSpeed:                  11.0 #27.0
         /BoostIncrease:             1 #9

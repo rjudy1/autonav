@@ -176,16 +176,16 @@ class TransformPublisher(Node):
 	# uncommented by James Oct 22 for pothole evaluation
 	# START
         # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES
-        for circle in self.circles:
-             # front part of lidar scan 0 to pi/2 radians
-             for i in range(len(scan.ranges)):
-                 if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
-                     dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
-                                                 self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
-                     if dist < scan.ranges[i] and hit:
-                         scan.ranges[i] = dist
-                         scan.intensities[i] = 47
-        print(". . . . . . . Made it to Finish . . . . .")
+        # for circle in self.circles:
+        #      # front part of lidar scan 0 to pi/2 radians
+        #      for i in range(len(scan.ranges)):
+        #          if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
+        #              dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
+        #                                          self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
+        #              if dist < scan.ranges[i] and hit:
+        #                  scan.ranges[i] = dist
+        #                  scan.intensities[i] = 47
+        # print(". . . . . . . Made it to Finish . . . . .")
 	# FINISH
 	# T1 rolled over; pothole touching the line; no change
 	# T2 rolled over; pothole a foot away from line; no change
@@ -193,10 +193,6 @@ class TransformPublisher(Node):
 	# T4 rolled over; pothole a foot away; no change
 	# T5 rolled over; pothole a foot away; no change
 	# T6 rolled over; pothole 2 feet away; no change
-	# T7
-	#
-	#
-	#
         self.lidar_pub.publish(scan)
 
         # scan in the range in front of robot to check for obstacles
