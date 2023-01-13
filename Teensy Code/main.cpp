@@ -10,6 +10,12 @@
 #include <Arduino.h>  //required in VsCode
 #include "QuadEncoder.h"
 
+//required for IMU
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
+#include <utility/vector.h>
 //Pin Definitions
 #define ApinL 7 //Left encoder A phase
 #define BpinL 8 //Left encoder B phase
@@ -21,6 +27,9 @@
 #define redPin 22
 //Constants
 #define blinkPeriod 500 //controls how fast the LED blinks when robot is in auto mode
+
+//IMU Library
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 //enc(encoder number (1-4), A pin, B pin, pullups required (0/1), 4=??) //IDK what the 4 does, but it seems necessary...
 QuadEncoder encL(1, ApinL, BpinL, 1, 4);
@@ -97,6 +106,7 @@ void setup() {
   encL.init();
   encR.setInitConfig();
   encR.init();
+  bno.setExtCrystalUse(true);
 }
 
 void loop() {
