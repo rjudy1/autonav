@@ -46,7 +46,7 @@ int parseSerial() {
   char incomingString[16];
   byte i = 0;
   while(Serial.available() > 0) {
-    incomingString[i] = Serial.read();
+    incomingString[i] = Serial.read();//recieve the  data from ROS
     i++;
     delayMicroseconds(50);
   }
@@ -127,7 +127,7 @@ void loop() {
     Serial.println("ERROR");
     break;
   case 1:
-    printEncoders();
+    printEncoders(); // send encoder data to ROS
     break;
   case 2:
     digitalWrite(buzzerPin, HIGH);
