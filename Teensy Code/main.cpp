@@ -40,27 +40,29 @@ QuadEncoder encR(2, ApinR, BpinR, 1, 4);
 void printIMU(){
   sensors_event_t event; 
   bno.getEvent(&event);
-  Serial.println("ABS Orientation: X, " + String(event.orientation.x, 4) 
-  + " Y, " + String(event.orientation.y, 4) + " Z, "+ String(event.orientation.z, 4));
+  //abs orientation
+  Serial.println("ABS," + String(event.orientation.x, 4) 
+  + "," + String(event.orientation.y, 4) + ","+ String(event.orientation.z, 4)+",**");
 
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  Serial.println("Euler: X, " + String(euler.x()) 
-  + " Y, " + String(euler.y()) + " Z, "+ String(euler.z()));
+  Serial.println("Euler," + String(euler.x()) 
+  + "," + String(euler.y()) + ","+ String(euler.z())+",**");
   
   imu::Quaternion quat = bno.getQuat();
-  Serial.println("Quaterion: W, " + String(quat.w(), 4) + " X, " + String(quat.x(), 4) 
-  + " Y, " + String(quat.y(), 4) + " Z, "+ String(quat.z(), 4));
+  Serial.println("Quaterion," + String(quat.w(), 4) + "," + String(quat.x(), 4) 
+  + "," + String(quat.y(), 4) + ","+ String(quat.z(), 4)+",**");
 
   //Debugging purpose
-  Serial1.println("ABS Orientation: X, " + String(event.orientation.x, 4) 
-  + " Y, " + String(event.orientation.y, 4) + " Z, "+ String(event.orientation.z, 4));
+  Serial1.println("ABS," + String(event.orientation.x, 4) 
+  + "," + String(event.orientation.y, 4) + ","+ String(event.orientation.z, 4)+",**");
 
-  Serial1.println("Euler: X, " + String(euler.x()) 
-  + " Y, " + String(euler.y()) + " Z, "+ String(euler.z()));
+  Serial1.println("Euler," + String(euler.x()) 
+  + "," + String(euler.y()) + ","+ String(euler.z())+",**");
   
-  Serial1.println("Quaterion: W, " + String(quat.w(), 4) + " X, " + String(quat.x(), 4) 
-  + " Y, " + String(quat.y(), 4) + " Z, "+ String(quat.z(), 4));
+  Serial1.println("Quaterion: W, " + String(quat.w(), 4) + "," + String(quat.x(), 4) 
+  + "," + String(quat.y(), 4) + ","+ String(quat.z(), 4)+",**");
 }
+
 
 void printEncoders() {
   //print the encoder counts with format "E,leftCount,rightCount,**"
@@ -68,6 +70,7 @@ void printEncoders() {
   Serial1.println("E,"+String(encL.read())+","+String(encR.read())+",**");
 }
 
+//Q,**
 int parseSerial() {
   //this is C string stuff, it's confusing -_-
   char incomingString[16];
@@ -114,6 +117,9 @@ int parseSerial() {
       return 8;
     else
       return 9;
+  }
+  else if (indicator == 'I'){
+    return 10;
   }
   else {
     return 0; //This should never happen, it means an invalid message was received
@@ -173,7 +179,6 @@ void loop() {
     break;
   case 1:
     printEncoders(); // send encoder data to ROS
-    printIMU(); 
     break;
   case 2:
     digitalWrite(buzzerPin, HIGH);
@@ -199,6 +204,8 @@ void loop() {
   case 9:
     digitalWrite(redPin, HIGH);
     break;
+  case 10:
+    printIMU();
   default:
     break;
   }
