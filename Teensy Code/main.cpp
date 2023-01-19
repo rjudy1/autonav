@@ -21,6 +21,8 @@
 #define BpinL 8 //Left encoder B phase
 #define ApinR 2 //you get it
 #define BpinR 3
+#define SCL1 16
+#define SDA1 17
 #define buzzerPin 19 //Pin controlling buzzer
 #define greenPin 20 //should be obvious
 #define yellowPin 21
@@ -35,12 +37,37 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 QuadEncoder encL(1, ApinL, BpinL, 1, 4);
 QuadEncoder encR(2, ApinR, BpinR, 1, 4);
 
+void printIMU(){
+  sensors_event_t event; 
+  bno.getEvent(&event);
+  Serial.println("ABS Orientation: X, " + String(event.orientation.x, 4) 
+  + " Y, " + String(event.orientation.y, 4) + " Z, "+ String(event.orientation.z, 4));
+
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  Serial.println("Euler: X, " + String(euler.x()) 
+  + " Y, " + String(euler.y()) + " Z, "+ String(euler.z()));
+  
+  imu::Quaternion quat = bno.getQuat();
+  Serial.println("Quaterion: W, " + String(quat.w(), 4) + " X, " + String(quat.x(), 4) 
+  + " Y, " + String(quat.y(), 4) + " Z, "+ String(quat.z(), 4));
+
+  //Debugging purpose
+  Serial1.println("ABS Orientation: X, " + String(event.orientation.x, 4) 
+  + " Y, " + String(event.orientation.y, 4) + " Z, "+ String(event.orientation.z, 4));
+
+  Serial1.println("Euler: X, " + String(euler.x()) 
+  + " Y, " + String(euler.y()) + " Z, "+ String(euler.z()));
+  
+  Serial1.println("Quaterion: W, " + String(quat.w(), 4) + " X, " + String(quat.x(), 4) 
+  + " Y, " + String(quat.y(), 4) + " Z, "+ String(quat.z(), 4));
+}
+
 void printEncoders() {
   //print the encoder counts with format "E,leftCount,rightCount,**"
   Serial.println("E,"+String(encL.read())+","+String(encR.read())+",**");
   Serial1.println("E,"+String(encL.read())+","+String(encR.read())+",**");
 }
-//Q,**
+
 int parseSerial() {
   //this is C string stuff, it's confusing -_-
   char incomingString[16];
@@ -107,6 +134,24 @@ void setup() {
   encR.setInitConfig();
   encR.init();
   bno.setExtCrystalUse(true);
+
+  //IMU set up
+  Serial.begin(9600);
+  
+  /* Initialise the sensor */
+  if(!bno.begin())
+  {
+    while(1){
+      Serial.print("Waiting for IMU connection");
+      if(bno.begin()){
+        break;
+      }
+      delay(1000);
+    }
+  }
+  
+  delay(1000);
+  bno.setExtCrystalUse(true);
 }
 
 void loop() {
@@ -128,6 +173,7 @@ void loop() {
     break;
   case 1:
     printEncoders(); // send encoder data to ROS
+    printIMU(); 
     break;
   case 2:
     digitalWrite(buzzerPin, HIGH);
