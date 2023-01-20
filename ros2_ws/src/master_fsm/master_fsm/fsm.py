@@ -93,7 +93,10 @@ class MainRobot(Node):
         self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
-            self.waypoint_count += 1
+            if self.get_parameter('/RepeatGps'):
+                self.waypoint_count = (self.waypoint_count + 1) % 4
+            else:
+                self.waypoint_count += 1
             self.waypoint_found = False
             self.exit_heading = self.target_heading
             # self.state = STATE.ORIENT_TO_GPS
@@ -125,7 +128,10 @@ class MainRobot(Node):
         # self.get_logger().info("Object Avoidance From Line Following State")
         # Check for another object in front of the robot
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
-            self.waypoint_count += 1
+            if self.get_parameter('/RepeatGps'):
+                self.waypoint_count = (self.waypoint_count + 1) % 4
+            else:
+                self.waypoint_count += 1
             self.waypoint_found = False
             self.exit_heading = self.target_heading
             self.heading_restored = False
@@ -196,7 +202,10 @@ class MainRobot(Node):
         # self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
-            self.waypoint_count += 1
+            if self.get_parameter('/RepeatGps'):
+                self.waypoint_count = (self.waypoint_count + 1) % 4
+            else:
+                self.waypoint_count += 1
             self.waypoint_found = False
             self.get_logger().info("WAYPOINT FOUND IN FSM!!")
 
@@ -248,7 +257,10 @@ class MainRobot(Node):
                               f"{(-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.TURN_SPEED}")
 
         if self.waypoint_found:
-            self.waypoint_count += 1
+            if self.get_parameter('/RepeatGps'):
+                self.waypoint_count = (self.waypoint_count + 1) % 4
+            else:
+                self.waypoint_count += 1
 
             self.waypoint_found = False
             self.state = STATE.GPS_TO_OBJECT
@@ -268,7 +280,6 @@ class MainRobot(Node):
     def object_to_line_state(self):
         # self.get_logger().info("Object to Line Transition State")
 
-
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
                             f"{round((1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}"
@@ -279,7 +290,6 @@ class MainRobot(Node):
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
-
             self.aligned = False
             self.state_msg.data = STATE.LINE_FOLLOWING
             self.state_pub.publish(self.state_msg)
@@ -383,7 +393,6 @@ class MainRobot(Node):
             self.gps_to_object_state()
 
     def gps_exit_state(self):
-
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{8},{15*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
@@ -476,7 +485,6 @@ class MainRobot(Node):
 
     # Callback for information coming from the line following node
     def line_callback(self, line_event):
-
         # self.get_logger().info("Message from Line Following Node")
 
         # Get the lock before proceeding
