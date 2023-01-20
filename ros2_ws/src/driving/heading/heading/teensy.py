@@ -256,7 +256,6 @@ class Teensy(Node):
             self.get_logger().info(f"Message type {msg.type} invalid")
         # self.lock.release()
 
-    #FIXME do something like this
     def timer_callback(self):
         # self.lock.acquire()
         try:
@@ -283,6 +282,7 @@ class Teensy(Node):
                 msg.left = -left_dist
                 msg.right = -right_dist
                 self.encoder_pub.publish(msg)
+                #It might need return here.
             else:
                 self.serialPort.flushInput()
 
@@ -318,10 +318,8 @@ class Teensy(Node):
             else:
                 self.serialPort.flushInput()
                 return 
-            self.imu_pub.publish(msg)
-               
-
-
+            #this location might be wrong
+            self.imu_pub.publish(msg)    
         except serial.serialutil.SerialException:
             self.get_logger().info("encoder error in serial port")
         except Exception as ex:
