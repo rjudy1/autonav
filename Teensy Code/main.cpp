@@ -21,12 +21,12 @@
 #define BpinL 8 //Left encoder B phase
 #define ApinR 2 //you get it
 #define BpinR 3
-#define SCL1 16
-#define SDA1 17
-#define buzzerPin 19 //Pin controlling buzzer
+#define SDA0 18
+#define SCL0 19
 #define greenPin 20 //should be obvious
 #define yellowPin 21
 #define redPin 22
+#define buzzerPin 23 //Pin controlling buzzer
 //Constants
 #define blinkPeriod 500 //controls how fast the LED blinks when robot is in auto mode
 
