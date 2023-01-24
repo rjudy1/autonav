@@ -49,7 +49,7 @@ class Data_Logger(Node):
         #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
 
         #FIXME
-        self.imu_sub           = self.create_subscription(Imu,          "/imu",                             self.imu_callback, 10)
+        self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
 
         t = str(round(time.time()))
 
@@ -158,10 +158,8 @@ class Data_Logger(Node):
         self.wheel_writer.writerow(np.concatenate(([time.time()], np.array(msg))))
         #self.get_logger().info("logged.")
 
-    #FIXME
-    #I do not know what data has. I do not know it contains imu data or not.
-    def imu_callback(self, data):
-        self.imu_writer.writerow(np.array([data.imu]))
+    def imu_callback(self, ImuData ):
+        self.imu_writer.writerow(np.array([ImuData.abs_x, ImuData.abs_y, ImuData.abs_z, ImuData.euler_x, ImuData.euler_y, ImuData.euler_z, ImuData.quat_w, ImuData.quat_x, ImuData.quat_y, ImuData.quat_z]))
 
     # destructor
     def __del__(self):
@@ -204,7 +202,6 @@ class Data_Logger(Node):
         if hasattr(self, 'wheel_sub'):
             self.wheel_logfile.close()
 
-        #FIXME
         if hasattr(self, 'imu_sub'):
             self.imu_logfile.close()
 
