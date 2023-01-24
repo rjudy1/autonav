@@ -25,6 +25,8 @@ class STATE:
     LINE_ORIENT = 8
     ORIENT_TO_GPS = 9
     GPS_EXIT = 10
+    ENCODER_BOX_FOLLOW_STRAIGHT = 11
+    ENCODER_BOX_FOLLOW_TURN = 12
 
 
 
@@ -132,3 +134,11 @@ def degrees_to_radians(degrees):
     if degrees > 180:
         heading -= math.pi * 2
     return heading
+
+def ticks_to_meters(ticks):
+    meters = ticks/1400
+    return meters
+
+def meters_to_ticks(meters):
+    ticks = meters*1400
+    return ticks

@@ -277,6 +277,8 @@ class Teensy(Node):
                 msg = EncoderData()
                 msg.left = -left_dist
                 msg.right = -right_dist
+                msg.left_raw = -int(data[1])
+                msg.right_raw = -int(data[2])
                 self.encoder_pub.publish(msg)
             else:
                 self.serialPort.flushInput()

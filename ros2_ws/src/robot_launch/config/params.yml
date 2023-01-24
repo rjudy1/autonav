@@ -15,11 +15,15 @@
 
 /fsm:
     ros__parameters:
-        /TimerRate:                 0.05  # rate at which to check and do state specified behavior
-        /StartState:                0 #3 GPS #0 Line
-        /TurnSpeed:                 5 #20
-        /SlightTurn:                3 #18
-        /ExitAngle:                 0.1
+        /TimerRate:  0.05  # rate at which to check and do state specified behavior
+        /StartState: 11 #3 GPS #0 Line
+        /TurnSpeed:  5 #20
+        /SlightTurn: 3 #18
+        /ExitAngle:  0.1
+        # Encoder Box Following (state 11-12) Parameters
+        /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
+        /EncoderBoxDistance: 0.3   # distance in meters of each side of the encoder's "box"
+        /EncoderBoxSpeed:    4.0   #
 
 /rplidar_node:
     ros__parameters:
@@ -49,7 +53,7 @@
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
     ros__parameters:
-        /SensorInput: 1              # 0 = GPS, 1 = shaft encoders
+        /SensorInput:           0    # 0 = GPS, 1 = shaft encoders
         /InputInitialCondition: True # True = use initial condition params, False = use take_reading() to get initial condition
         ## Practice Coordinates
         /PracticeInitialLat:   0.0

@@ -19,6 +19,7 @@ from std_msgs.msg import Int32
 from std_msgs.msg import String
 from custom_msgs.msg import HeadingStatus
 from custom_msgs.msg import LightCmd
+from custom_msgs.msg import EncoderData
 
 
 class MainRobot(Node):
@@ -77,6 +78,33 @@ class MainRobot(Node):
         self.waypoints_done = False
         self.gps_exit_heading = self.get_parameter('/GpsExitHeading').value
         self.waypoint_count = 0
+
+        # Encoder box following setup
+        if self.state == STATE.ENCODER_BOX_FOLLOW_STRAIGHT:
+            # get the encoder parameters
+            self.declare_parameter('/EncoderBoxTurnLeft', True)
+            self.declare_parameter('/EncoderBoxDistance', 0.3)
+            self.declare_parameter('/EncoderBoxSpeed', 4.0)
+
+            # subscribe to the encoder data
+            self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.enc_callback, 10)
+            
+            # initialize our variables
+            self.encoder_straight_increment = meters_to_ticks(self.get_parameter('/EncoderBoxDistance').value)
+            if self.get_parameter('/EncoderBoxTurnLeft').value:
+                self.encoder_turn_increment_left = 0
+                self.encoder_turn_increment_right = meters_to_ticks(math.pi/4*0.64)
+            else:
+                self.encoder_turn_increment_left = meters_to_ticks(math.pi/4*0.64)
+                self.encoder_turn_increment_right = 0
+            self.encoder_box_count_left = 0.0
+            self.encoder_box_count_right = 0.0
+
+            # init the encoder data storage
+            self.encoder_left = data.left
+            self.encoder_right = data.right
+            self.encoder_left_raw = data.left_raw
+            self.encoder_right_raw = data.right_raw
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
@@ -411,6 +439,39 @@ class MainRobot(Node):
             self.line_to_object_state()
     # End of Transition States
 
+    # Debug / Testing States
+    def encoder_box_follow_straight_state(self):
+        if self.encoder_left_raw < self.encoder_left_target:
+            # add test to make sure we're adjusting if we're not going straight
+            pass
+        else:
+            # time to transition states
+            # adjust targets
+            self.encoder_left_target += self.encoder_turn_increment_left
+            self.encoder_right_target += self.encoder_turn_increment_right
+            # send updated command to motors
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.get_parameter('/EncoderBoxTurnLeft').value)+1)}"
+            # change state
+            self.state = STATE.ENCODER_BOX_FOLLOW_TURN
+            self.encoder_box_follow_turn_state()
+
+    def encoder_box_follow_turn_state(self):
+        if self.encoder_left_raw < self.encoder_left_target and self.encoder_right_raw < self.encoder_right_target:
+            # don't do anything...
+            pass
+        else:
+            # time to transition states
+            # adjust targets
+            self.encoder_left_target += self.encoder_straight_increment
+            self.encoder_right_target += self.encoder_straight_increment
+            # send an updated command to the motors
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{0}"
+            self.wheel_pub.publish(self.wheel_msg)
+            # change state
+            self.state = STATE.ENCODER_BOX_FOLLOW_STRAIGHT
+            self.encoder_box_follow_straight_state()
+        pass
+
     # This function is essentially a big state machine handling transitions
     # between a number of different states in the system.
     def change_state(self):
@@ -437,6 +498,10 @@ class MainRobot(Node):
             self.orient_to_gps_state()
         elif self.state == STATE.GPS_EXIT:
             self.gps_exit_state()
+        elif self.state == STATE.ENCODER_BOX_FOLLOW_STRAIGHT:
+            self.encoder_box_follow_straight_state()
+        elif self.state == STATE.ENCODER_BOX_FOLLOW_TURN:
+            self.encoder_box_follow_turn_state()
         else:
             self.get_logger().info("Error: Invalid State")
 
@@ -569,6 +634,13 @@ class MainRobot(Node):
         finally:
             # Release the lock
             self.lock.release()
+
+    def encoder_callback(self, data):
+        self.encoder_left = data.left
+        self.encoder_right = data.right
+        self.encoder_left_raw = data.left_raw
+        self.encoder_right_raw = data.right_raw
+        pass
 
     # Callback for the timer
     def timer_callback(self):
