@@ -183,6 +183,8 @@ public:
 
   /*! @brief Get the latest sensor event
       @returns True if able to fetch an event */
+
+  //FIXME  0->1  
   virtual bool getEvent(sensors_event_t *) = 0;
   /*! @brief Get info about the sensor itself */
   virtual void getSensor(sensor_t *) = 0;

@@ -23,7 +23,6 @@
 #define __ADAFRUIT_BNO055_H__
 
 #include "Arduino.h"
-
 #include "utility/imumaths.h"
 #include <Adafruit_I2CDevice.h>
 #include <Adafruit_Sensor.h>

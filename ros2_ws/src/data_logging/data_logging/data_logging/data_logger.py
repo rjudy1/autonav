@@ -123,7 +123,7 @@ class Data_Logger(Node):
         if hasattr(self, 'imu_sub'):
             name               = 'log-' + t + '-imu.csv'
             self.imu_logfile = open(name, 'w')
-            self.image_writer  = csv.writer(self.imu_logfile)
+            self.imu_writer  = csv.writer(self.imu_logfile)
 
     ## Callback Functions
 
@@ -158,8 +158,8 @@ class Data_Logger(Node):
         self.wheel_writer.writerow(np.concatenate(([time.time()], np.array(msg))))
         #self.get_logger().info("logged.")
 
-    def imu_callback(self, ImuData ):
-        self.imu_writer.writerow(np.array([ImuData.abs_x, ImuData.abs_y, ImuData.abs_z, ImuData.euler_x, ImuData.euler_y, ImuData.euler_z, ImuData.quat_w, ImuData.quat_x, ImuData.quat_y, ImuData.quat_z]))
+    def imu_callback(self, data ):
+        self.imu_writer.writerow(np.array([data.abs_x, data.abs_y, data.abs_z, data.euler_x, data.euler_y, data.euler_z, data.quat_w, data.quat_x, data.quat_y, data.quat_z]))
 
     # destructor
     def __del__(self):

@@ -88,11 +88,6 @@ class Teensy(Node):
         self.state = STATE.LINE_FOLLOWING
         self.MAX_CHANGE = 5
         self.MAX_ANGULAR_CHANGE = 5
-
-        # IMU parameters
-
-
-        # CHECK THIS CODE
         self.serialPort.write("M,89,89,**".encode())
         # self.get_logger().info("WAIT: Enable power to motors")
         # x = input("Hit enter when ready to proceed")
@@ -282,7 +277,6 @@ class Teensy(Node):
                 msg.left = -left_dist
                 msg.right = -right_dist
                 self.encoder_pub.publish(msg)
-                #It might need return here.
             else:
                 self.serialPort.flushInput()
 
@@ -318,7 +312,6 @@ class Teensy(Node):
             else:
                 self.serialPort.flushInput()
                 return 
-            #this location might be wrong
             self.imu_pub.publish(msg)    
         except serial.serialutil.SerialException:
             self.get_logger().info("encoder error in serial port")

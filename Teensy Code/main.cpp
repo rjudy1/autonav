@@ -59,7 +59,7 @@ void printIMU(){
   Serial1.println("Euler," + String(euler.x()) 
   + "," + String(euler.y()) + ","+ String(euler.z())+",**");
   
-  Serial1.println("Quaterion: W, " + String(quat.w(), 4) + "," + String(quat.x(), 4) 
+  Serial1.println("Quaterion, " + String(quat.w(), 4) + "," + String(quat.x(), 4) 
   + "," + String(quat.y(), 4) + ","+ String(quat.z(), 4)+",**");
 }
 
@@ -155,7 +155,6 @@ void setup() {
       delay(1000);
     }
   }
-  
   delay(1000);
   bno.setExtCrystalUse(true);
 }
