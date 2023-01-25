@@ -213,7 +213,7 @@ class GPS(Node):
     # this function will read from the gps a single nmea sentence
     # and return a lat, long complex pair
     def take_reading(self):
-        if self.get_parameter('/SensorInput') == 0: # GPS
+        if self.get_parameter('/SensorInput').value == 0: # GPS
             while True:
                 try:
                     line = self.ser.readline().decode()

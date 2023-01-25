@@ -22,7 +22,7 @@
         # Encoder Box Following (state 11-12) Parameters
         /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
         /EncoderBoxDistance: 0.3   # distance in meters of each side of the encoder's "box"
-        /EncoderBoxSpeed:    4.0   #
+        /EncoderBoxSpeed:    10.0   #
 
 /rplidar_node:
     ros__parameters:
@@ -34,7 +34,7 @@
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
         /LineDetectDistance:        1.05
-        /Debug:                     True
+        /Debug:                     False
 
 
 /obstacles:
@@ -47,13 +47,13 @@
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
         /ObstacleDetectDistance:    1.1  # meters
-        /Debug:                     True 
+        /Debug:                     False
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
     ros__parameters:
         /SensorInput:           0    # 0 = GPS, 1 = shaft encoders
-        /InputInitialCondition: True # True = use initial condition params, False = use take_reading() to get initial condition
+        /InputInitialCondition: False # True = use initial condition params, False = use take_reading() to get initial condition
         ## Practice Coordinates
         /PracticeInitialLat:   0.0
         /PracticeInitialLon:   0.0
@@ -108,4 +108,4 @@
 /fusion:
     ros__parameters:
         /ExitAngle:                 0.4  # radians
-        /Debug:                     True
+        /Debug:                     False

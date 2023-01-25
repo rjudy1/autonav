@@ -124,6 +124,7 @@ class Teensy(Node):
             self.boost_count = 0
 
     def wheel_callback(self, msg):
+        self.get_logger().info(f"teensy: {msg.data}")
         msg = msg.data
         linear = self.curr_linear
         angular = self.curr_angular
@@ -138,7 +139,7 @@ class Teensy(Node):
             else:
                 linear = int(float(cmds[0]))
                 angular = int(float(cmds[1]))
-            # self.get_logger().info(f"FOLLOWING TRA with delta {angular}, speed {linear}")
+            #self.get_logger().info(f"FOLLOWING TRA with delta {angular}, speed {linear}")
         elif self.following_mode == FollowMode.eeLine and msg[:3] == CODE.LIN_SENDER:
             # self.get_logger().info(f"IN FOLLOW MODE: msg = {msg}")
             position = float(msg[4:])
