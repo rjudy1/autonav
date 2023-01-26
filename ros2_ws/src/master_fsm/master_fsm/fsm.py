@@ -92,11 +92,11 @@ class MainRobot(Node):
             # initialize our variables
             self.encoder_straight_increment = meters_to_ticks(self.get_parameter('/EncoderBoxDistance').value)
             if self.get_parameter('/EncoderBoxTurnLeft').value:
-                self.encoder_turn_increment_left = 0
-                self.encoder_turn_increment_right = meters_to_ticks(math.pi/4*0.64)
+                self.encoder_turn_increment_left = -1
+                self.encoder_turn_increment_right = meters_to_ticks(math.pi/2*0.6096)
             else:
-                self.encoder_turn_increment_left = meters_to_ticks(math.pi/4*0.64)
-                self.encoder_turn_increment_right = 0
+                self.encoder_turn_increment_left = meters_to_ticks(math.pi/2*0.6096)
+                self.encoder_turn_increment_right = -1
             self.encoder_left_target = self.encoder_straight_increment
             self.encoder_right_target = self.encoder_straight_increment
 
@@ -106,9 +106,6 @@ class MainRobot(Node):
             self.encoder_left_raw = 0
             self.encoder_right_raw = 0
 
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{8},{0}"
-            self.wheel_pub.publish(self.wheel_msg)
-
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
 
@@ -116,7 +113,7 @@ class MainRobot(Node):
 
     # Beginning of Major States
 
-    # Line Following Staenc_callbackte
+    # Line Following State
     def line_following_state(self):
         light_msg = LightCmd()
         light_msg.type = 'G'
@@ -444,28 +441,32 @@ class MainRobot(Node):
 
     # Debug / Testing States
     def encoder_box_follow_straight_state(self):
-        #self.get_logger("box follow straight!")
-        if self.encoder_left_raw < self.encoder_left_target:
+        self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
+        if self.encoder_left_raw < self.encoder_left_target or self.encoder_right_raw < self.encoder_right_target:
             # add test to make sure we're adjusting if we're not going straight
-            pass
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{0}"
+            self.wheel_pub.publish(self.wheel_msg)
         else:
             # time to transition states
+            # change state
+            self.state = STATE.ENCODER_BOX_FOLLOW_TURN
             # adjust targets
             self.encoder_left_target += self.encoder_turn_increment_left
             self.encoder_right_target += self.encoder_turn_increment_right
             # send updated command to motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.get_parameter('/EncoderBoxTurnLeft').value)+1)}"
             self.wheel_pub.publish(self.wheel_msg)
-            self.get_logger(self.wheel_msg.data)
-            # change state
-            self.state = STATE.ENCODER_BOX_FOLLOW_TURN
+
             self.encoder_box_follow_turn_state()
 
     def encoder_box_follow_turn_state(self):
-        self.get_logger("box follow turn!")
-        if self.encoder_left_raw < self.encoder_left_target and self.encoder_right_raw < self.encoder_right_target:
+        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
+
+        #self.get_logger().info("turn state")
+        if self.encoder_left_raw < self.encoder_left_target or self.encoder_right_raw < self.encoder_right_target:
             # don't do anything...
-            pass
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
+            self.wheel_pub.publish(self.wheel_msg)
         else:
             # time to transition states
             # adjust targets
@@ -511,6 +512,8 @@ class MainRobot(Node):
             self.encoder_box_follow_turn_state()
         else:
             self.get_logger().info("Error: Invalid State")
+
+        self.get_logger().info(f"fsm: current state is {self.state}")
 
     # End of State Machine
 
@@ -647,7 +650,6 @@ class MainRobot(Node):
         self.encoder_right = data.right
         self.encoder_left_raw = data.left_raw
         self.encoder_right_raw = data.right_raw
-        pass
 
     # Callback for the timer
     def timer_callback(self):

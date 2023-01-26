@@ -10,19 +10,20 @@
         /CrossRampInGps:            True
         /RepeatGps:                 True       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
         /LineDist:                  0.2        # Distance in meters to follow the line from
+        /StartState: 11 #3 GPS #0 Line
 #        /EncoderWeight:             .75
+
 
 /fsm:
     ros__parameters:
         /TimerRate:  0.05  # rate at which to check and do state specified behavior
-        /StartState: 11 #3 GPS #0 Line
         /TurnSpeed:  5 #20
         /SlightTurn: 3 #18
         /ExitAngle:  0.1
         # Encoder Box Following (state 11-12) Parameters
         /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
         /EncoderBoxDistance: 0.3   # distance in meters of each side of the encoder's "box"
-        /EncoderBoxSpeed:    10.0   #
+        /EncoderBoxSpeed:    5.0   #
 
 /rplidar_node:
     ros__parameters:
