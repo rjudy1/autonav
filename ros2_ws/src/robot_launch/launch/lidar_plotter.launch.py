@@ -18,7 +18,6 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
-    # node constructor
     lidar_plotter_node = Node(
         package = "lidar_plotter",
         executable="plot_scan",
