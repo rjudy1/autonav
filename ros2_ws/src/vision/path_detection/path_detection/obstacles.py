@@ -1,8 +1,8 @@
 ################################
-# AutoNav 2022 Competition Robot
+# AutoNav 2023 Competition Robot
 # Package: rs2l_transform
 # File: obstacles.py
-# Purpose: detect potholes and remove back 180 of lidar sweep
+# Purpose: detect potholes and obstacles in the front 180 degrees
 # Date Modified: 24 May 2022
 # To run: ros2 run path_detection obstacles
 ################################
@@ -21,13 +21,11 @@ from std_msgs.msg import Int32
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
-
 @dataclass
 class Circle:
     xcenter: float
     ycenter: float
     radius: float
-
 
 # given ax+bx+c=0 and center and radius of a circle, determine if they intersect and returns distance in meters from edge
 def check_collision(a, b, c, x, y, radius):
@@ -38,8 +36,8 @@ def check_collision(a, b, c, x, y, radius):
     if radius < dist:
         return 0, False
     else:
+        # need to know what these consts are for (need to be update?? 1/28/23)
         return math.sqrt((x - 190) * (x - 190) + (y - 452) * (y - 452)) / 150 - 0.3, True
-
 
 class TransformPublisher(Node):
     def __init__(self):
@@ -57,14 +55,15 @@ class TransformPublisher(Node):
         self.state = STATE.LINE_FOLLOWING
 
         # lidar parameters
-        self.declare_parameter("/LIDARTrimMin", 1.31)
-        self.declare_parameter("/LIDARTrimMax", 4.97)
-        self.declare_parameter("/ObstacleFOV", math.pi/6)
-        self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters
-        self.declare_parameter("/FollowingDirection", 1)
+        self.declare_parameter("/LIDARTrimMin", 2.8808)         # radians = 165.0575 degrees
+        self.declare_parameter("/LIDARTrimMax", 0.2576)         # radians = 14.7 degrees
+
+        self.declare_parameter("/ObstacleFOV", math.pi/6)       #
+        self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters = 4.9213 ft
+        self.declare_parameter("/FollowingDirection", 1)        # meters
 
         # camera parameters
-        self.declare_parameter('/LineDetectCropTop', 0.0)
+        self.declare_parameter('/LineDetectCropTop', 0.0)       # will need to adjust later for new method
         self.declare_parameter('/LineDetectCropBottom', 0.2)
         self.declare_parameter('/LineDetectCropSide', 0.2)
         self.declare_parameter("/PotholeBufferSize", 5)
@@ -72,7 +71,6 @@ class TransformPublisher(Node):
         self.declare_parameter('/Debug', False)
 
         self.BUFF_SIZE = self.get_parameter('/PotholeBufferSize').value
-
 
         # camera/obstacle detection
         self.circles = []  # recent circle history
@@ -88,13 +86,13 @@ class TransformPublisher(Node):
         self.state = new_state.data
 
     def get_c(self, i, scan):
-        return -(190 * (452-math.cos(i * scan.angle_increment)) - 452 * (190-math.sin(i * scan.angle_increment)))
+        return -(190 * (452-math.cos(i * scan.angle_increment)) - 452 * (190-math.sin(i * scan.angle_increment))) # is this center of obstacle or pothole??
 
     def check_range(self, scan, min, max, max_distance):
         distances = 0
         count = 0
         for i in range(len(scan.ranges)):
-            if max > i * scan.angle_increment > min and scan.ranges[i] is not None and scan.ranges[i] != math.inf\
+            if max > i * scan.angle_increment > min and scan.ranges[i] is not None and scan.ranges[i] != math.inf \
                     and scan.ranges[i] < max_distance:
                 distances += scan.ranges[i] * math.sin(i*scan.angle_increment)
                 count += 1
@@ -110,9 +108,9 @@ class TransformPublisher(Node):
     def lidar_callback(self, scan):
         # adjust range to only include data in front of scanner\
 
-        # self.get_logger().info(f"trim range: {scan.angle_max}, scan range: {scan.angle_min}")
-        scan.angle_max += math.pi
-        scan.angle_min += math.pi
+        self.get_logger().info(f"trim range: {scan.angle_max}, scan range: {scan.angle_min}") # uncommented to see if it affects anything
+        #scan.angle_max += math.pi
+        #scan.angle_min += math.pi
 
         trim_min = self.get_parameter('/LIDARTrimMin').value
         trim_max = self.get_parameter('/LIDARTrimMax').value
@@ -120,97 +118,81 @@ class TransformPublisher(Node):
         new_ranges = []
         new_intensities = []
 
-        startOffset = int(scan.angle_min/scan.angle_increment)
-        endOffset = int(scan.angle_max/scan.angle_increment)
+        #startOffset = int(scan.angle_min/scan.angle_increment)                     # not sure if we will uses this with the new design
+        #endOffset = int(scan.angle_max/scan.angle_increment)
 
+        zero = int(0.0/scan.angle_increment)                                        # start at 0 on left side of robot lidar sweep
+        semiCircle = int(3.1416/scan.angle_increment)                               # end at 180 degrees
         startTrim = int(trim_min/scan.angle_increment)
         endTrim = int(trim_max/scan.angle_increment)
-        try:
+        try:                                                                        # don't care about anything behind the robot
             if len(scan.intensities) > 0:
                 i = 0
-                while i <= startOffset:
+                while zero <= i < endTrim:                                          # clip edges by filling with inf and 0 
                     new_ranges.append(math.inf)
                     new_intensities.append(0.0)
                     i += 1
-                while i <= startTrim:
-                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
-                    new_intensities.append(scan.intensities[i - (startOffset + 1)])
+                while endTrim <= i <= startTrim:                                    # keep values in front of the robot
+                    new_ranges.append(scan.ranges[i])
+                    new_intensities.append(scan.intensities[i])
                     i += 1
-                while i <= endTrim:
-                    new_ranges.append(math.inf)
-                    new_intensities.append(0.0)
-                    i += 1
-                while i <= endOffset:
-                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
-                    new_intensities.append(scan.intensities[i - (startOffset + 1)])
-                    i += 1
-                while i <= int(6.28/scan.angle_increment):
+                while endTrim < i <= semiCircle:                                    # anything left that we missed fill with inf and 0
                     new_ranges.append(math.inf)
                     new_intensities.append(0.0)
                     i += 1
                 scan.ranges = new_ranges
                 scan.intensities = new_intensities
-            else:
-                i = 0
-                while i <= startOffset:
+            else:                                                                   # same thing above just without intensities
+                while zero <= i < endTrim:                                          
                     new_ranges.append(math.inf)
                     i += 1
-                while i <= startTrim:
-                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                while endTrim <= i <= startTrim:                                    
+                    new_ranges.append(scan.ranges[i])
                     i += 1
-                while i <= endTrim:
-                    new_ranges.append(math.inf)
-                    i += 1
-                while i <= endOffset:
-                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
-                    i += 1
-                while i <= int(6.28/scan.angle_increment):
+                while endTrim < i <= semiCircle:                                    
                     new_ranges.append(math.inf)
                     i += 1
                 scan.ranges = new_ranges
-            scan.angle_min = 0.0
-            scan.angle_max = 6.28
+            scan.angle_min = 0.0            # radians = 0 degrees
+            scan.angle_max = 3.1416           # radians = ~180 degrees
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
-	# uncommented by James Oct 22 for pothole evaluation
-	# START
-        # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES
-        # for circle in self.circles:
-        #      # front part of lidar scan 0 to pi/2 radians
-        #      for i in range(len(scan.ranges)):
-        #          if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
-        #              dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
-        #                                          self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
-        #              if dist < scan.ranges[i] and hit:
-        #                  scan.ranges[i] = dist
-        #                  scan.intensities[i] = 47
-        # print(". . . . . . . Made it to Finish . . . . .")
-	# FINISH
-	# T1 rolled over; pothole touching the line; no change
-	# T2 rolled over; pothole a foot away from line; no change
-	# T3 no roll over sudden left turn with beep; pothole a foot away from line; no change
-	# T4 rolled over; pothole a foot away; no change
-	# T5 rolled over; pothole a foot away; no change
-	# T6 rolled over; pothole 2 feet away; no change
+        """
+        # START
+            # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES
+            # for circle in self.circles:
+            #      # front part of lidar scan 0 to pi/2 radians
+            #      for i in range(len(scan.ranges)):
+            #          if i < (len(scan.ranges) // 4) or i > len(scan.ranges) // 4 * 3:
+            #              dist, hit = check_collision(-math.cos(i * scan.angle_increment), math.sin(i * scan.angle_increment),
+            #                                          self.get_c(i, scan), circle.xcenter, circle.ycenter, circle.radius)
+            #              if dist < scan.ranges[i] and hit:
+            #                  scan.ranges[i] = dist
+            #                  scan.intensities[i] = 47
+            # print(". . . . . . . Made it to Finish . . . . .")
+        # FINISH
+        """
         self.lidar_pub.publish(scan)
 
         # scan in the range in front of robot to check for obstacles
         msg = String()
         msg.data = STATUS.PATH_CLEAR
         count1 = 0
+        follow_dist = self.get_parameter("/ObstacleDetectDistance").value
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
-            follow_dist = self.get_parameter("/ObstacleDetectDistance").value *3/4
-        else:
-            follow_dist = self.get_parameter("/ObstacleDetectDistance").value
+             follow_dist *= 3/4
+        
+        # scan within the FOV in front and detect if there is an obstacle
+        half_FOV = self.get_parameter('/ObstacleFOV').value / 2
+        piOver2 = math.pi / 2
         for i in range(len(scan.ranges)):
-            if i * scan.angle_increment < self.get_parameter('/ObstacleFOV').value/2 \
-                    or i * scan.angle_increment > 2 * math.pi - self.get_parameter('/ObstacleFOV').value / 2:
+            if piOver2 - half_FOV < i * scan.angle_increment < piOver2 + half_FOV :
                 if scan.ranges[i] < follow_dist: #self.get_parameter("/ObstacleDetectDistance").value:
                     if count1 > 1: # get at least two points of obstacle in front to trigger found
                         msg.data = STATUS.OBJECT_SEEN
                     count1+=1
-
+        # didn't see anything in front of the robot
         if msg.data == STATUS.PATH_CLEAR:
             self.update_history(0)
         else:
@@ -231,12 +213,12 @@ class TransformPublisher(Node):
         try:
             if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
                 if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, 70*math.pi/180, 84*math.pi/180, 2.0))
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 160*math.pi/180, 174*math.pi/180, 2.0))   # double check that this is the correct side
                     # self.get_logger().info("Publishing from obstacles.py:")
                     # self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)
                 elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, 276*math.pi/180, 290*math.pi/180, 2.0))
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 6*math.pi/180, 20*math.pi/180, 2.0)) # double check that this is the correct side
                     # self.get_logger().info("Publishing from obstacles.py:")
                     # self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)
@@ -244,6 +226,7 @@ class TransformPublisher(Node):
         except Exception as e:
             self.get_logger().warning(f"ERROR with TOF Following direction : {e}")
 
+    # will need to refactor when make a pothole solution
     # receives camera image and parses potholes into history
     def image_callback(self, image):
         image = bridge_image(image, "bgr8")
@@ -292,7 +275,6 @@ class TransformPublisher(Node):
         self.history = np.zeros((self.BUFF_SIZE,), dtype=bool)
         self.path_clear = True
 
-
 def main(args=None):
     rclpy.init(args=args)
 
@@ -304,7 +286,6 @@ def main(args=None):
         # Destroy the node explicitly (optional)
         transform.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
