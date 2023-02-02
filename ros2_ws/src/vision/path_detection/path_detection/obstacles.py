@@ -133,8 +133,8 @@ class TransformPublisher(Node):
                     new_intensities.append(0.0)
                     i += 1
                 while startOffset < i < endOffset:                                  # keep values in front of the robot
-                    new_ranges.append(scan.ranges[i])
-                    new_intensities.append(scan.intensities[i])
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
+                    new_intensities.append(scan.intensities[i - (startOffset + 1)])
                     i += 1
                 while endOffset <= i <= semiCircle:                                 # anything left that we missed fill with inf and 0
                     new_ranges.append(math.inf)
@@ -147,7 +147,7 @@ class TransformPublisher(Node):
                     new_ranges.append(math.inf)
                     i += 1
                 while startOffset < i < endOffset:                                    
-                    new_ranges.append(scan.ranges[i])
+                    new_ranges.append(scan.ranges[i - (startOffset + 1)])
                     i += 1
                 while endOffset <= i <= semiCircle:                                    
                     new_ranges.append(math.inf)
@@ -185,11 +185,12 @@ class TransformPublisher(Node):
         
         # scan within the FOV in front and detect if there is an obstacle
         half_FOV = self.get_parameter('/ObstacleFOV').value / 2
-        piOver2 = math.pi / 2
+        right_FOV = (math.pi / 2) - half_FOV
+        left_FOV = (math.pi / 2) + half_FOV
         for i in range(len(scan.ranges)):
-            if piOver2 - half_FOV < i * scan.angle_increment < piOver2 + half_FOV :
-                if scan.ranges[i] < follow_dist: #self.get_parameter("/ObstacleDetectDistance").value:
-                    if count1 > 1: # get at least two points of obstacle in front to trigger found
+            if right_FOV < i * scan.angle_increment < left_FOV:
+                if scan.ranges[i] < follow_dist:                                    # self.get_parameter("/ObstacleDetectDistance").value:
+                    if count1 > 1:                                                  # get at least two points of obstacle in front to trigger found
                         msg.data = STATUS.OBJECT_SEEN
                     count1+=1
         # didn't see anything in front of the robot
