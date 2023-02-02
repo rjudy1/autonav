@@ -92,11 +92,11 @@ class MainRobot(Node):
             # initialize our variables
             self.encoder_straight_increment = meters_to_ticks(self.get_parameter('/EncoderBoxDistance').value)
             if self.get_parameter('/EncoderBoxTurnLeft').value:
-                self.encoder_turn_increment_left = -1
+                self.encoder_turn_increment_left = 0
                 self.encoder_turn_increment_right = meters_to_ticks(math.pi/2*0.6096)
             else:
                 self.encoder_turn_increment_left = meters_to_ticks(math.pi/2*0.6096)
-                self.encoder_turn_increment_right = -1
+                self.encoder_turn_increment_right = 0
             self.encoder_left_target = self.encoder_straight_increment
             self.encoder_right_target = self.encoder_straight_increment
 
@@ -105,6 +105,8 @@ class MainRobot(Node):
             self.encoder_right = 0.0
             self.encoder_left_raw = 0
             self.encoder_right_raw = 0
+
+            self.encoder_straight_threshold = 50
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
@@ -443,27 +445,39 @@ class MainRobot(Node):
     def encoder_box_follow_straight_state(self):
         self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
         if self.encoder_left_raw < self.encoder_left_target or self.encoder_right_raw < self.encoder_right_target:
-            # add test to make sure we're adjusting if we're not going straight
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{0}"
-            self.wheel_pub.publish(self.wheel_msg)
+            # test to make sure we're adjusting if we're not going straight
+            delta_left = self.encoder_left_target - self.encoder_left_raw
+            delta_right = self.encoder_right_target - self.encoder_right_raw
+            
+            if (delta_right < delta_left - self.encoder_straight_threshold):
+                # we're too far right
+                # decrease right wheel speed -> turn right slightly
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{1}"
+                self.wheel_pub.publish(self.wheel_msg)
+            elif (delta_left < delta_right - self.encoder_straight_threshold):
+                # we're too far left
+                # decrease left wheel speed -> turn left slightly
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{-1}"
+                self.wheel_pub.publish(self.wheel_msg)
+            else:
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{0}"
+                self.wheel_pub.publish(self.wheel_msg)
         else:
             # time to transition states
-            # change state
-            self.state = STATE.ENCODER_BOX_FOLLOW_TURN
             # adjust targets
             self.encoder_left_target += self.encoder_turn_increment_left
             self.encoder_right_target += self.encoder_turn_increment_right
             # send updated command to motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.get_parameter('/EncoderBoxTurnLeft').value)+1)}"
             self.wheel_pub.publish(self.wheel_msg)
-
+            # change state
+            self.state = STATE.ENCODER_BOX_FOLLOW_TURN
             self.encoder_box_follow_turn_state()
 
     def encoder_box_follow_turn_state(self):
         self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
 
-        #self.get_logger().info("turn state")
-        if self.encoder_left_raw < self.encoder_left_target or self.encoder_right_raw < self.encoder_right_target:
+        if (self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_right_raw < self.encoder_right_target) or (not self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_left_raw < self.encoder_left_target):
             # don't do anything...
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
             self.wheel_pub.publish(self.wheel_msg)
