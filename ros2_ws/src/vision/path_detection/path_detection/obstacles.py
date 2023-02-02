@@ -63,7 +63,7 @@ class TransformPublisher(Node):
         self.declare_parameter("/FollowingDirection", 1)        # meters
 
         # camera parameters
-        self.declare_parameter('/LineDetectCropTop', 0.0)       # will need to adjust later for new method
+        self.declare_parameter('/LineDetectCropTop', 0.0)
         self.declare_parameter('/LineDetectCropBottom', 0.2)
         self.declare_parameter('/LineDetectCropSide', 0.2)
         self.declare_parameter("/PotholeBufferSize", 5)
@@ -105,56 +105,56 @@ class TransformPublisher(Node):
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
     # third portion replaces obstacle in front and time of flight sensors
+
+    # this funciton does the following:
+    # 1.
+    # 2.
+    # 3. 
     def lidar_callback(self, scan):
-        # adjust range to only include data in front of scanner\
 
-        self.get_logger().info(f"trim range: {scan.angle_max}, scan range: {scan.angle_min}") # uncommented to see if it affects anything
-        #scan.angle_max += math.pi
-        #scan.angle_min += math.pi
+        self.get_logger().info(f"angle min: {scan.angle_min} \n angle max: {scan.angle_max} \n angle increment: {scan.angle_increment}")
 
-        trim_min = self.get_parameter('/LIDARTrimMin').value
-        trim_max = self.get_parameter('/LIDARTrimMax').value
-        
+        scan.angle_max += math.pi                                                   # mirror the incoming scan angles over the y (forward) axis . . .
+        scan.angle_min += math.pi                                                   # flip angle 0 to be on the right and -pi to pi to be on the left
+
         new_ranges = []
         new_intensities = []
 
-        #startOffset = int(scan.angle_min/scan.angle_increment)                     # not sure if we will uses this with the new design
-        #endOffset = int(scan.angle_max/scan.angle_increment)
+        startOffset = int(scan.angle_min/scan.angle_increment)                      # get difference between absolute 0 or pi and were . . .
+        endOffset = int(scan.angle_max/scan.angle_increment)                        # the lidar is - this is variabel
 
-        zero = int(0.0/scan.angle_increment)                                        # start at 0 on left side of robot lidar sweep
-        semiCircle = int(3.1416/scan.angle_increment)                               # end at 180 degrees
-        startTrim = int(trim_min/scan.angle_increment)
-        endTrim = int(trim_max/scan.angle_increment)
+        zero = 0.0                                                                  # start at 0 radians on right side of robot lidar sweep 
+        semiCircle = math.pi                                                        # end at 3.1415 randians = 180 degrees
         try:                                                                        # don't care about anything behind the robot
             if len(scan.intensities) > 0:
                 i = 0
-                while zero <= i < endTrim:                                          # clip edges by filling with inf and 0 
+                while zero <= i <= startOffset:                                     # clip edges by filling with inf and 0 
                     new_ranges.append(math.inf)
                     new_intensities.append(0.0)
                     i += 1
-                while endTrim <= i <= startTrim:                                    # keep values in front of the robot
+                while startOffset < i < endOffset:                                  # keep values in front of the robot
                     new_ranges.append(scan.ranges[i])
                     new_intensities.append(scan.intensities[i])
                     i += 1
-                while endTrim < i <= semiCircle:                                    # anything left that we missed fill with inf and 0
+                while endOffset <= i <= semiCircle:                                 # anything left that we missed fill with inf and 0
                     new_ranges.append(math.inf)
                     new_intensities.append(0.0)
                     i += 1
                 scan.ranges = new_ranges
                 scan.intensities = new_intensities
             else:                                                                   # same thing above just without intensities
-                while zero <= i < endTrim:                                          
+                while zero <= i <= startOffset:                                          
                     new_ranges.append(math.inf)
                     i += 1
-                while endTrim <= i <= startTrim:                                    
+                while startOffset < i < endOffset:                                    
                     new_ranges.append(scan.ranges[i])
                     i += 1
-                while endTrim < i <= semiCircle:                                    
+                while endOffset <= i <= semiCircle:                                    
                     new_ranges.append(math.inf)
                     i += 1
                 scan.ranges = new_ranges
-            scan.angle_min = 0.0            # radians = 0 degrees
-            scan.angle_max = 3.1416           # radians = ~180 degrees
+            scan.angle_min = 0.0                                                    # radians = 0 degrees
+            scan.angle_max = math.pi                                                # radians = ~180 degrees
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
