@@ -37,7 +37,7 @@ class Data_Logger(Node):
         #self.fused_heading_sub = self.create_subscription(HeadingStatus, "/fused_heading",                    self.fused_heading_callback, 10)
         #self.gps_events_sub    = self.create_subscription(String,        "/gps_events",                       self.gps_events_callback,    10)
         #self.gps_heading_sub   = self.create_subscription(HeadingStatus, "/gps_heading",                      self.gps_heading_callback,   10)
-        self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
+        #self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
         #self.light_sub         = self.create_subscription(LightCmd,      "/light_events",                     self.light_callback, 10)
         #self.line_sub          = self.create_subscription(String,        "/line_events",                      self.line_callback, 10)
         #self.mod_lidar_sub     = self.create_subscription(String,        "/mod_lidar",                        self.mod_lidar_callback, 10)
@@ -137,12 +137,12 @@ class Data_Logger(Node):
     # lidar_frame_callback function
     # logs lidar frame data to csv
     def lidar_frame_callback(self, data):
-        self.lidar_frame_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec], data.ranges)))
+        self.lidar_frame_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec, data.angle_increment, data.angle_min, data.angle_max], data.ranges)))
 
     # lidar_scan_callback function
     # logs lidar /scan data to csv
     def lidar_scan_callback(self, data):
-        self.lidar_scan_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec], data.ranges)))
+        self.lidar_scan_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec, data.angle_increment, data.angle_min, data.angle_max], data.ranges,)))
 
     def wheel_callback(self, data):
         msg = data.data.split(',')
