@@ -10,8 +10,8 @@
 
 from dataclasses import dataclass
 import time
-#from utils.utils import *
-import matplotlib.pyplot as plt
+from utils.utils import *
+from matplotlib import pyplot as plt
 import numpy as np
 import rclpy
 from rclpy.node      import Node
@@ -33,19 +33,24 @@ class Plot_Scan(Node):
     # logs lidar frame data to csv
     def lidar_frame_callback(self, data):
         
-        self.get_logger().info(data.ranges)
-        self.get_logger().info(len(data.ranges))
+        #self.get_logger().info(f"Data ranges: {data.ranges} \n Len of ranges: {len(data.ranges)} \n")
         # build points to plot from scan
-        dist_y = data.ranges
+        dist_y = np.array(data.ranges)
+        dist_y[dist_y == "inf"] = ""
+        self.get_logger().info(f"dist_y: {dist_y}")
         points_x = np.arange(1, len(data.ranges)+1, 1)
+        self.get_logger().info(f"dist_y: {dist_y}")
 
         # plotting points as a scatter plot
-        plt.scatter(points_x, dist_y, label= "points", color= "green", marker= "*", s=30)
+        plt.scatter(points_x, dist_y, label= "points", color= "black", marker= ".", s=30)
+
         # axiis, title, display
         plt.xlabel('Samples Per Scan')
         plt.ylabel('Distances (m)')
         plt.title('Lidar laster_frame scan')
         plt.show()
+        time.sleep(10)
+        plt.close()
 
 def main(args=None):
     rclpy.init(args=args)
@@ -53,6 +58,7 @@ def main(args=None):
     try:
         rclpy.spin(plot_scan)
     except KeyboardInterrupt:
+        plot_scan.destroy_node()
         plot_scan.destroy_node()
         rclpy.shutdown()
 
