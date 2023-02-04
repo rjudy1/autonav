@@ -7,12 +7,13 @@
 # Date Created  : 24 Jan 2023
 # Date Modified : 24 Jan 2023
 ################################
-
-from dataclasses import dataclass
 import time
+
+import numpy
 from utils.utils import *
 from matplotlib import pyplot as plt
 import numpy as np
+from numpy import inf
 import rclpy
 from rclpy.node      import Node
 from custom_msgs.msg import *
@@ -36,10 +37,12 @@ class Plot_Scan(Node):
         #self.get_logger().info(f"Data ranges: {data.ranges} \n Len of ranges: {len(data.ranges)} \n")
         # build points to plot from scan
         dist_y = np.array(data.ranges)
-        dist_y[dist_y == "inf"] = ""
-        self.get_logger().info(f"dist_y: {dist_y}")
+        dist_y[dist_y == inf] = 0
+
+        # if you want to see the lidar plot in ft
+        #dist_y = np.array(dist_y) * 3.28084
         points_x = np.arange(1, len(data.ranges)+1, 1)
-        self.get_logger().info(f"dist_y: {dist_y}")
+        #self.get_logger().info(f"dist_y: {dist_y}")
 
         # plotting points as a scatter plot
         plt.scatter(points_x, dist_y, label= "points", color= "black", marker= ".", s=30)
@@ -47,9 +50,13 @@ class Plot_Scan(Node):
         # axiis, title, display
         plt.xlabel('Samples Per Scan')
         plt.ylabel('Distances (m)')
+        # if you want distance in ft
+        #plt.ylabel('Distances (ft)')
         plt.title('Lidar laster_frame scan')
         plt.show()
-        time.sleep(10)
+        time.sleep(1)
+        # you can also press ctl C to close the program else it will
+        # keep popping up
         plt.close()
 
 def main(args=None):
