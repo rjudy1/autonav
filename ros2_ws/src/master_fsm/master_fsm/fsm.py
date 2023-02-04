@@ -106,7 +106,7 @@ class MainRobot(Node):
             self.encoder_left_raw = 0
             self.encoder_right_raw = 0
 
-            self.encoder_straight_threshold = 50
+            self.encoder_straight_threshold = 20
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)

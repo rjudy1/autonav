@@ -96,7 +96,7 @@
     ros__parameters:
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
-        /TeensyUpdateDelay:         .1
+        /TeensyUpdateDelay:         .05
         /SideObjectDist:            0.425 # 0.85
         /LineSpeed:                 14.0
         /ObjectSpeed:               8.0
