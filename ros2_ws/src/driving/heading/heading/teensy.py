@@ -115,9 +115,6 @@ class Teensy(Node):
         self.left_offset = -int(data[1])
         self.right_offset = -int(data[2])
 
-        self.get_logger().info(f"{self.left_offset},{self.right_offset}")
-
-
         # CHECK THIS CODE
         self.serialPort.write("M,89,89,**".encode())
         # self.get_logger().info("WAIT: Enable power to motors")
@@ -156,7 +153,6 @@ class Teensy(Node):
             self.boost_count = 0
 
     def wheel_callback(self, msg):
-        #self.get_logger().info(f"teensy: {msg.data}")
         msg = msg.data
         linear = self.curr_linear
         angular = self.curr_angular

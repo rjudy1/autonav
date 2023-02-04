@@ -1,16 +1,16 @@
 # ros2 bag record -o bags/run06062200950 /camera/color/image_raw /gps_heading /scan /rosout
 /**:
     ros__parameters:
-        /RealCourse:                False
-        /FollowingDirection:        0          # 1  is right, 0 is left (line following)
-        /UseYellow:                 False      # True for yellow lines, False for white lines
-        /InitialHeading:            162.0      # robot's absolute initial heading. set before build in degrees.
-        /NorthPointFirst:           True
-        /GpsExitHeading:            0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
-        /CrossRampInGps:            True
-        /RepeatGps:                 True       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
-        /LineDist:                  0.2        # Distance in meters to follow the line from
-        /StartState: 11 #3 GPS #0 Line
+        /RealCourse:         False
+        /FollowingDirection: 0          # 1  is right, 0 is left (line following)
+        /UseYellow:          False      # True for yellow lines, False for white lines
+        /InitialHeading:     162.0      # robot's absolute initial heading. set before build in degrees.
+        /NorthPointFirst:    True
+        /GpsExitHeading:     0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
+        /CrossRampInGps:     True
+        /RepeatGps:          True       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
+        /LineDist:           0.2        # Distance in meters to follow the line from
+        /StartState:         0          #3 GPS #0 Line
 #        /EncoderWeight:             .75
 
 

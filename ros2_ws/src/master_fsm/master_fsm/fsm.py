@@ -221,7 +221,7 @@ class MainRobot(Node):
     def gps_navigation_state(self):
         # self.get_logger().info("GPS Navigation State")
         # After looking for an obstacle, see if we have arrived
-        # turn light offenc_callback so should blink at first waypoint
+        # turn light off so should blink at first waypoint
         # light_msg = LightCmd()
         # light_msg.type = 'G'
         # light_msg.on = False

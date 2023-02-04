@@ -135,8 +135,8 @@ def degrees_to_radians(degrees):
         heading -= math.pi * 2
     return heading
 
-# TICKS_PER_METER = 1400
 TICKS_PER_METER = 1400
+
 def ticks_to_meters(ticks):
     meters = ticks/TICKS_PER_METER
     return meters
