@@ -11,7 +11,6 @@
 
 from dataclasses import dataclass
 import math
-
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -57,7 +56,6 @@ class TransformPublisher(Node):
         # lidar parameters
         self.declare_parameter("/LIDARTrimMin", 2.8808)         # radians = 165.0575 degrees
         self.declare_parameter("/LIDARTrimMax", 0.2576)         # radians = 14.7 degrees
-
         self.declare_parameter("/ObstacleFOV", math.pi/6)       #
         self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters = 4.9213 ft
         self.declare_parameter("/FollowingDirection", 1)        # meters
@@ -107,54 +105,48 @@ class TransformPublisher(Node):
     # third portion replaces obstacle in front and time of flight sensors
 
     # this funciton does the following:
-    # 1.
-    # 2.
-    # 3. 
+    # 1. Shifts the angle and records scans that are in front of the robot
+    # 2. Check/detect if there are obstacles/objects in front and in the FOV
+    # 3. Publish the wheel distance to the obstacle based off the current line following direction
     def lidar_callback(self, scan):
 
         self.get_logger().info(f"angle min: {scan.angle_min} \n angle max: {scan.angle_max} \n angle increment: {scan.angle_increment}")
 
-        scan.angle_max += math.pi                                                   # mirror the incoming scan angles over the y (forward) axis . . .
-        scan.angle_min += math.pi                                                   # flip angle 0 to be on the right and -pi to pi to be on the left
+        scan.angle_max += math.pi                                                   # change the range from -pi -> pi to 0 -> 2 pi for array indexing 
+        scan.angle_min += math.pi                                                    
 
         new_ranges = []
         new_intensities = []
 
-        startOffset = int(scan.angle_min/scan.angle_increment)                      # get difference between absolute 0 or pi and were . . .
-        endOffset = int(scan.angle_max/scan.angle_increment)                        # the lidar is - this is variabel
-
-        zero = 0.0                                                                  # start at 0 radians on right side of robot lidar sweep 
-        semiCircle = math.pi                                                        # end at 3.1415 randians = 180 degrees
-        try:                                                                        # don't care about anything behind the robot
+        startOffset = int(scan.angle_min/scan.angle_increment)                      # where lidar started recording the scan in relation to min angle
+        endOffset = int(scan.angle_max/scan.angle_increment)                        # where the lidar finished recording the scan in relation to the max angle
+        endTrim = math.pi/scan.angle_increment
+        startTrim = 2*math.pi/scan.angle_increment
+        try:                                                                        
             if len(scan.intensities) > 0:
-                i = 0
-                while zero <= i <= startOffset:                                     # clip edges by filling with inf and 0 
-                    new_ranges.append(math.inf)
-                    new_intensities.append(0.0)
-                    i += 1
-                while startOffset < i < endOffset:                                  # keep values in front of the robot
+                i = 0                                                               
+                while 0 <= i < endTrim:                                             # 0 is where the physical scan starts - don't record scan that are behind
+                    i += 1                                                          
+                while endTrim <= i < endOffset:                                     # keep values in front of the robot
                     new_ranges.append(scan.ranges[i - (startOffset + 1)])
                     new_intensities.append(scan.intensities[i - (startOffset + 1)])
                     i += 1
-                while endOffset <= i <= semiCircle:                                 # anything left that we missed fill with inf and 0
-                    new_ranges.append(math.inf)
-                    new_intensities.append(0.0)
+                while endOffset <= i <= startTrim:                                  # anything left that we missed
                     i += 1
                 scan.ranges = new_ranges
                 scan.intensities = new_intensities
             else:                                                                   # same thing above just without intensities
-                while zero <= i <= startOffset:                                          
-                    new_ranges.append(math.inf)
-                    i += 1
-                while startOffset < i < endOffset:                                    
+                i = 0                                                               
+                while 0 <= i < endTrim:                                             
+                    i += 1                                                          
+                while endTrim <= i < endOffset:                                     
                     new_ranges.append(scan.ranges[i - (startOffset + 1)])
                     i += 1
-                while endOffset <= i <= semiCircle:                                    
-                    new_ranges.append(math.inf)
+                while endOffset <= i <= startTrim:                                 
                     i += 1
                 scan.ranges = new_ranges
             scan.angle_min = 0.0                                                    # radians = 0 degrees
-            scan.angle_max = math.pi                                                # radians = ~180 degrees
+            scan.angle_max = math.pi                                                # radians = 180 degrees
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
@@ -189,7 +181,7 @@ class TransformPublisher(Node):
         left_FOV = (math.pi / 2) + half_FOV
         for i in range(len(scan.ranges)):
             if right_FOV < i * scan.angle_increment < left_FOV:
-                if scan.ranges[i] < follow_dist:                                    # self.get_parameter("/ObstacleDetectDistance").value:
+                if scan.ranges[i] < follow_dist:                                    
                     if count1 > 1:                                                  # get at least two points of obstacle in front to trigger found
                         msg.data = STATUS.OBJECT_SEEN
                     count1+=1
@@ -214,12 +206,12 @@ class TransformPublisher(Node):
         try:
             if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
                 if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, 160*math.pi/180, 174*math.pi/180, 2.0))   # double check that this is the correct side
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 160*math.pi/180, 174*math.pi/180, 2.0))
                     # self.get_logger().info("Publishing from obstacles.py:")
                     # self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)
                 elif self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT:
-                    distance_msg.data = "OBJ," + str(self.check_range(scan, 6*math.pi/180, 20*math.pi/180, 2.0)) # double check that this is the correct side
+                    distance_msg.data = "OBJ," + str(self.check_range(scan, 6*math.pi/180, 20*math.pi/180, 2.0))
                     # self.get_logger().info("Publishing from obstacles.py:")
                     # self.get_logger().info(f"Distance message data: {distance_msg}")
                     self.lidar_wheel_distance_pub.publish(distance_msg)

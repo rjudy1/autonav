@@ -35,8 +35,6 @@
 
 /obstacles:
     ros__parameters:
-        /LIDARTrimMin:              2.8808 # radians = 16​5.0575 degrees
-        /LIDARTrimMax:              0.2576 # radians = 14.76 degrees
         /ObstacleFOV:               0.8754  # radians = 50.1567 degrees
         /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
