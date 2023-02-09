@@ -44,7 +44,16 @@ class Plot_Scan(Node):
         # if you want to see the lidar plot in ft
         #dist_y = np.array(dist_y) * 3.28084
         points_x = np.arange(1, len(data.ranges)+1, 1)
+        # make lidar right/left is same as plot right/left - note: it doesn't come in this way
+        points_x = np.flip(points_x)
         #self.get_logger().info(f"dist_y: {dist_y}")
+
+        # plot only the useful data in a certain window
+        if (True):
+
+            dist_y = np.where(np.logical_and(dist_y >= 20, dist_y <= 120))
+            points_x = np.arange(1, len(dist_y) + 1, 1)
+            dist_y = np.where((dist_y <= 0.8) or (dist_y >= 2), 0, dist_y)
 
         # plotting points as a scatter plot
         plt.scatter(points_x, dist_y, label= "points", color= "black", marker= ".", s=30)
