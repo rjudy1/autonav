@@ -110,39 +110,36 @@ class TransformPublisher(Node):
     # 3. Publish the wheel distance to the obstacle based off the current line following direction
     def lidar_callback(self, scan):
 
-        self.get_logger().info(f"angle min: {scan.angle_min} \n angle max: {scan.angle_max} \n angle increment: {scan.angle_increment}")
+        #self.get_logger().info(f"angle min: {scan.angle_min} \n angle max: {scan.angle_max} \n angle increment: {scan.angle_increment}")
 
-        scan.angle_max += math.pi                                                   # change the range from -pi -> pi to 0 -> 2 pi for array indexing 
-        scan.angle_min += math.pi                                                    
+        scan.angle_max += math.pi                                                   # change the range from -pi -> pi to 0 -> 2 pi for array indexing
+        scan.angle_min += math.pi
 
         new_ranges = []
         new_intensities = []
 
         startOffset = int(scan.angle_min/scan.angle_increment)                      # where lidar started recording the scan in relation to min angle
-        endOffset = int(scan.angle_max/scan.angle_increment)                        # where the lidar finished recording the scan in relation to the max angle
-        endTrim = math.pi/scan.angle_increment
-        startTrim = 2*math.pi/scan.angle_increment
-        try:                                                                        
+        fullScan = int(math.pi/scan.angle_increment)
+        try:
             if len(scan.intensities) > 0:
                 i = 0                                                               
-                while 0 <= i < endTrim:                                             # 0 is where the physical scan starts - don't record scan that are behind
-                    i += 1                                                          
-                while endTrim <= i < endOffset:                                     # keep values in front of the robot
+                while 0 <= i < startOffset:                                             # 0 is where the physical scan starts - don't record scan that are behind
+                    i += 1
+                    #self.get_logger().info(f"0 -> start off: 0 <= {i} < {startOffset}\n ")
+                while startOffset <= i < fullScan:                                     # keep values in front of the robot
+                    #self.get_logger().info(f"start off -> in front: start off <= {i} < {inFront}\n ")
                     new_ranges.append(scan.ranges[i - (startOffset + 1)])
                     new_intensities.append(scan.intensities[i - (startOffset + 1)])
-                    i += 1
-                while endOffset <= i <= startTrim:                                  # anything left that we missed
+                    #self.get_logger().info(f"Intensity")
                     i += 1
                 scan.ranges = new_ranges
                 scan.intensities = new_intensities
             else:                                                                   # same thing above just without intensities
                 i = 0                                                               
-                while 0 <= i < endTrim:                                             
+                while 0 <= i < startOffset:
                     i += 1                                                          
-                while endTrim <= i < endOffset:                                     
+                while startOffset <= i < fullScan:
                     new_ranges.append(scan.ranges[i - (startOffset + 1)])
-                    i += 1
-                while endOffset <= i <= startTrim:                                 
                     i += 1
                 scan.ranges = new_ranges
             scan.angle_min = 0.0                                                    # radians = 0 degrees

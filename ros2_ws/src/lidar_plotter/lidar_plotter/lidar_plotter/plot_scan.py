@@ -26,6 +26,8 @@ class Plot_Scan(Node):
 
         # Subscribe to node
         self.lidar_frame_sub = self.create_subscription(LaserScan, "/laser_frame", self.lidar_frame_callback, 10)
+        # use /scan if you want to see everything that the lidar sees
+        #self.lidar_frame_sub = self.create_subscription(LaserScan, "/scan", self.lidar_frame_callback, 10)
 
         #record the time for time stamps
         t = str(round(time.time()))
@@ -54,7 +56,6 @@ class Plot_Scan(Node):
         #plt.ylabel('Distances (ft)')
         plt.title('Lidar laster_frame scan')
         plt.show()
-        time.sleep(1)
         # you can also press ctl C to close the program else it will
         # keep popping up
         plt.close()
