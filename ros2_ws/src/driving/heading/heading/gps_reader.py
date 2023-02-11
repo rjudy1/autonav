@@ -118,6 +118,7 @@ class GPS(Node):
 
         # process GPS data at 2 Hz
         self.timer = self.create_timer(.45, self.process_gps_data)
+        self.T = 0.5
 
         self.ser = serial.Serial(self.get_parameter('/Port').value, baudrate=115200)
         self.ser.readline()  # read one junk line to achieve line synchronization
@@ -191,6 +192,28 @@ class GPS(Node):
     # information from the location to send to the motor controller
     def process_gps_data(self):
         loc = self.take_reading()  # get the new reading
+
+        if self.get_parameter('/UseAlphaBetaGamma').value:
+            # Prediction stage
+            self.lat_predict = self.lat_filter + self.lat_dot_filter*self.T + lat_dot_dot_filter*self.T^2/2
+            self.lat_dot_predict = self.lat_dot_filter + self.lat_dot_dot_filter*self.T
+            self.lat_dot_dot_predict = self.lat_dot_dot_filter
+
+            self.lon_predict = self.lon_filter + self.lon_dot_filter*self.T + lon_dot_dot_filter*self.T^2/2
+            self.lon_dot_predict = self.lon_dot_filter + self.lon_dot_dot_filter*self.T
+            self.lon_dot_dot_predict = self.lon_dot_dot_filter
+
+            # Update stage
+            self.lat_filter = self.lat_predict + self.alpha*(real(loc)-self.lat_predict)
+            self.lat_dot_filter = self.lat_dot_predict + self.beta/self.T*(real(loc)-self.lat_predict)
+            self.lat_dot_dot_filter = self.lat_dot_dot_predict + 2*self.gamma/self.T^2*(real(loc)-self.lat_predict)
+
+            self.lon_filter = self.lon_predict + self.alpha*(real(loc)-self.lon_predict)
+            self.lon_dot_filter = self.lon_dot_predict + self.beta/self.T*(real(loc)-self.lon_predict)
+            self.lon_dot_dot_filter = self.lon_dot_dot_predict + 2*self.gamma/self.T^2*(real(loc)-self.lon_predict)
+            
+            loc = complex(self.lat_filter, self.lon_filter)
+
         # Check if we are at the waypoint
         distance = self.check_waypoint(loc)
         if self.get_parameter('/Debug').value:
