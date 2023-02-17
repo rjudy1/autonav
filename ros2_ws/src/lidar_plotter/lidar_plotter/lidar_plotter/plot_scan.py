@@ -50,10 +50,10 @@ class Plot_Scan(Node):
         #self.get_logger().info(f"dist_y: {dist_y}")
 
         # plot only the useful data in a certain window
-        for i in range(len(dist_y)):
-            # clip the edges and get rid of noise values that are too close/far
-            if (i < 18) or (i > (len(dist_y) - 18)) or (dist_y[i] > 2) or (dist_y[i] < 0.2):
-                dist_y[i] = 0
+        #for i in range(len(dist_y)):
+        #    # clip the edges and get rid of noise values that are too close/far
+        #    if (i < 18) or (i > (len(dist_y) - 18)) or (dist_y[i] > 2) or (dist_y[i] < 0.2):
+        #        dist_y[i] = 0
 
         # plotting points as a scatter plot
         plt.scatter(points_x, dist_y, label= "points", color= "black", marker= ".", s=30)

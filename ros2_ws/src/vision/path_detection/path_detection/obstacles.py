@@ -111,7 +111,6 @@ class TransformPublisher(Node):
     def lidar_callback(self, scan):
 
         #self.get_logger().info(f"angle min: {scan.angle_min} \n angle max: {scan.angle_max} \n angle increment: {scan.angle_increment}")
-
         scan.angle_max += math.pi                                                   # change the range from -pi -> pi to 0 -> 2 pi for array indexing
         scan.angle_min += math.pi
 
@@ -146,6 +145,10 @@ class TransformPublisher(Node):
             scan.angle_max = math.pi                                                # radians = 180 degrees
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
+
+        # detecting sawhorse legs
+        # self.get_logger().info(f"start off -> in front: start off <= {i} < {inFront}\n ")
+        # define windows
 
         """
         # START
