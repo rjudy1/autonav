@@ -57,9 +57,9 @@
         /InputInitialCondition: False # True = use initial condition params, False = use take_reading() to get initial condition
         ## Alpha-Beta-Gamma Filter Parameters
         /UseAlphaBetaGamma:     True  # True = use ABG filter to filter position measurements, False = use raw measurements
-        /Alpha:                 0     # 
-        /Beta:                  0     #
-        /Gamma:                 0     #
+        /Alpha:                 0.6025898891062007     # ABG filter parameters 
+        /Beta:                  0.2732013421190653     #
+        /Gamma:                 0.061931816883260195   #
         /InitialLatDot:         0     # Initial velocity in the latitudinal direction in GPS units (DMM)/second
         /InitialLatDotDot:      0     # Initial acceleration in the latitudinal direction in GPS units (DMM)/second^2
         /InitialLonDot:         0     # Initial velocity in the longitudinal direction in GPS units (DMM)/second
