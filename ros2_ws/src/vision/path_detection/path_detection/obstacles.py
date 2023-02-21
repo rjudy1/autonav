@@ -26,6 +26,7 @@ class Circle:
     ycenter: float
     radius: float
 
+# this funciton deals with pothole design - we have not changed/updated the parms for the physical lidar change
 # given ax+bx+c=0 and center and radius of a circle, determine if they intersect and returns distance in meters from edge
 def check_collision(a, b, c, x, y, radius):
     # Finding the distance of line from center
@@ -83,9 +84,11 @@ class TransformPublisher(Node):
         # self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = new_state.data
 
+    # this funciton deals with pothole design - we have not changed/update parms due to the lidar physical change
     def get_c(self, i, scan):
         return -(190 * (452-math.cos(i * scan.angle_increment)) - 452 * (190-math.sin(i * scan.angle_increment))) # is this center of obstacle or pothole??
 
+    # calculates avg distance from the obstacle to the front plan of the robot
     def check_range(self, scan, min, max, max_distance):
         distances = 0
         count = 0
