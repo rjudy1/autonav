@@ -195,22 +195,22 @@ class GPS(Node):
 
         if self.get_parameter('/UseAlphaBetaGamma').value:
             # Prediction stage
-            self.lat_predict = self.lat_filter + self.lat_dot_filter*self.T + lat_dot_dot_filter*self.T^2/2
+            self.lat_predict = self.lat_filter + self.lat_dot_filter*self.T + lat_dot_dot_filter*self.T**2/2
             self.lat_dot_predict = self.lat_dot_filter + self.lat_dot_dot_filter*self.T
             self.lat_dot_dot_predict = self.lat_dot_dot_filter
 
-            self.lon_predict = self.lon_filter + self.lon_dot_filter*self.T + lon_dot_dot_filter*self.T^2/2
+            self.lon_predict = self.lon_filter + self.lon_dot_filter*self.T + lon_dot_dot_filter*self.T**2/2
             self.lon_dot_predict = self.lon_dot_filter + self.lon_dot_dot_filter*self.T
             self.lon_dot_dot_predict = self.lon_dot_dot_filter
 
             # Update stage
             self.lat_filter = self.lat_predict + self.alpha*(real(loc)-self.lat_predict)
             self.lat_dot_filter = self.lat_dot_predict + self.beta/self.T*(real(loc)-self.lat_predict)
-            self.lat_dot_dot_filter = self.lat_dot_dot_predict + 2*self.gamma/self.T^2*(real(loc)-self.lat_predict)
+            self.lat_dot_dot_filter = self.lat_dot_dot_predict + 2*self.gamma/self.T**2*(real(loc)-self.lat_predict)
 
             self.lon_filter = self.lon_predict + self.alpha*(real(loc)-self.lon_predict)
             self.lon_dot_filter = self.lon_dot_predict + self.beta/self.T*(real(loc)-self.lon_predict)
-            self.lon_dot_dot_filter = self.lon_dot_dot_predict + 2*self.gamma/self.T^2*(real(loc)-self.lon_predict)
+            self.lon_dot_dot_filter = self.lon_dot_dot_predict + 2*self.gamma/self.T**2*(real(loc)-self.lon_predict)
             
             loc = complex(self.lat_filter, self.lon_filter)
 
