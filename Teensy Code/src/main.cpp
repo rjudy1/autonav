@@ -1,9 +1,7 @@
 /*********************************
-//Encoder Feedback for ROS
+//Teensy Motor Controller with Encoder Feedback
 //Designed to run on Teensy 4.0
 //Author: Josh Blackburn
-//Date Created: 2/10/2022
-//Last Updated:
 *********************************/
 
 //Libraries to include
@@ -203,7 +201,6 @@ void setup() {
 }
 
 void loop() {
-  static bool blink = false; 
   while(!Serial.available()) {
     static bool redBlink = false; 
     redBlink = !digitalRead(modeInputPin);
@@ -212,7 +209,7 @@ void loop() {
     if(!redBlink) {
       digitalWrite(redPin, HIGH);
     }
-    if(blink && millis() - startTime >= blinkPeriod) {
+    if(redBlink && millis() - startTime >= blinkPeriod) {
       startTime = millis();
       static bool ledState = false;
       ledState = !ledState;
@@ -278,16 +275,9 @@ void loop() {
     break;
   case 8:
     //Serial.println("Red light control no longer available");
-    goodReceived = true;
-    goodBlinkStartTime = millis();
-    digitalWrite(goodLed, HIGH);
-    blink = true;
     break;
   case 9:
     //Serial.println("Red light control no longer available");
-    goodReceived = true;
-    goodBlinkStartTime = millis();
-    digitalWrite(goodLed, HIGH);
     break;
   case 10:
     goodReceived = true;
