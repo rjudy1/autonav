@@ -47,8 +47,6 @@ class Data_Logger(Node):
         #self.state_sub        = self.create_subscription(Int32,         "/state_topic",                      self.state_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
         #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
-
-        #FIXME
         self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
 
         t = str(round(time.time()))
@@ -119,7 +117,6 @@ class Data_Logger(Node):
             self.wheel_logfile = open(name, 'w')
             self.wheel_writer  = csv.writer(self.wheel_logfile)
 
-        #FIXME
         if hasattr(self, 'imu_sub'):
             name               = 'log-' + t + '-imu.csv'
             self.imu_logfile = open(name, 'w')
@@ -158,8 +155,10 @@ class Data_Logger(Node):
         self.wheel_writer.writerow(np.concatenate(([time.time()], np.array(msg))))
         #self.get_logger().info("logged.")
 
-    def imu_callback(self, ImuData ):
-        self.imu_writer.writerow(np.array([ImuData.abs_x, ImuData.abs_y, ImuData.abs_z, ImuData.euler_x, ImuData.euler_y, ImuData.euler_z, ImuData.quat_w, ImuData.quat_x, ImuData.quat_y, ImuData.quat_z]))
+    def imu_callback(self, data):
+        self.imu_writer.writerow(np.array([data.abs_x, data.abs_y, data.abs_z,
+                                           data.euler_x, data.euler_y, data.euler_z,
+                                           data.quat_w, data.quat_x, data.quat_y, data.quat_z]))
 
     # destructor
     def __del__(self):
