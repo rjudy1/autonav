@@ -43,10 +43,11 @@ class Data_Logger(Node):
         #self.mod_lidar_sub     = self.create_subscription(String,        "/mod_lidar",                        self.mod_lidar_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/parameter_events",                 self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/rosout",                           self.callback, 10)
-        self.lidar_scan_sub   = self.create_subscription(LaserScan,     "/scan",                             self.lidar_scan_callback, 10)
+        # self.lidar_scan_sub   = self.create_subscription(LaserScan,     "/scan",                             self.lidar_scan_callback, 10)
         #self.state_sub        = self.create_subscription(Int32,         "/state_topic",                      self.state_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
         #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
+        self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
 
         t = str(round(time.time()))
 
@@ -116,6 +117,11 @@ class Data_Logger(Node):
             self.wheel_logfile = open(name, 'w')
             self.wheel_writer  = csv.writer(self.wheel_logfile)
 
+        if hasattr(self, 'imu_sub'):
+            name               = 'log-' + t + '-imu.csv'
+            self.imu_logfile = open(name, 'w')
+            self.imu_writer  = csv.writer(self.imu_logfile)
+
     ## Callback Functions
 
     # image_callback function
@@ -148,6 +154,12 @@ class Data_Logger(Node):
         msg = data.data.split(',')
         self.wheel_writer.writerow(np.concatenate(([time.time()], np.array(msg))))
         #self.get_logger().info("logged.")
+
+    def imu_callback(self, data):
+        self.get_logger().info("logged!")
+        self.imu_writer.writerow(np.array([data.abs_x, data.abs_y, data.abs_z,
+                                           data.euler_x, data.euler_y, data.euler_z,
+                                           data.quat_w, data.quat_x, data.quat_y, data.quat_z]))
 
     # destructor
     def __del__(self):
@@ -189,6 +201,9 @@ class Data_Logger(Node):
 
         if hasattr(self, 'wheel_sub'):
             self.wheel_logfile.close()
+
+        if hasattr(self, 'imu_sub'):
+            self.imu_logfile.close()
 
 
 def main(args=None):
