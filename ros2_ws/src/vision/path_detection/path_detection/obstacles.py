@@ -12,6 +12,7 @@
 from dataclasses import dataclass
 import math
 import numpy as np
+from numpy import inf
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -119,7 +120,7 @@ class TransformPublisher(Node):
         minDist = 3 # can parm
 
         # finds the point clusters in window and determines if it is a leg or barrel
-        for point in range(len(scan.ranges)):
+        for point in range(1, len(scan.ranges)-2):
             # get rid of noise values that are too close/far
             if (scan.ranges[point] > 2) or (scan.ranges[point] < 0.2) or (scan.ranges[point] == inf):
                 scan.ranges[point] = 0
@@ -128,7 +129,7 @@ class TransformPublisher(Node):
                 objPoints.append((point, scan.ranges[point]))
                 minDist = min(minDist, scan.ranges[point]) # may need to check range
                 # handles if we have found a different object
-                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
+                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)): # need to fix possible uncaught conditions
                     # handles legs
                     if len(objPoints) < 15:
                         legsFound.append(objPoints)
@@ -155,9 +156,9 @@ class TransformPublisher(Node):
             # 2. extend inward object plane towards the center of mass at closest distance
         # replace the points in the scan based off of the corners making a tangential plane to the obj
         for scanPoint in range(len(scan.ranges)):
-            if legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding:
+            if legLRCorners and (legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding):
                 scan.ranges[scanPoint] = legMinDist
-            if barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]:
+            if barrelLRCorners and (barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]):
                 scan.ranges[scanPoint] = barrelMinDists[barrel]
                 isBarrel = True
             elif (isBarrel == True) and ((barrel + 1) < barrelCount):

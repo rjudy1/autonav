@@ -26,7 +26,7 @@ class Data_Logger(Node):
 
         # Subscribe to nodes you'd like data from. comment out nodes you don't want.
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/camera_info",         self.callback, 10)
-        #self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
+        self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/metadata",            self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/depth/camera_info",         self.callback, 10)
         #self.depth_image_sub   = self.create_subscription(Image,         "/camera/depth/image_rect_raw",      self.depth_image_callback,   10)
@@ -47,7 +47,7 @@ class Data_Logger(Node):
         #self.state_sub        = self.create_subscription(Int32,         "/state_topic",                      self.state_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
         #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
-        self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
+        #self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
 
         t = str(round(time.time()))
 
