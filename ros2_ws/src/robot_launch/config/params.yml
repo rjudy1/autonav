@@ -40,15 +40,13 @@
 
 /obstacles:
     ros__parameters:
-        /LIDARTrimMin:              1.31  # radians (1.31 radians = 75.0575 degrees) 
-        /LIDARTrimMax:              4.97  # radians (4.97 radians = 284.7600 degrees)
-        /ObstacleFOV:               0.8754  # radians = 50 degrees
+        /ObstacleFOV:               0.8754  # radians = 50.1567 degrees
         /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.1  # meters
-        /Debug:                     False
+        /ObstacleDetectDistance:    1.1  # meters = 3.6089 ft
+        /Debug:                     True 
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
@@ -117,5 +115,5 @@
 
 /fusion:
     ros__parameters:
-        /ExitAngle:                 0.4  # radians
-        /Debug:                     False
+        /ExitAngle:                 0.4  # radians = 22.9183 degrees
+        /Debug:                     True
