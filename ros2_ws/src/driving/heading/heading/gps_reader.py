@@ -39,8 +39,18 @@ class GPS(Node):
         
         self.declare_parameter('/SensorInput', 0)
         self.declare_parameter('/InputInitialCondition', False)
+        self.declare_parameter('/UseAlphaBetaGamma', True)
+        self.declare_parameter('/Alpha', 0.5)
+        self.declare_parameter('/Beta', 0.5)
+        self.declare_parameter('/Gamma', 0.5)
         self.declare_parameter('/InitialLat', 0.0)
         self.declare_parameter('/InitialLon', 0.0)
+        self.declare_parameter('/InitialLatDot', 0.0)
+        self.declare_parameter('/InitialLonDot', 0.0)
+        self.declare_parameter('/InitialLatDotDot', 0.0)
+        self.declare_parameter('/InitialLonDotDot', 0.0)
+        self.declare_parameter('/PracticeInitialLat', 0.0)
+        self.declare_parameter('/PracticeInitialLon', 0.0)
         self.declare_parameter('/WaypointLat1', 0.0)
         self.declare_parameter('/WaypointLon1', 0.0)
         self.declare_parameter('/WaypointLat2', 0.0)
@@ -56,8 +66,6 @@ class GPS(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/NorthPointFirst', False)
         self.declare_parameter('/RealCourse', False)
-        self.declare_parameter('/PracticeInitialLat', 0.0)
-        self.declare_parameter('/PracticeInitialLon', 0.0)
         self.declare_parameter('/PracticeWaypointLat1', 0.0)
         self.declare_parameter('/PracticeWaypointLon1', 0.0)
         self.declare_parameter('/PracticeWaypointLat2', 0.0)
@@ -103,6 +111,15 @@ class GPS(Node):
             self.target_loc.append(complex(WP_LAT2, WP_LON2))
             self.target_loc.append(complex(WP_LAT3, WP_LON3))
             self.target_loc.append(complex(WP_LAT4, WP_LON4))
+
+        self.lat_dot_filter = self.get_parameter('/InitialLatDot').value
+        self.lon_dot_filter = self.get_parameter('/InitialLonDot').value
+        self.lat_dot_dot_filter = self.get_parameter('/InitialLatDotDot').value
+        self.lon_dot_dot_filter = self.get_parameter('/InitialLonDotDot').value
+        self.alpha = self.get_parameter('/Alpha').value
+        self.beta = self.get_parameter('/Beta').value
+        self.gamma = self.get_parameter('/Gamma').value
+        
 
         # flip if
         if not self.get_parameter('/NorthPointFirst').value:
@@ -181,11 +198,6 @@ class GPS(Node):
             self.gps_event_pub.publish(msg)
             self.get_logger().info(f"WAYPOINT FOUND - SWITCH POINTS to {self.target_loc[self.waypoint_itr]}")
 
-            # if self.waypoint_itr >= len(self.target_loc):
-            #     msg = String()
-            #     msg.data = STATUS.WAYPOINTS_DONE
-            #     self.gps_event_pub.publish(msg)
-            #     self.get_logger().warning("FINISHED GPS")
         return dist_meters
 
     # this function takes a measurement and calculates all of the necessary
