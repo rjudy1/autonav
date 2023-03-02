@@ -103,6 +103,69 @@ class TransformPublisher(Node):
             # self.get_logger().info("ZERO DIVISION ERROR")
             return max_distance + .75  # parameterize later
 
+
+    # new def to squash bad values and to detect and paint a plane on each barricade/barrel
+    def lidar_ObjToPlane(self, scan):
+        
+        # identify and save points for possible legs and barrels
+        threshold = 0.07 # a parm - max distance between points to check if it's apart of same obj
+        objPoints = []
+        legsFound = []
+        legLRCorners = []
+        legMinDist = []
+        barrelsFound = []
+        barrelLRCorners = []
+        barrelMinDists = []
+        minDist = 3 # can parm
+
+        # finds the point clusters in window and determines if it is a leg or barrel
+        for point in range(len(scan.ranges)):
+            # get rid of noise values that are too close/far
+            if (scan.ranges[point] > 2) or (scan.ranges[point] < 0.2) or (scan.ranges[point] == inf):
+                scan.ranges[point] = 0
+            else:
+                # handles if we are still on the same obj
+                objPoints.append((point, scan.ranges[point]))
+                minDist = min(minDist, scan.ranges[point]) # may need to check range
+                # handles if we have found a different object
+                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
+                    # handles legs
+                    if len(objPoints) < 15:
+                        legsFound.append(objPoints)
+                        legLRCorners = [legsFound[0][0][0], point] # assuming only one barricade in view at any time instant
+                        legMinDist = minDist
+                        objPoints = []
+                    # handles barrels
+                    else:
+                        barrelsFound.append(objPoints)
+                        barrelLRCorners.append([objPoints[0][0],objPoints[-1][0]])
+                        barrelMinDists.append(minDist)
+                        minDist = 3
+                        objPoints = []
+
+        # need to keep track of which barrel we are on
+        barrelCount = len(barrelsFound)
+        legCount = len(legsFound) # assuming only one barricade in view
+        sidePadding = 2 # can be parm
+        barrel = 0
+        isBarrel = False
+
+        # 2 methods of extending the plans
+            # 1. extend inward object plane towards the center at different distances
+            # 2. extend inward object plane towards the center of mass at closest distance
+        # replace the points in the scan based off of the corners making a tangential plane to the obj
+        for scanPoint in range(len(scan.ranges)):
+            if legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding:
+                scan.ranges[scanPoint] = legMinDist
+            if barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]:
+                scan.ranges[scanPoint] = barrelMinDists[barrel]
+                isBarrel = True
+            elif (isBarrel == True) and ((barrel + 1) < barrelCount):
+                barrel = barrel + 1
+            else:
+                isBarrel = False
+
+
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
     # third portion replaces obstacle in front and time of flight sensors
@@ -149,10 +212,8 @@ class TransformPublisher(Node):
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
-        # detecting sawhorse legs
-        # self.get_logger().info(f"start off -> in front: start off <= {i} < {inFront}\n ")
-        # define windows
-
+        # turn objects into a plan and squash all unnecessary points
+        self.lidar_ObjToPlane(scan)
         """
         # START
             # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES
