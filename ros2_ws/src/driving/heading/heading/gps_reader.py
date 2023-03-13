@@ -36,7 +36,8 @@ class SensorMsg:
 class GPS(Node):
     def __init__(self):
         super().__init__("gps")
-        
+
+        self.declare_parameter('/StartState', 0)
         self.declare_parameter('/SensorInput', 0)
         self.declare_parameter('/InputInitialCondition', False)
         self.declare_parameter('/InitialLat', 0.0)
@@ -66,6 +67,7 @@ class GPS(Node):
         self.declare_parameter('/PracticeWaypointLon3', 0.0)
         self.declare_parameter('/PracticeWaypointLat4', 0.0)
         self.declare_parameter('/PracticeWaypointLon4', 0.0)
+
 
         self.DISTANCE_GOAL = self.get_parameter('/GPSFollowGoal').value
         self.line_to_gps = self.get_parameter('/LineToGPSTrans').value

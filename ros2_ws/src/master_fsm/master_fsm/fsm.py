@@ -20,6 +20,7 @@ from std_msgs.msg import String
 from custom_msgs.msg import HeadingStatus
 from custom_msgs.msg import LightCmd
 from custom_msgs.msg import EncoderData
+from custom_msgs.msg import ImuData
 
 
 class MainRobot(Node):
