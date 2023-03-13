@@ -114,7 +114,7 @@ class GPS(Node):
 
         # Subscribe to state updates for the robot
         self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
-        self.state = STATE.LINE_FOLLOWING
+        self.state = self.get_parameter('/StartState').value
 
         # process GPS data at 2 Hz
         self.timer = self.create_timer(.45, self.process_gps_data)
@@ -132,7 +132,7 @@ class GPS(Node):
             self.past_loc = complex(IC_LAT, IC_LON)
         else:
             self.past_loc = self.take_reading()
-        # self.target_loc.append(self.past_loc)  # set initial position as end goal
+        
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 

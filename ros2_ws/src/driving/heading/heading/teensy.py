@@ -106,7 +106,7 @@ class Teensy(Node):
         elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or \
                 self.state == STATE.LINE_ORIENT or self.state == STATE.ORIENT_TO_GPS or \
                 self.state == STATE.GPS_EXIT or self.state == STATE.ENCODER_BOX_FOLLOW_STRAIGHT or \
-                self.state == STATE.ENCODER_BOX_FOLLOW_TURN:
+                self.state == STATE.ENCODER_BOX_FOLLOW_TURN or self.state == STATE.IMU_HEADING_ACCURACY_TEST:
             self.following_mode = FollowMode.eeTransition
             self.MAX_CHANGE = 2
             self.boost_count = 0
