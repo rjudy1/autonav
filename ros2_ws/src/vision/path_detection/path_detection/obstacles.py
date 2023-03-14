@@ -272,6 +272,54 @@ class TransformPublisher(Node):
         params.minInertiaRatio = .45
         params.maxInertiaRatio = 1
         params.filterByColor = False
+        #***************************************************************
+
+        # Convert the image to grayscale
+        img_gray = ImageOps.grayscale(image)
+
+        # Invert the image (black becomes white, white becomes black)
+        img_inv = ImageOps.invert(img_gray)
+
+        # Color the non-black spots more white
+        factor = 1.5  # Change this factor to adjust the degree of whitening
+        img_white = ImageOps.autocontrast(img_inv, cutoff=0, ignore=255).point(lambda i: i*factor)
+
+        # Save the result
+        #img_white.save("result.jpg")
+
+        #Data (Original for cv2)
+        # Convert image to numpy array
+        numpydata = np.array(img_white)
+
+        # Apply Gaussian blur to reduce noise
+        blur = cv2.GaussianBlur(numpydata, (5, 5), 0)
+
+        kernel = np.ones((5,5),np.uint8)
+        ksize = (5,5)
+        M = cv2.getStructuringElement(cv2.MORPH_CROSS, ksize);
+
+        dilation = cv2.dilate(blur,kernel,iterations = 25)
+        erosion = cv2.erode(dilation,kernel,iterations = 25)
+        opening = cv2.morphologyEx(erosion, cv2.MORPH_OPEN, M)
+        numpydata = opening
+        #numpydata = cv2.resize(numpydata,(2016,1512))
+
+        # Apply HoughCircles to detect circles
+        circles = cv2.HoughCircles(numpydata, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=0, maxRadius=0)
+
+        # Draw detected circles on the original image
+        if circles is not None:
+            circles = np.round(circles[0, :]).astype("int")
+            for (x, y, r) in circles:
+                cv2.circle(numpydata, (x, y), r, (0, 255, 0), 2)
+
+        # Display the final image
+        cv2.imshow(numpydata)
+        morph = numpydata
+
+        cv2.imwrite('rentestData.jpg',morph)
+
+        #*************************************************************
 
         detector = cv2.SimpleBlobDetector_create(params)
         keypoints = detector.detect(morph)  # find the blobs meeting the parameters
