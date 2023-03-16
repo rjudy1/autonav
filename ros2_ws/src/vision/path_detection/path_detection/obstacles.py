@@ -109,7 +109,7 @@ class TransformPublisher(Node):
     def lidar_ObjToPlane(self, scan):
         
         # identify and save points for possible legs and barrels
-        threshold = 0.07 # a parm - max distance between points to check if it's apart of same obj
+        threshold = 0.07 # a parm - max distance between points to check if it's a part of same obj
         objPoints = []
         legsFound = []
         legLRCorners = []
@@ -120,7 +120,7 @@ class TransformPublisher(Node):
         minDist = 3 # can parm
 
         # finds the point clusters in window and determines if it is a leg or barrel
-        for point in range(1, len(scan.ranges)-2):
+        for point in range(len(scan.ranges)):
             # get rid of noise values that are too close/far
             if (scan.ranges[point] > 2) or (scan.ranges[point] < 0.2) or (scan.ranges[point] == inf):
                 scan.ranges[point] = 0
@@ -129,7 +129,7 @@ class TransformPublisher(Node):
                 objPoints.append((point, scan.ranges[point]))
                 minDist = min(minDist, scan.ranges[point]) # may need to check range
                 # handles if we have found a different object
-                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)): # need to fix possible uncaught conditions
+                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
                     # handles legs
                     if len(objPoints) < 15:
                         legsFound.append(objPoints)
@@ -151,21 +151,21 @@ class TransformPublisher(Node):
         barrel = 0
         isBarrel = False
 
-        # 2 methods of extending the plans
-            # 1. extend inward object plane towards the center at different distances
-            # 2. extend inward object plane towards the center of mass at closest distance
         # replace the points in the scan based off of the corners making a tangential plane to the obj
         for scanPoint in range(len(scan.ranges)):
-            if legLRCorners and (legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding):
+            # if it is a barricade
+            if legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding:
                 scan.ranges[scanPoint] = legMinDist
-            if barrelLRCorners and (barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]):
+            # if it is 1 or more barrels
+            if barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]:
                 scan.ranges[scanPoint] = barrelMinDists[barrel]
                 isBarrel = True
             elif (isBarrel == True) and ((barrel + 1) < barrelCount):
                 barrel = barrel + 1
             else:
                 isBarrel = False
-
+        
+        return scan
 
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
@@ -214,7 +214,7 @@ class TransformPublisher(Node):
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
         # turn objects into a plan and squash all unnecessary points
-        self.lidar_ObjToPlane(scan)
+        scan = self.lidar_ObjToPlane(scan)
         """
         # START
             # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES
