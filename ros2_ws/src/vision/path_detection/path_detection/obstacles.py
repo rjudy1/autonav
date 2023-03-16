@@ -120,7 +120,7 @@ class TransformPublisher(Node):
         minDist = 3 # can parm
 
         # finds the point clusters in window and determines if it is a leg or barrel
-        for point in range(1, len(scan.ranges)-2):
+        for point in range(len(scan.ranges)):
             # get rid of noise values that are too close/far
             if (scan.ranges[point] > 2) or (scan.ranges[point] < 0.2) or (scan.ranges[point] == inf):
                 scan.ranges[point] = 0
@@ -146,18 +146,17 @@ class TransformPublisher(Node):
 
         # need to keep track of which barrel we are on
         barrelCount = len(barrelsFound)
-        legCount = len(legsFound) # assuming only one barricade in view
-        sidePadding = 2 # can be parm
+        legCount = len(legsFound) # assuming only one barricade in view for this function
+        sidePadding = 0 # padding add to the edges of the obj - can be parm
         barrel = 0
         isBarrel = False
 
-        # 2 methods of extending the plans
-            # 1. extend inward object plane towards the center at different distances
-            # 2. extend inward object plane towards the center of mass at closest distance
         # replace the points in the scan based off of the corners making a tangential plane to the obj
         for scanPoint in range(len(scan.ranges)):
+            # if it is a barricade
             if legLRCorners and (legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding):
                 scan.ranges[scanPoint] = legMinDist
+            # if it is 1+ barrel(s)
             if barrelLRCorners and (barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]):
                 scan.ranges[scanPoint] = barrelMinDists[barrel]
                 isBarrel = True
