@@ -120,7 +120,7 @@ class TransformPublisher(Node):
         minDist = 3 # can parm
 
         # finds the point clusters in window and determines if it is a leg or barrel
-        for point in range(len(scan.ranges)):
+        for point in range(len(scan.ranges)-2):
             # get rid of noise values that are too close/far
             if (scan.ranges[point] > 2) or (scan.ranges[point] < 0.2) or (scan.ranges[point] == inf):
                 scan.ranges[point] = 0
@@ -146,7 +146,9 @@ class TransformPublisher(Node):
 
         # need to keep track of which barrel we are on
         barrelCount = len(barrelsFound)
+        self.get_logger().info(f"Barrel count: {barrelCount}, corners: {barrelLRCorners}")
         legCount = len(legsFound) # assuming only one barricade in view for this function
+        self.get_logger().info(f"Leg count: {legCount}, corners: {legLRCorners}")
         sidePadding = 0 # padding add to the edges of the obj - can be parm
         barrel = 0
         isBarrel = False
