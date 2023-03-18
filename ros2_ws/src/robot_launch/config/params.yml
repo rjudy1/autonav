@@ -10,7 +10,7 @@
         /CrossRampInGps:     True
         /RepeatGps:          True       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
         /LineDist:           0.2        # Distance in meters to follow the line from
-        /StartState:         13          #3 GPS #0 Line
+        /StartState:         0          #3 GPS #0 Line
 #        /EncoderWeight:             .75
 
 
