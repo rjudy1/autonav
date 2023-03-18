@@ -35,6 +35,10 @@ class MainRobot(Node):
         self.declare_parameter('/ExitAngle', math.pi/8)
         self.declare_parameter('/GpsExitHeading', 0.0)
         self.declare_parameter('/CrossRampInGps', True)
+        # get the encoder parameters
+        self.declare_parameter('/EncoderBoxTurnLeft', True)
+        self.declare_parameter('/EncoderBoxDistance', 0.3)
+        self.declare_parameter('/EncoderBoxSpeed', 4.0)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -82,11 +86,6 @@ class MainRobot(Node):
 
         # Encoder box following setup
         if self.get_parameter("/StartState").value == STATE.ENCODER_BOX_FOLLOW_STRAIGHT:
-            # get the encoder parameters
-            self.declare_parameter('/EncoderBoxTurnLeft', True)
-            self.declare_parameter('/EncoderBoxDistance', 0.3)
-            self.declare_parameter('/EncoderBoxSpeed', 4.0)
-
             # subscribe to the encoder data
             self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.encoder_callback, 10)
             
@@ -111,6 +110,7 @@ class MainRobot(Node):
 
         if self.get_parameter('/StartState').value == STATE.IMU_HEADING_ACCURACY_TEST:
             self.imu_sub = self.create_subscription(ImuData, "imu_data", self.imu_callback, 10)
+            self.last_imu_data = ImuData()
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
@@ -497,7 +497,9 @@ class MainRobot(Node):
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
         self.wheel_pub.publish(self.wheel_msg)
 
-        if self.imu_data.euler_x < 181.0 and self.imu_data.euler_x > 179.0:
+        self.get_logger().info(f"x: {self.last_imu_data.euler_x}, y: {self.last_imu_data.euler_y}, z: {self.last_imu_data.euler_z}")
+
+        if self.last_imu_data.euler_x < 181.0 and self.last_imu_data.euler_x > 179.0:
             light_msg = LightCmd()
             light_msg.type = 'B'
             light_msg.on = True
