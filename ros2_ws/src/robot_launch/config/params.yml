@@ -46,7 +46,7 @@
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
         /ObstacleDetectDistance:    1.1  # meters = 3.6089 ft
-        /Debug:                     True 
+        /Debug:                     False
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
@@ -107,4 +107,4 @@
 /fusion:
     ros__parameters:
         /ExitAngle:                 0.4  # radians = 22.9183 degrees
-        /Debug:                     True
+        /Debug:                     False
