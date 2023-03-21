@@ -151,6 +151,8 @@ class GPS(Node):
         else:
             self.past_loc = self.take_reading()
         # self.target_loc.append(self.past_loc)  # set initial position as end goal
+        self.lat_filter = self.past_loc.real
+        self.lon_filter = self.past_loc.imag
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
@@ -207,22 +209,22 @@ class GPS(Node):
 
         if self.get_parameter('/UseAlphaBetaGamma').value:
             # Prediction stage
-            self.lat_predict = self.lat_filter + self.lat_dot_filter*self.T + lat_dot_dot_filter*self.T**2/2
+            self.lat_predict = self.lat_filter + self.lat_dot_filter*self.T + self.lat_dot_dot_filter*self.T**2/2
             self.lat_dot_predict = self.lat_dot_filter + self.lat_dot_dot_filter*self.T
             self.lat_dot_dot_predict = self.lat_dot_dot_filter
 
-            self.lon_predict = self.lon_filter + self.lon_dot_filter*self.T + lon_dot_dot_filter*self.T**2/2
+            self.lon_predict = self.lon_filter + self.lon_dot_filter*self.T + self.lon_dot_dot_filter*self.T**2/2
             self.lon_dot_predict = self.lon_dot_filter + self.lon_dot_dot_filter*self.T
             self.lon_dot_dot_predict = self.lon_dot_dot_filter
 
             # Update stage
-            self.lat_filter = self.lat_predict + self.alpha*(real(loc)-self.lat_predict)
-            self.lat_dot_filter = self.lat_dot_predict + self.beta/self.T*(real(loc)-self.lat_predict)
-            self.lat_dot_dot_filter = self.lat_dot_dot_predict + 2*self.gamma/self.T**2*(real(loc)-self.lat_predict)
+            self.lat_filter = self.lat_predict + self.alpha*(loc.real-self.lat_predict)
+            self.lat_dot_filter = self.lat_dot_predict + self.beta/self.T*(loc.real-self.lat_predict)
+            self.lat_dot_dot_filter = self.lat_dot_dot_predict + 2*self.gamma/self.T**2*(loc.real-self.lat_predict)
 
-            self.lon_filter = self.lon_predict + self.alpha*(real(loc)-self.lon_predict)
-            self.lon_dot_filter = self.lon_dot_predict + self.beta/self.T*(real(loc)-self.lon_predict)
-            self.lon_dot_dot_filter = self.lon_dot_dot_predict + 2*self.gamma/self.T**2*(real(loc)-self.lon_predict)
+            self.lon_filter = self.lon_predict + self.alpha*(loc.imag-self.lon_predict)
+            self.lon_dot_filter = self.lon_dot_predict + self.beta/self.T*(loc.imag-self.lon_predict)
+            self.lon_dot_dot_filter = self.lon_dot_dot_predict + 2*self.gamma/self.T**2*(loc.imag-self.lon_predict)
             
             loc = complex(self.lat_filter, self.lon_filter)
 

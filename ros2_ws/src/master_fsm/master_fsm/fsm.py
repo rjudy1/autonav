@@ -527,7 +527,7 @@ class MainRobot(Node):
         else:
             self.get_logger().info("Error: Invalid State")
 
-        self.get_logger().info(f"fsm: current state is {self.state}")
+        # self.get_logger().info(f"fsm: current state is {self.state}")
 
     # End of State Machine
 
