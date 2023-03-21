@@ -215,7 +215,7 @@ class TransformPublisher(Node):
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
         # turn objects into a plan and squash all unnecessary points
-        self.lidar_ObjToPlane(scan)
+        #self.lidar_ObjToPlane(scan)
         """
         # START
             # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES

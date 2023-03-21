@@ -26,7 +26,7 @@ class Data_Logger(Node):
 
         # Subscribe to nodes you'd like data from. comment out nodes you don't want.
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/camera_info",         self.callback, 10)
-        self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
+        #self.image_sub         = self.create_subscription(Image,         "/camera/color/image_raw",           self.image_callback,         10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/color/metadata",            self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/depth/camera_info",         self.callback, 10)
         #self.depth_image_sub   = self.create_subscription(Image,         "/camera/depth/image_rect_raw",      self.depth_image_callback,   10)
@@ -37,7 +37,7 @@ class Data_Logger(Node):
         #self.fused_heading_sub = self.create_subscription(HeadingStatus, "/fused_heading",                    self.fused_heading_callback, 10)
         #self.gps_events_sub    = self.create_subscription(String,        "/gps_events",                       self.gps_events_callback,    10)
         #self.gps_heading_sub   = self.create_subscription(HeadingStatus, "/gps_heading",                      self.gps_heading_callback,   10)
-        #self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
+        self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
         #self.light_sub         = self.create_subscription(LightCmd,      "/light_events",                     self.light_callback, 10)
         #self.line_sub          = self.create_subscription(String,        "/line_events",                      self.line_callback, 10)
         #self.mod_lidar_sub     = self.create_subscription(String,        "/mod_lidar",                        self.mod_lidar_callback, 10)
