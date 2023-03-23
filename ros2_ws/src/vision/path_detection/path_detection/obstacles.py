@@ -119,11 +119,14 @@ class TransformPublisher(Node):
         barrelMinDists = []
         minDist = 3 # can parm
 
+        windowMax = self.get_parameter("/ObstacleToPlainDistance").value
+        windowMin = self.get_parameter("/ObstacleNoiseMinDist").value
+
         # finds the point clusters in window and determines if it is a leg or barrel
         for point in range(len(scan.ranges)-2):
             # get rid of noise values that are too close/far
-            if (scan.ranges[point] > 2) or (scan.ranges[point] < 0.2) or (scan.ranges[point] == inf):
-                scan.ranges[point] = 0
+x            if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin): #or (scan.ranges[point] == inf): # possibly remove the inf check
+                scan.ranges[point] = inf                                                                            # changed from 0 to inf
             else:
                 # handles if we are still on the same obj
                 objPoints.append((point, scan.ranges[point]))
@@ -131,13 +134,13 @@ class TransformPublisher(Node):
                 # handles if we have found a different object
                 if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)): # need to fix possible uncaught conditions
                     # handles legs
-                    if len(objPoints) < 15:
+                    if 1 < len(objPoints) < 15:
                         legsFound.append(objPoints)
                         legLRCorners = [legsFound[0][0][0], point] # assuming only one barricade in view at any time instant
                         legMinDist = minDist
                         objPoints = []
                     # handles barrels
-                    else:
+                    elif 15 <= len(objPoints):
                         barrelsFound.append(objPoints)
                         barrelLRCorners.append([objPoints[0][0],objPoints[-1][0]])
                         barrelMinDists.append(minDist)
@@ -156,7 +159,7 @@ class TransformPublisher(Node):
         # replace the points in the scan based off of the corners making a tangential plane to the obj
         for scanPoint in range(len(scan.ranges)):
             # if it is a barricade
-            if legLRCorners and (legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding):
+            if (legCount > 1) and (legLRCorners[0] - sidePadding <= scanPoint <= legLRCorners[1] + sidePadding): # may be able to get of legLRCorners check 
                 scan.ranges[scanPoint] = legMinDist
             # if it is 1+ barrel(s)
             if barrelLRCorners and (barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]):
