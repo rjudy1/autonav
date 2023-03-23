@@ -72,7 +72,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6) # for line following
         self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
-        self.pid_gps = PIDController(2.0, 0, 0.0, 6, -6)  # for during gps navigation
+        self.pid_gps = PIDController(1.75, 0, 0.0, 6, -6)  # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -230,7 +230,7 @@ class Teensy(Node):
             if self.boost_count > self.gps_boost_count_threshold and message_valid:
                 linear += self.speed_boost
 
-            self.get_logger().info(f"setting speeds: ({linear, angular})")
+            # self.get_logger().info(f"setting speeds: ({linear, angular})")
 
         else:
             message_valid = False
@@ -253,7 +253,7 @@ class Teensy(Node):
             # self.get_logger().info(f"handling {x}")
 
             self.send_speed(linear+89, angular+89)
-            self.get_logger().info(f"setting speeds: ({linear, angular})")
+            # self.get_logger().info(f"setting speeds: ({linear, angular})")
 
         self.curr_linear = linear
         self.curr_angular = angular
