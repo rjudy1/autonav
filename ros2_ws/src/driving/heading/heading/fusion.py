@@ -46,7 +46,6 @@ class Fusion(Node):
         self.fused_pub = self.create_publisher(HeadingStatus, "fused_heading", 10)
 
     def state_callback(self, new_state):
-        # self.get_logger().info("New State Received: {}".format(new_state.data))
         self.state = new_state.data
 
     # encoder must be sufficiently faster than GPS to be considered updated
@@ -57,8 +56,6 @@ class Fusion(Node):
             if self.encoder_curr_heading > math.pi:
                 self.encoder_curr_heading += -2*math.pi
 
-        # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
-        
         # calculate weighted current heading
         diff = sub_angles(self.curr_heading, self.imu_curr_heading)
         self.curr_heading = (self.curr_heading - diff*self.encoder_weight) % (2*math.pi)
@@ -71,9 +68,10 @@ class Fusion(Node):
         heading_msg.target_heading = self.target_heading
         heading_msg.distance = self.distance_from_waypoint
         self.fused_pub.publish(heading_msg)
-        # self.get_logger().info(f"Current heading: {heading_msg.current_heading}, target: {heading_msg.target_heading}")
-
         self.publish_to_motors()
+
+        if self.get_parameter('/Debug').value:
+            self.get_logger().info(f"Current heading from encoder callback: {heading_msg.current_heading}, target: {heading_msg.target_heading}")
 
     def imu_callback(self, imu_msg):
         try:
@@ -93,8 +91,13 @@ class Fusion(Node):
             heading_msg.distance = self.distance_from_waypoint
             self.fused_pub.publish(heading_msg)
             self.publish_to_motors()
+
+            if self.get_parameter('/Debug').value:
+                self.get_logger().info(f"Current heading from IMU callback: {heading_msg.current_heading}, target: {heading_msg.target_heading}")
+
         except:
-            # TODO: add initial IMU data publish in the teensy node
+            # we don't have an initial heading stored, so store the current message as
+            # that initial heading
             self.imu_initial_heading = imu_msg.euler_x
 
 
@@ -150,17 +153,6 @@ class Fusion(Node):
                                       "Current IMU Heading: " + str(self.imu_curr_heading) + '\n' +
                                       "Current Weighted Heading " + str(self.curr_heading) + '\n' +
                                       "Target Heading: " + str(gps_msg.target_heading) + '\n')
-        # self.encoder_curr_heading = self.curr_heading
-
-        # publish
-        # msg = String()
-        # msg.data = CODE.GPS_SENDER + ',' + str(error_angle) + ',' + str(self.distance_from_waypoint) +
-        #                               "Error: " + str(error_angle)
-        # # self.get_logger().warning(f"SENDING GPS ERROR {error_angle}")
-        # self.wheel_pub.publish(msg)
-
-        # if self.get_parameter('/Debug').value:
-        #     self.get_logger().info(f'encoder report: {gps_msg}, {self.curr_heading}')
 
 
 def main(args=None):
