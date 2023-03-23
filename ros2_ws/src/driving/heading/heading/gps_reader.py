@@ -229,7 +229,6 @@ class GPS(Node):
         # Check if we are at the waypoint
         distance = self.check_waypoint(loc)
         if self.get_parameter('/Debug').value:
-            # pass
             self.get_logger().info(f"loc {loc}\n")
                                    # f"Desired location: {self.target_loc[self.waypoint_itr]}")
 

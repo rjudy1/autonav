@@ -111,11 +111,14 @@ class Teensy(Node):
             self.MAX_CHANGE = 2
             self.boost_count = 0
 
+        # get initial offset for shaft encoder data
         self.serialPort.write('Q,**'.encode('utf-8'))
         read = self.serialPort.readline().decode('utf-8')
         data = read.split(',')
         self.left_offset = -int(data[1])
         self.right_offset = -int(data[2])
+
+        # TODO: add poll for initial IMU data for heading here
 
         self.serialPort.write("M,89,89,**".encode())
         # self.get_logger().info("WAIT: Enable power to motors")

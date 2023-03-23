@@ -16,6 +16,7 @@ from rclpy.node import Node
 from utils.utils import *
 
 from custom_msgs.msg import EncoderData
+from custom_msgs.msg import ImuData
 from custom_msgs.msg import HeadingStatus
 from std_msgs.msg import String
 
@@ -39,6 +40,7 @@ class Fusion(Node):
         self.distance_from_waypoint = 100.0
 
         self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.enc_callback, 10)
+        self.imu_sub = self.create_subscription(ImuData, "imu_data", self.imu_callback, 10)
         self.gps_heading_sub = self.create_subscription(HeadingStatus, "gps_heading", self.gps_callback, 10)
         self.wheel_pub = self.create_publisher(String, "wheel_distance", 10)
         self.fused_pub = self.create_publisher(HeadingStatus, "fused_heading", 10)
@@ -56,7 +58,14 @@ class Fusion(Node):
                 self.encoder_curr_heading += -2*math.pi
 
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
-        self.curr_heading = self.encoder_curr_heading
+        
+        # calculate weighted current heading
+        diff = sub_angles(self.curr_heading, self.imu_curr_heading)
+        self.curr_heading = (self.curr_heading - diff*self.encoder_weight) % (2*math.pi)
+        if self.curr_heading > math.pi:
+            self.curr_heading -= 2*math.pi
+
+        # construct and publish heading message
         heading_msg = HeadingStatus()
         heading_msg.current_heading = self.curr_heading
         heading_msg.target_heading = self.target_heading
@@ -65,6 +74,29 @@ class Fusion(Node):
         # self.get_logger().info(f"Current heading: {heading_msg.current_heading}, target: {heading_msg.target_heading}")
 
         self.publish_to_motors()
+
+    def imu_callback(self, imu_msg):
+        try:
+            # calculate IMU heading
+            self.imu_curr_heading = imu_msg.euler_x - self.imu_initial_heading + self.get_parameter('/InitialHeading').value
+
+            # calculate weighted current heading
+            diff = sub_angles(self.curr_heading, self.imu_curr_heading)
+            self.curr_heading = (self.curr_heading - diff*self.imu_weight) % (2*math.pi)
+            if self.curr_heading > math.pi:
+                self.curr_heading -= 2*math.pi
+            
+            # construct and publish heading message
+            heading_msg = HeadingStatus()
+            heading_msg.current_heading = self.curr_heading
+            heading_msg.target_heading = self.target_heading
+            heading_msg.distance = self.distance_from_waypoint
+            self.fused_pub.publish(heading_msg)
+            self.publish_to_motors()
+        except:
+            # TODO: add initial IMU data publish in the teensy node
+            self.imu_initial_heading = imu_msg.euler_x
+
 
     # a 5 point moving average filter
     def filter_angle(self, new_val):
@@ -89,37 +121,36 @@ class Fusion(Node):
 
     def gps_callback(self, gps_msg):
         if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:
-            encoder_weight = .55
+            self.encoder_weight = self.get_parameter('/EncoderWeight').value
         elif self.state == STATE.LINE_FOLLOWING and not -0.01 < gps_msg.current_heading < 0.01:
-            encoder_weight = 1.0
+            self.encoder_weight = 1.0
         else:
-            encoder_weight = 1.0
+            self.encoder_weight = 1.0
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
 
-        # new heading calculations
-        diff = sub_angles(self.encoder_curr_heading, gps_msg.current_heading)
-        self.curr_heading = (self.encoder_curr_heading - diff*(1-encoder_weight)) % (2*math.pi)
+        # calculate weighted current heading
+        diff = sub_angles(self.curr_heading, gps_msg.current_heading)
+        self.curr_heading = (self.curr_heading - diff*(1 - self.encoder_weight - self.imu_weight)) % (2*math.pi)
         if self.curr_heading > math.pi:
             self.curr_heading -= 2*math.pi
+        self.distance_from_waypoint = gps_msg.distance
 
+        # construct and publish heading message
         heading_msg = HeadingStatus()
         heading_msg.current_heading = self.curr_heading
         heading_msg.target_heading = self.target_heading
-        self.distance_from_waypoint = gps_msg.distance
-        heading_msg.distance = gps_msg.distance
+        heading_msg.distance = self.distance_from_waypoint
         self.fused_pub.publish(heading_msg)
-
-        # calculate and filter the error in the angle of the two headings
-#       error_angle = sub_angles(self.target_heading, self.curr_heading)
         self.publish_to_motors()
-        # filtered_error_angle = self.filter_angle(error_angle)
+
         if self.get_parameter('/Debug').value:
             self.get_logger().warning("Current GPS HEADING: " + str(gps_msg.current_heading) + '\n' +
                                       "Current Encoder Heading: " + str(self.encoder_curr_heading) + '\n' +
+                                      "Current IMU Heading: " + str(self.imu_curr_heading) + '\n' +
                                       "Current Weighted Heading " + str(self.curr_heading) + '\n' +
                                       "Target Heading: " + str(gps_msg.target_heading) + '\n')
-        self.encoder_curr_heading = self.curr_heading
+        # self.encoder_curr_heading = self.curr_heading
 
         # publish
         # msg = String()
