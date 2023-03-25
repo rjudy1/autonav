@@ -119,13 +119,13 @@ class TransformPublisher(Node):
         barrelMinDists = []
         minDist = 3 # can parm
 
-        windowMax = self.get_parameter("/ObstacleToPlainDistance").value
-        windowMin = self.get_parameter("/ObstacleNoiseMinDist").value
+        windowMax = self.get_parameter('/ObstacleToPlainDistance').value
+        windowMin = self.get_parameter('/ObstacleNoiseMinDist').value
 
         # finds the point clusters in window and determines if it is a leg or barrel
         for point in range(len(scan.ranges)-2):
             # get rid of noise values that are too close/far
-x            if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin): #or (scan.ranges[point] == inf): # possibly remove the inf check
+            if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin): #or (scan.ranges[point] == inf): # possibly remove the inf check
                 scan.ranges[point] = inf                                                                            # changed from 0 to inf
             else:
                 # handles if we are still on the same obj

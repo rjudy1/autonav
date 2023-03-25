@@ -49,8 +49,8 @@ class Plot_Scan(Node):
         points_x = np.flip(points_x)
         #self.get_logger().info(f"dist_y: {dist_y}")
 
-        windowMax = self.get_parameter("/ObstacleToPlainDistance").value
-        windowMin = self.get_parameter("/ObstacleNoiseMinDist").value
+        windowMax = self.get_parameter('/ObstacleToPlainDistance').value
+        windowMin = self.get_parameter('/ObstacleNoiseMinDist').value
 
         # plot only the useful data in a certain window
         for i in range(len(dist_y)):
