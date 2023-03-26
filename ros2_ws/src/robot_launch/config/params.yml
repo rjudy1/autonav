@@ -48,7 +48,7 @@
         /ObstacleDetectDistance:    1.1         # meters = 43.307 inches
         /ObstacleToPlainDistance:   1.5         # meters = 59.055 inches
         /ObstacleNoiseMinDist:      0.3         # meters = 11.81 inches
-        /Debug:                     True
+        /Debug:                     False
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
