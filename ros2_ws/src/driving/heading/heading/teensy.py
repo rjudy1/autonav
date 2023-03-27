@@ -72,7 +72,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6) # for line following
         self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
-        self.pid_gps = PIDController(1.75, 0, 0.0, 6, -6)  # for during gps navigation
+        self.pid_gps = PIDController(1.8, 0.0, 0.0, 6, -6)  # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -220,7 +220,7 @@ class Teensy(Node):
             adjustment = 0.0
             if gps_distance <= 2.5:
                 adjustment = 4*(2.5 - gps_distance)
-                self.get_logger().info(f"adjusted linear by {adjustment}")
+                # self.get_logger().info(f"adjusted linear by {adjustment}")
 
             linear = round(self.gps_speed - adjustment)
             angular = round(delta)
@@ -313,53 +313,53 @@ class Teensy(Node):
             self.get_logger().warning(message)
 
 # function to call to get and publish an IMU data message, since we do it in more than one place
-def get_imu_data(self):
-    # write command to Teensy to send IMU data
-    self.serialPort.write('I,**'.encode('utf-8'))
+    def get_imu_data(self):
+        # write command to Teensy to send IMU data
+        self.serialPort.write('I,**'.encode('utf-8'))
 
-    # get absolute orientation data
-    read = self.serialPort.readline().decode('utf-8')
-    data = read.split(',')
-    msg = ImuData()
-    if data[0] == 'ABS' and len(data) == 5 and data[4] == '**\r\n':
-        # if the teensy returned valid data, save it
-        msg.abs_x = float(data[1])
-        msg.abs_y = float(data[2])
-        msg.abs_z = float(data[3])  
-    else:
-        # if the teensy returned invalid data, abort
-        self.serialPort.flushInput()
-        return     
-    
-    # get euler angles
-    read = self.serialPort.readline().decode('utf-8')
-    data = read.split(',')
-    if data[0] == 'Euler' and len(data) == 5 and data[4] == '**\r\n':
-        # if the teensy returned valid data, save it
-        msg.euler_x = float(data[1])
-        msg.euler_y = float(data[2])
-        msg.euler_z = float(data[3])  
-    else:
-        # if the teensy returned invalid data, abort
-        self.serialPort.flushInput()
-        return 
-    
-    # get quaternions
-    read = self.serialPort.readline().decode('utf-8')
-    data = read.split(',')
-    if data[0] == 'Quaterion' and len(data) == 6 and data[5] == '**\r\n':
-        # if the teensy returned valid data, save it
-        msg.quat_w = float(data[1])
-        msg.quat_x = float(data[2])
-        msg.quat_y = float(data[3])  
-        msg.quat_z = float(data[4])  
-    else:
-        # if the teensy returned invalid data, abort
-        self.serialPort.flushInput()
-        return 
-    
-    # publish IMU data message
-    self.imu_pub.publish(msg)  
+        # get absolute orientation data
+        read = self.serialPort.readline().decode('utf-8')
+        data = read.split(',')
+        msg = ImuData()
+        if data[0] == 'ABS' and len(data) == 5 and data[4] == '**\r\n':
+            # if the teensy returned valid data, save it
+            msg.abs_x = float(data[1])
+            msg.abs_y = float(data[2])
+            msg.abs_z = float(data[3])
+        else:
+            # if the teensy returned invalid data, abort
+            self.serialPort.flushInput()
+            return
+
+        # get euler angles
+        read = self.serialPort.readline().decode('utf-8')
+        data = read.split(',')
+        if data[0] == 'Euler' and len(data) == 5 and data[4] == '**\r\n':
+            # if the teensy returned valid data, save it
+            msg.euler_x = float(data[1])
+            msg.euler_y = float(data[2])
+            msg.euler_z = float(data[3])
+        else:
+            # if the teensy returned invalid data, abort
+            self.serialPort.flushInput()
+            return
+
+        # get quaternions
+        read = self.serialPort.readline().decode('utf-8')
+        data = read.split(',')
+        if data[0] == 'Quaterion' and len(data) == 6 and data[5] == '**\r\n':
+            # if the teensy returned valid data, save it
+            msg.quat_w = float(data[1])
+            msg.quat_x = float(data[2])
+            msg.quat_y = float(data[3])
+            msg.quat_z = float(data[4])
+        else:
+            # if the teensy returned invalid data, abort
+            self.serialPort.flushInput()
+            return
+
+        # publish IMU data message
+        self.imu_pub.publish(msg)
 
 
 def main(args=None):

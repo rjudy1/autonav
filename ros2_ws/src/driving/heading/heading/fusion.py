@@ -27,9 +27,10 @@ class Fusion(Node):
 
         self.declare_parameter("/InitialHeading", 0.000)
         self.declare_parameter('/EncoderWeight', .5)
+        self.declare_parameter('/ImuWeight', .5)
         self.declare_parameter('/Debug', False)
-
         self.declare_parameter('/ExitAngle', .2)
+
         self.exit_angle = self.get_parameter('/ExitAngle').value
         self.state = STATE.LINE_FOLLOWING
         self.curr_heading = self.get_parameter('/InitialHeading').value
@@ -38,6 +39,9 @@ class Fusion(Node):
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
         self.distance_from_waypoint = 100.0
+
+        self.encoder_weight = self.get_parameter('/EncoderWeight').value
+        self.imu_weight = self.get_parameter('/ImuWeight').value
 
         self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.enc_callback, 10)
         self.imu_sub = self.create_subscription(ImuData, "imu_data", self.imu_callback, 10)
@@ -57,7 +61,7 @@ class Fusion(Node):
                 self.encoder_curr_heading += -2*math.pi
 
         # calculate weighted current heading
-        diff = sub_angles(self.curr_heading, self.imu_curr_heading)
+        diff = sub_angles(self.curr_heading, self.encoder_curr_heading)
         self.curr_heading = (self.curr_heading - diff*self.encoder_weight) % (2*math.pi)
         if self.curr_heading > math.pi:
             self.curr_heading -= 2*math.pi
@@ -99,7 +103,8 @@ class Fusion(Node):
             # we don't have an initial heading stored, so store the current message as
             # that initial heading
             self.imu_initial_heading = imu_msg.euler_x
-
+            self.imu_curr_heading = imu_msg.euler_x - self.imu_initial_heading + self.get_parameter(
+                '/InitialHeading').value
 
     # a 5 point moving average filter
     def filter_angle(self, new_val):
