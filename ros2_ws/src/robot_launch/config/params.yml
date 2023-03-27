@@ -2,7 +2,7 @@
 /**:
     ros__parameters:
         /RealCourse:         False
-        /FollowingDirection: 1          # 1  is right, 0 is left (line following)
+        /FollowingDirection: 0          # 1  is right, 0 is left (line following)
         /UseYellow:          False      # True for yellow lines, False for white lines
         /InitialHeading:     162.0      # robot's absolute initial heading. set before build in degrees.
         /NorthPointFirst:    True
