@@ -2,28 +2,28 @@
 /**:
     ros__parameters:
         /RealCourse:         False
-        /FollowingDirection: 0                  # 1  is right, 0 is left (line following)
-        /UseYellow:          False              # True for yellow lines, False for white lines
-        /InitialHeading:     162.0              # robot's absolute initial heading. set before build in degrees.
+        /FollowingDirection: 0          # 1  is right, 0 is left (line following)
+        /UseYellow:          False      # True for yellow lines, False for white lines
+        /InitialHeading:     162.0      # robot's absolute initial heading. set before build in degrees.
         /NorthPointFirst:    True
-        /GpsExitHeading:     0.0 #1.020304      # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
+        /GpsExitHeading:     0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
         /CrossRampInGps:     True
-        /RepeatGps:          True               # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
-        /LineDist:           0.2                # Distance in meters to follow the line from
-        /StartState:         0                  #3 GPS #0 Line
+        /RepeatGps:          True       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
+        /LineDist:           0.2        # Distance in meters to follow the line from
+        /StartState:         0          #3 GPS #0 Line
 #        /EncoderWeight:             .75
 
 
 /fsm:
     ros__parameters:
-        /TimerRate:  0.05                       # rate at which to check and do state specified behavior
+        /TimerRate:  0.05  # rate at which to check and do state specified behavior
         /TurnSpeed:  5 #20
         /SlightTurn: 3 #18
         /ExitAngle:  0.1
         # Encoder Box Following (state 11-12) Parameters
-        /EncoderBoxTurnLeft: False              # used to configure the turn direction. False -> turn right
-        /EncoderBoxDistance: 0.3                # distance in meters of each side of the encoder's "box"
-        /EncoderBoxSpeed:    5.0   
+        /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
+        /EncoderBoxDistance: 0.3   # distance in meters of each side of the encoder's "box"
+        /EncoderBoxSpeed:    5.0   #
 
 /rplidar_node:
     ros__parameters:
@@ -40,14 +40,12 @@
 
 /obstacles:
     ros__parameters:
-        /ObstacleFOV:               0.8754      # radians = 50.1567 degrees
+        /ObstacleFOV:               0.8754  # radians = 50.1567 degrees
         /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.1         # meters = 43.307 inches
-        /ObstacleToPlainDistance:   1.5         # meters = 59.055 inches
-        /ObstacleNoiseMinDist:      0.3         # meters = 11.81 inches
+        /ObstacleDetectDistance:    1.1  # meters = 3.6089 ft
         /Debug:                     False
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
@@ -56,36 +54,36 @@
         /SensorInput:           0    # 0 = GPS, 1 = shaft encoders
         /InputInitialCondition: False # True = use initial condition params, False = use take_reading() to get initial condition
         ## Practice Coordinates
-        #/PracticeInitialLat:   0.0
-        #/PracticeInitialLon:   0.0
-        #/PracticeWaypointLat1: 39.4477519
-        #/PracticeWaypointLon1: -83.4877888
-        #/PracticeWaypointLat2: 39.4477519
-        #/PracticeWaypointLon2: -83.4877888
-        #/PracticeWaypointLat3: 39.4477519
-        #/PracticeWaypointLon3: -83.4877888
-        #/PracticeWaypointLat4: 39.4477519
-        #/PracticeWaypointLon4: -83.4877888
+        /PracticeInitialLat:   0.0
+        /PracticeInitialLon:   0.0
+        /PracticeWaypointLat1: 39.4477519 
+        /PracticeWaypointLon1: -83.4877888 
+        /PracticeWaypointLat2: 39.4477519
+        /PracticeWaypointLon2: -83.4877888
+        /PracticeWaypointLat3: 39.4477519
+        /PracticeWaypointLon3: -83.4877888
+        /PracticeWaypointLat4: 39.4477519
+        /PracticeWaypointLon4: -83.4877888
         ## Real Coordinates
-        #/InitialLat: 0.0
-        #/InitialLon: 0.0
+        /InitialLat: 0.0
+        /InitialLon: 0.0
         # their provided north point = 42.400961833333334 + -83.13160418166666j
         # our nearest recorded point = 42.400974399999996-83.1315972
-        #/WaypointLat1:              42.40096900         # north real -- adjusted about 83 cm north
-        #/WaypointLon1:              -83.13160718166666  # going north use = -83.13160418166666, south use = -83.13160718166666
+        /WaypointLat1:              42.40096900         # north real -- adjusted about 83 cm north
+        /WaypointLon1:              -83.13160718166666  # going north use = -83.13160418166666, south use = -83.13160718166666
 
         # actual point on ramp = 42.400875400000004-83.13161829999999 north
-        #/WaypointLat2:              42.40088038666667          # center north - shifted north slightly
-        #/WaypointLon2:              -83.131620365               # shift west
+        /WaypointLat2:              42.40088038666667          # center north - shifted north slightly
+        /WaypointLon2:              -83.131620365               # shift west
 
         # 42.4008482-83.1316123 OUR RECORDED POINT
-        #/WaypointLat3:              42.40083898           # center south - shifted south 2 decimeters
-        #/WaypointLon3:              -83.131618495
+        /WaypointLat3:              42.40083898           # center south - shifted south 2 decimeters
+        /WaypointLon3:              -83.131618495
 
         # their provided south point = 42.400756623333336 + -83.131596585j
         # found south = 42.4007429-83.1316116
-        #/WaypointLat4:              42.400749623333336   # south real -- adjusted about a meter south
-        #/WaypointLon4:              -83.131591085  # going north use = -83.131591085 , south same
+        /WaypointLat4:              42.400749623333336   # south real -- adjusted about a meter south
+        /WaypointLon4:              -83.131591085  # going north use = -83.131591085 , south same
         
         /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
