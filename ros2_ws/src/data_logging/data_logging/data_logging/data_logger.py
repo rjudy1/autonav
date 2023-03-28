@@ -47,7 +47,7 @@ class Data_Logger(Node):
         #self.state_sub        = self.create_subscription(Int32,         "/state_topic",                      self.state_callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
         #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
-        self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
+        #self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
 
         t = str(round(time.time()))
 

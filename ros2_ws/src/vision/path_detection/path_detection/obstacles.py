@@ -12,6 +12,7 @@
 from dataclasses import dataclass
 import math
 import numpy as np
+from numpy import inf
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -59,6 +60,8 @@ class TransformPublisher(Node):
         self.declare_parameter("/LIDARTrimMax", 0.2576)         # radians = 14.7 degrees
         self.declare_parameter("/ObstacleFOV", math.pi/6)       #
         self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters = 4.9213 ft
+        self.declare_parameter("/ObstacleToPlainDistance", 2.0)
+        self.declare_parameter("/ObstacleNoiseMinDist", 0.3)
         self.declare_parameter("/FollowingDirection", 1)        # meters
 
         # camera parameters
@@ -103,6 +106,77 @@ class TransformPublisher(Node):
             # self.get_logger().info("ZERO DIVISION ERROR")
             return max_distance + .75  # parameterize later
 
+
+    # new def to squash bad values and to detect and paint a plane on each barricade/barrel
+    def lidar_ObjToPlane(self, scan):
+        
+        # identify and save points for possible legs and barrels
+        threshold = 0.08 # was 0.07 # a parm - max distance between points to check if it's apart of same obj
+        objPoints = []
+        legsFound = []
+        legLRCorners = []
+        legMinDist = []
+        barrelsFound = []
+        barrelLRCorners = []
+        barrelMinDists = []
+        minDist = 3 # can parm
+
+        windowMax = self.get_parameter("/ObstacleToPlainDistance").value
+        windowMin = self.get_parameter("/ObstacleNoiseMinDist").value
+
+        # finds the point clusters in window and determines if it is a leg or barrel
+        for point in range(len(scan.ranges)-2):
+            # get rid of noise values that are too close/far
+            if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin): #or (scan.ranges[point] == inf): # possibly remove the inf check
+                scan.ranges[point] = inf                                                                            # changed from 0 to inf
+            else:
+                # handles if we are still on the same obj
+                objPoints.append((point, scan.ranges[point]))
+                minDist = min(minDist, scan.ranges[point]) # may need to check range
+                # handles if we have found a different object
+                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)): # need to fix possible uncaught conditions
+                    # handles legs
+                    if 1 < len(objPoints) < 14:
+                        legsFound.append(objPoints)
+                        legLRCorners = [legsFound[0][0][0], point] # assuming only one barricade in view at any time instant
+                        legMinDist = minDist
+                        objPoints = []
+                    # handles barrels
+                    elif 14 <= len(objPoints):
+                        barrelsFound.append(objPoints)
+                        barrelLRCorners.append([objPoints[0][0],objPoints[-1][0]])
+                        barrelMinDists.append(minDist)
+                        minDist = 3
+                        objPoints = []
+
+        # need to keep track of which barrel we are on
+        barrelCount = len(barrelsFound)
+        self.get_logger().info(f"Barrel count: {barrelCount}, corners: {barrelLRCorners}")
+        legCount = len(legsFound) # assuming only one barricade in view for this function
+        self.get_logger().info(f"Leg count: {legCount}, corners: {legLRCorners}")
+        barrel = 0
+        isBarrel = False
+
+        # replace the points in the scan based off of the corners making a tangential plane to the obj
+        for scanPoint in range(len(scan.ranges)):
+            # if it is a barricade
+            if (0 < legCount < 3): # may be able to get of legLRCorners check
+                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and legLRCorners[0] <= scanPoint:
+                    scan.ranges[scanPoint] = legMinDist
+                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= legLRCorners[1]:
+                    scan.ranges[scanPoint] = legMinDist
+            elif (legCount >= 3) and (legLRCorners[0]<= scanPoint <= legLRCorners[1]):
+                scan.ranges[scanPoint] = legMinDist
+            # if it is 1+ barrel(s)
+            if barrelLRCorners and (barrelLRCorners[barrel][0] <= scanPoint <= barrelLRCorners[barrel][1]):
+                scan.ranges[scanPoint] = barrelMinDists[barrel]
+                isBarrel = True
+            elif (isBarrel == True) and ((barrel + 1) < barrelCount):
+                barrel = barrel + 1
+            else:
+                isBarrel = False
+
+
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
     # third portion replaces obstacle in front and time of flight sensors
@@ -114,7 +188,6 @@ class TransformPublisher(Node):
     def lidar_callback(self, scan):
 
         #self.get_logger().info(f"angle min: {scan.angle_min} \n angle max: {scan.angle_max} \n angle increment: {scan.angle_increment}")
-
         scan.angle_max += math.pi                                                   # change the range from -pi -> pi to 0 -> 2 pi for array indexing
         scan.angle_min += math.pi
 
@@ -150,6 +223,8 @@ class TransformPublisher(Node):
         except Exception:
             self.get_logger().info(f"ERROR: removing extraneous data broke ranges length: {len(scan.ranges)}, width: {width}")
 
+        # turn objects into a plan and squash all unnecessary points
+        self.lidar_ObjToPlane(scan)
         """
         # START
             # insert pothole additions to lidar here - can compensate with constants for the camera angle - REMOVED AT COMPETITION BECAUSE NO POTHOLES
@@ -171,12 +246,12 @@ class TransformPublisher(Node):
         msg = String()
         msg.data = STATUS.PATH_CLEAR
         count1 = 0
-        follow_dist = self.get_parameter("/ObstacleDetectDistance").value
+        follow_dist = self.get_parameter('/ObstacleDetectDistance').value
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
              follow_dist *= 3/4
         
         # scan within the FOV in front and detect if there is an obstacle
-        half_FOV = self.get_parameter('/ObstacleFOV').value / 2
+        half_FOV = self.get_parameter("/ObstacleFOV").value / 2
         right_FOV = (math.pi / 2) - half_FOV
         left_FOV = (math.pi / 2) + half_FOV
         for i in range(len(scan.ranges)):
