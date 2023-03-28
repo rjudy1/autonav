@@ -45,13 +45,17 @@ class Lines(Node):
         self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
 
         # Read ROS Params - Line Detection
+        self.declare_parameter("/FollowingDirection", DIRECTION.LEFT)
         self.declare_parameter('/LineDetectBufferSize', 5)
         self.declare_parameter('/LineDetectBufferFill', 0.6)
         self.declare_parameter('/LineDetectCropTop', 0.0)
         self.declare_parameter('/LineDetectCropBottom', 0.2)
         self.declare_parameter('/LineDetectCropSide', 0.2)
         self.declare_parameter('/LineDetectMaxWhite', 0.5)
-        self.declare_parameter('/LineDetectMinSlope', 1.25)
+        if self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT:
+            self.declare_parameter('/LineDetectMinSlope', 1.25)
+        else:
+            self.declare_parameter('/LineDetectMinSlope', -1.25)
         self.declare_parameter('/LineDetectMinLineLength', 0.35)
         self.declare_parameter('/LineDetectDistance', 1.25)
         self.declare_parameter('/Debug', True)
