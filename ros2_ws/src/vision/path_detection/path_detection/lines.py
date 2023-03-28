@@ -60,7 +60,6 @@ class Lines(Node):
         self.declare_parameter('/LineDetectDistance', 1.25)
         self.declare_parameter('/Debug', True)
         self.declare_parameter('/UseYellow', False)
-        self.declare_parameter("/FollowingDirection", DIRECTION.LEFT)
 
         self.get_logger().warning(f"STARTUP { self.get_parameter('/UseYellow').value,}")
 

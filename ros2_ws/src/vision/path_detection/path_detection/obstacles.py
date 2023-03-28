@@ -106,6 +106,7 @@ class TransformPublisher(Node):
             # self.get_logger().info("ZERO DIVISION ERROR")
             return max_distance + .75  # parameterize later
 
+    # may need to check range from the front of the robot instead of radially
 
     # new def to squash bad values and to detect and paint a plane on each barricade/barrel
     def lidar_ObjToPlane(self, scan):
