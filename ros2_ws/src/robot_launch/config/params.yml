@@ -53,9 +53,9 @@
         /InputInitialCondition: True # True = use initial condition params, False = use take_reading() to get initial condition
         ## Alpha-Beta-Gamma Filter Parameters
         /UseAlphaBetaGamma:     True  # True = use ABG filter to filter position measurements, False = use raw measurements
-        /Alpha:                 0.5     # ABG filter parameters
-        /Beta:                  0.9     #
-        /Gamma:                 0.9     #
+        /Alpha:                 0.5     # Initial ABG filter parameters
+        /Beta:                  0.5     #
+        /Gamma:                 0.5     #
         /InitialLatDot:         0.0     # Initial velocity in the latitudinal direction in GPS units (DMM)/second
         /InitialLatDotDot:      0.0     # Initial acceleration in the latitudinal direction in GPS units (DMM)/second^2
         /InitialLonDot:         0.0     # Initial velocity in the longitudinal direction in GPS units (DMM)/second
@@ -115,6 +115,6 @@
     ros__parameters:
         /ExitAngle:                 0.4  # +/- angle range we need to achieve to leave obstacle avoidance and return to GPS mode. radians = 22.9183 degrees
         ## Heading Weights -- note that GPS weight is 1 - EncoderWeight - ImuWeight
-        /EncoderWeight:             0.0
-        /ImuWeight:                 0.9
+        /EncoderWeight:             0.2
+        /ImuWeight:                 0.5
         /Debug:                     False

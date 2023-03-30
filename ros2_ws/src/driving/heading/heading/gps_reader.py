@@ -116,9 +116,12 @@ class GPS(Node):
         self.lon_dot_filter = self.get_parameter('/InitialLonDot').value
         self.lat_dot_dot_filter = self.get_parameter('/InitialLatDotDot').value
         self.lon_dot_dot_filter = self.get_parameter('/InitialLonDotDot').value
-        self.alpha = self.get_parameter('/Alpha').value
-        self.beta = self.get_parameter('/Beta').value
-        self.gamma = self.get_parameter('/Gamma').value
+        self.alpha_lat = self.get_parameter('/Alpha').value
+        self.alpha_lon = self.get_parameter('/Alpha').value
+        self.beta_lat = self.get_parameter('/Beta').value
+        self.beta_lon = self.get_parameter('/Beta').value
+        self.gamma_lat = self.get_parameter('/Gamma').value
+        self.gamma_lon = self.get_parameter('/Gamma').value
         
 
         # flip if
@@ -209,23 +212,46 @@ class GPS(Node):
 
         if self.get_parameter('/UseAlphaBetaGamma').value:
             # Prediction stage
-            self.lat_predict = self.lat_filter + self.lat_dot_filter*self.T + self.lat_dot_dot_filter*self.T**2/2
-            self.lat_dot_predict = self.lat_dot_filter + self.lat_dot_dot_filter*self.T
+            self.lat_predict = self.lat_filter + self.lat_dot_filter + self.lat_dot_dot_filter/2
+            self.lat_dot_predict = self.lat_dot_filter + self.lat_dot_dot_filter
             self.lat_dot_dot_predict = self.lat_dot_dot_filter
 
-            self.lon_predict = self.lon_filter + self.lon_dot_filter*self.T + self.lon_dot_dot_filter*self.T**2/2
-            self.lon_dot_predict = self.lon_dot_filter + self.lon_dot_dot_filter*self.T
+            self.lon_predict = self.lon_filter + self.lon_dot_filter + self.lon_dot_dot_filter/2
+            self.lon_dot_predict = self.lon_dot_filter + self.lon_dot_dot_filter
             self.lon_dot_dot_predict = self.lon_dot_dot_filter
 
             # Update stage
-            self.lat_filter = self.lat_predict + self.alpha*(loc.real-self.lat_predict)
-            self.lat_dot_filter = self.lat_dot_predict + self.beta/self.T*(loc.real-self.lat_predict)
-            self.lat_dot_dot_filter = self.lat_dot_dot_predict + 2*self.gamma/self.T**2*(loc.real-self.lat_predict)
+            lat_measurement_error = loc.real - self.lat_predict
+            lon_measurement_error = loc.imag - self.lon_predict
 
-            self.lon_filter = self.lon_predict + self.alpha*(loc.imag-self.lon_predict)
-            self.lon_dot_filter = self.lon_dot_predict + self.beta/self.T*(loc.imag-self.lon_predict)
-            self.lon_dot_dot_filter = self.lon_dot_dot_predict + 2*self.gamma/self.T**2*(loc.imag-self.lon_predict)
+            self.lat_filter = self.lat_predict + self.alpha_lat*lat_measurement_error
+            self.lat_dot_filter = self.lat_dot_predict + self.beta_lat*lat_measurement_error
+            self.lat_dot_dot_filter = self.lat_dot_dot_predict + self.gamma_lat*lat_measurement_error
+
+            self.lon_filter = self.lon_predict + self.alpha_lon*lon_measurement_error
+            self.lon_dot_filter = self.lon_dot_predict + self.beta_lon*lon_measurement_error
+            self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
             
+            # adjust filter parameters and update again
+            self.alpha_lat = self.optimize_abg(self.alpha_lat, lat_measurement_error, self.lat_filter-self.lat_predict)
+            self.beta_lat = self.optimize_abg(self.beta_lat, lat_measurement_error, self.lat_dot_filter-self.lat_dot_predict)
+            self.gamma_lat = self.optimize_abg(self.gamma_lat, lat_measurement_error, self.lat_dot_dot_filter-self.lat_dot_dot_predict)
+            self.alpha_lon = self.optimize_abg(self.alpha_lon, lon_measurement_error, self.lon_filter-self.lon_predict)
+            self.beta_lon = self.optimize_abg(self.beta_lon, lon_measurement_error, self.lon_dot_filter-self.lon_dot_predict)
+            self.gamma_lon = self.optimize_abg(self.gamma_lon, lon_measurement_error, self.lon_dot_dot_filter-self.lon_dot_dot_predict)
+            
+            if self.get_parameter('/Debug').value:
+                self.get_logger().info(f'alpha_lat: {self.alpha_lat}, beta_lat: {self.beta_lat}, gamma_lat: {self.gamma_lat}')
+                self.get_logger().info(f'alpha_lon: {self.alpha_lon}, beta_lon: {self.beta_lon}, gamma_lon: {self.gamma_lon}')
+
+            self.lat_filter = self.lat_predict + self.alpha_lat*lat_measurement_error
+            self.lat_dot_filter = self.lat_dot_predict + self.beta_lat*lat_measurement_error
+            self.lat_dot_dot_filter = self.lat_dot_dot_predict + self.gamma_lat*lat_measurement_error
+
+            self.lon_filter = self.lon_predict + self.alpha_lon*lon_measurement_error
+            self.lon_dot_filter = self.lon_dot_predict + self.beta_lon*lon_measurement_error
+            self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
+
             loc = complex(self.lat_filter, self.lon_filter)
 
         # Check if we are at the waypoint
@@ -286,6 +312,16 @@ class GPS(Node):
         # call "log_gps(GNGGA_string)" each time new GPS data is received
         # nmealist = nmeastring.split(',')
         self.writer.writerow(np.concatenate(([time.time()],nmeastring)))
+
+    # m_err : "measurement error" - difference between measurement and prediction
+    # p_e_err : "prediction-estimation error" - difference between 
+    def optimize_abg(self, abg_param, m_err, p_e_err)
+        learning_rate = 0.1
+
+        err = m_err ** 2
+        gradient_abg = 2*err*p_e_err
+        return abg_param - learning_rate * gradient_abg
+        
 
     def __del__(self):
         # self.get_logger().info("Deleting GPS Node")
