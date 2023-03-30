@@ -315,7 +315,7 @@ class GPS(Node):
 
     # m_err : "measurement error" - difference between measurement and prediction
     # p_e_err : "prediction-estimation error" - difference between 
-    def optimize_abg(self, abg_param, m_err, p_e_err)
+    def optimize_abg(self, abg_param, m_err, p_e_err):
         learning_rate = 0.1
 
         err = m_err ** 2

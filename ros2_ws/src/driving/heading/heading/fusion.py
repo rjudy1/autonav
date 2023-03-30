@@ -51,6 +51,12 @@ class Fusion(Node):
 
     def state_callback(self, new_state):
         self.state = new_state.data
+        if self.state == STATE.ORIENT_TO_GPS:
+            self.imu_weight = 1.0
+            self.encoder_weight = 0.0
+        else:
+            self.imu_weight = self.get_parameter('/ImuWeight').value
+            self.encoder_weight = self.get_parameter('/EncoderWeight').value
 
     # encoder must be sufficiently faster than GPS to be considered updated
     def enc_callback(self, enc_msg):
@@ -136,6 +142,10 @@ class Fusion(Node):
             self.encoder_weight = 1.0
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
+
+        if self.distance_from_waypoint < 2:
+            self.imu_weight = 1.0
+            self.encoder_weight = 0.0
 
         # calculate weighted current heading
         diff = sub_angles(self.curr_heading, gps_msg.current_heading)
