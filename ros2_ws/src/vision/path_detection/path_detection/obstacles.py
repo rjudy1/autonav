@@ -106,8 +106,6 @@ class TransformPublisher(Node):
             # self.get_logger().info("ZERO DIVISION ERROR")
             return max_distance + .75  # parameterize later
 
-    # may need to check range from the front of the robot instead of radially
-
     # new def to squash bad values and to detect and paint a plane on each barricade/barrel
     def lidar_ObjToPlane(self, scan):
         
@@ -128,16 +126,18 @@ class TransformPublisher(Node):
         # finds the point clusters in window and determines if it is a leg or barrel
         for point in range(len(scan.ranges)-2):
             # get rid of noise values that are too close/far
-            if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin): #or (scan.ranges[point] == inf): # possibly remove the inf check
-                scan.ranges[point] = inf                                                                            # changed from 0 to inf
+            if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
+                scan.ranges[point] = inf                                                                            
             else:
-                # handles if we are still on the same obj
-                objPoints.append((point, scan.ranges[point]))
-                minDist = min(minDist, scan.ranges[point]) # may need to check range
+                # handles if we are still on the same obj 
+                #objPoints.append((point, scan.ranges[point]))
+                objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
+                #minDist = min(minDist, scan.ranges[point])
+                minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
                 # handles if we have found a different object
                 if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)): # need to fix possible uncaught conditions
                     # handles legs
-                    if 1 < len(objPoints) < 14:
+                    if 1 < len(objPoints) < 14: # 14 can param if needed
                         legsFound.append(objPoints)
                         legLRCorners = [legsFound[0][0][0], point] # assuming only one barricade in view at any time instant
                         legMinDist = minDist
