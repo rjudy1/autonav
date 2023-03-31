@@ -130,12 +130,12 @@ class TransformPublisher(Node):
                 scan.ranges[point] = inf                                                                            
             else:
                 # handles if we are still on the same obj 
-                #objPoints.append((point, scan.ranges[point]))
+                #objPoints.append((point, scan.ranges[point])) # may be able to get ride of
                 objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
-                #minDist = min(minDist, scan.ranges[point])
+                #minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
                 minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
                 # handles if we have found a different object
-                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)): # need to fix possible uncaught conditions
+                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
                     # handles legs
                     if 1 < len(objPoints) < 14: # 14 can param if needed
                         legsFound.append(objPoints)
@@ -152,9 +152,10 @@ class TransformPublisher(Node):
 
         # need to keep track of which barrel we are on
         barrelCount = len(barrelsFound)
-        self.get_logger().info(f"Barrel count: {barrelCount}, corners: {barrelLRCorners}")
+        #self.get_logger().info(f"Barrel count: {barrelCount}, corners: {barrelLRCorners}")
         legCount = len(legsFound) # assuming only one barricade in view for this function
-        self.get_logger().info(f"Leg count: {legCount}, corners: {legLRCorners}")
+        #self.get_logger().info(f"Leg count: {legCount}, corners: {legLRCorners}")
+        self.get_logger().info(f"Min BarrelDist: {barrelMinDists}, Min LegDist: {legMinDist} ")
         barrel = 0
         isBarrel = False
 
@@ -248,16 +249,17 @@ class TransformPublisher(Node):
         msg.data = STATUS.PATH_CLEAR
         count1 = 0
         follow_dist = self.get_parameter('/ObstacleDetectDistance').value
+
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
              follow_dist *= 3/4
-        
+
         # scan within the FOV in front and detect if there is an obstacle
         half_FOV = self.get_parameter("/ObstacleFOV").value / 2
         right_FOV = (math.pi / 2) - half_FOV
         left_FOV = (math.pi / 2) + half_FOV
         for i in range(len(scan.ranges)):
             if right_FOV < i * scan.angle_increment < left_FOV:
-                if scan.ranges[i] < follow_dist:                                    
+                if scan.ranges[i] < follow_dist:
                     if count1 > 1:                                                  # get at least two points of obstacle in front to trigger found
                         msg.data = STATUS.OBJECT_SEEN
                     count1+=1
