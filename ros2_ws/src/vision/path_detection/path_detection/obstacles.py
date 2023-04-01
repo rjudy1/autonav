@@ -59,7 +59,7 @@ class TransformPublisher(Node):
         self.declare_parameter("/LIDARTrimMin", 2.8808)         # radians = 165.0575 degrees
         self.declare_parameter("/LIDARTrimMax", 0.2576)         # radians = 14.7 degrees
         self.declare_parameter("/ObstacleFOV", math.pi/6)       #
-        self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters = 4.9213 ft
+        self.declare_parameter("/ObstacleDetectDistance", 1.5)  # meters = 4.9213 ft  # may need to fine tune param to detect farther out
         self.declare_parameter("/ObstacleToPlainDistance", 2.0)
         self.declare_parameter("/ObstacleNoiseMinDist", 0.3)
         self.declare_parameter("/FollowingDirection", 1)        # meters
@@ -251,7 +251,7 @@ class TransformPublisher(Node):
         follow_dist = self.get_parameter('/ObstacleDetectDistance').value
 
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
-             follow_dist *= 3/4
+             follow_dist *= 3/4                                                     # may need to param to detect further out but follow just as close
 
         # scan within the FOV in front and detect if there is an obstacle
         half_FOV = self.get_parameter("/ObstacleFOV").value / 2
