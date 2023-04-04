@@ -129,10 +129,13 @@ class TransformPublisher(Node):
             if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
                 scan.ranges[point] = inf                                                                            
             else:
-                # handles if we are still on the same obj 
+                # handles if we are still on the same obj
+                # uses a radial cordinate system 
                 #objPoints.append((point, scan.ranges[point])) # may be able to get ride of
-                objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
                 #minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
+                
+                # uses a cartesian coordinate system
+                objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
                 minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
                 # handles if we have found a different object
                 if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
