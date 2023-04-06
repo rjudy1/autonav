@@ -129,16 +129,16 @@ class TransformPublisher(Node):
             if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
                 scan.ranges[point] = inf                                                                            
             else:
-                # added if statement to account for one barrel
-            # handles if we are still on the same obj
-                if ((len(barrelsFound) != 0) and (len(legsFound) <= 1)):
-                    # uses a radial cordinate system
-                    objPoints.append((point, scan.ranges[point])) # may be able to get ride of
-                    minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
-                else :
-                    # uses a cartesian coordinate system
-                    objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
-                    minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
+                # added if statement to account for one barrel - may be wrong
+                # handles if we are still on the same obj
+                #if ((len(barrelsFound) != 0) and (len(legsFound) <= 1)):
+                #    # uses a radial cordinate system
+                #objPoints.append((point, scan.ranges[point])) # may be able to get ride of
+                #minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
+                #else :
+                # uses a cartesian coordinate system
+                objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
+                minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
                 # handles if we have found a different object
                 if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
                     # handles legs

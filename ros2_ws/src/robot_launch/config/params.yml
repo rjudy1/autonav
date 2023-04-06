@@ -17,9 +17,9 @@
 /fsm:
     ros__parameters:
         /TimerRate:  0.05                       # rate at which to check and do state specified behavior
-        /TurnSpeed:  5 #20
-        /SlightTurn: 3 #18
-        /ExitAngle:  0.1 #0.1
+        /TurnSpeed:  6 #5 #20
+        /SlightTurn: 5 #3 #18
+        /ExitAngle:  1.15 #0.1
         # Encoder Box Following (state 11-12) Parameters
         /EncoderBoxTurnLeft: False              # used to configure the turn direction. False -> turn right
         /EncoderBoxDistance: 0.3                # distance in meters of each side of the encoder's "box"
@@ -35,7 +35,7 @@
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
         /LineDetectDistance:        1.05
-        /Debug:                     False
+        /Debug:                     True
 
 
 /obstacles:
@@ -45,9 +45,9 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.3  #1.1        # meters = 43.307 inches
-        /ObstacleToPlainDistance:   1.5         # meters = 59.055 inches
-        /ObstacleNoiseMinDist:      0.24 #0.3         # meters = 11.81 inches
+        /ObstacleDetectDistance:    1.1  #1.1        # meters = 43.307 inches
+        /ObstacleToPlainDistance:   3.1         # meters =  inches
+        /ObstacleNoiseMinDist:      0.3 #0.3         # meters = 11.81 inches
         /Debug:                     True
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
