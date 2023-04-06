@@ -23,6 +23,7 @@ from sensor_msgs.msg import LaserScan
 
 import cv2
 from PIL import ImageOps
+from PIL import Image as im
 import time
 from cv_bridge import CvBridge
 
@@ -282,34 +283,24 @@ class TransformPublisher(Node):
         kernel = np.ones((5,5),np.uint8)
         ksize = (5,5)
 
-        #image = Image.open('3m.jpg')
-        image = cv2.imread('3m.jpg')
-
-        bridge = CvBridge()
-        cv_image = bridge.imgmsg_to_cv2(image, desired_encoding='passthrough')
-
         # Convert the image to grayscale
         img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # Invert the image (black becomes white, white becomes black)
-        img_inv = abs(img_gray - 255)
-
+        img_inv = np.array(ImageOps.invert(im.fromarray(img_gray)))
+        
         # Color the non-black spots more white
         factor = 1.5  # Change this factor to adjust the degree of whitening
-        img_white = ImageOps.autocontrast(Image.fromarray(img_inv), cutoff=0, ignore=255).point(lambda i: i*factor)
+        img_white = ImageOps.autocontrast(im.fromarray(img_inv), cutoff=0, ignore=255).point(lambda i: i*factor)
 
         numpydata = np.array(img_white)
-
         #removing other componets
         (thresh, blackAndWhiteImage) = cv2.threshold(numpydata, 127, 255, cv2.THRESH_BINARY)
 
         # HSV filtering
-        #grey = hsv_filter(image, use_white=True)
-        dilation = cv2.dilate(blackAndWhiteImage,kernel,iterations = 10)
-        erosion = cv2.erode(dilation,kernel,iterations = 10)
-
+        dilation = cv2.dilate(blackAndWhiteImage,kernel,iterations = 2)
+        erosion = cv2.erode(dilation,kernel,iterations = 2)
         closing = cv2.morphologyEx(erosion, cv2.MORPH_CLOSE, kernel)
-
 
         # Apply HoughCircles to detect circles
         circles = cv2.HoughCircles(closing, cv2.HOUGH_GRADIENT_ALT, 1, 1, param1=100, param2=0.1, minRadius=100, maxRadius=0)
@@ -319,6 +310,7 @@ class TransformPublisher(Node):
         thickness = 50
 
         im_rgb = cv2.cvtColor(closing, cv2.COLOR_BGR2RGB)
+        im_rgb_withMarker=im_rgb
         t2=time.time()
         # Draw detected circles on the original image
         if circles is not None:
@@ -326,21 +318,21 @@ class TransformPublisher(Node):
             i =0
             for (x, y, r) in circles:
                 cv2.circle(im_rgb, (x, y), r, (0, 0, 0), 2)
-                print(x, y, r)
+                self.get_logger().info(x, y, r)
                 i=i+1
-                cv2.drawMarker(im_rgb, (x, y), color, markerType, markerSize, thickness)
+                cv2.drawMarker(im_rgb_withMarker, (x, y), color, markerType, markerSize, thickness)
 
         t3=time.time()
-        print('time before loop')
-        print(t2-t1)
-        print('time after loop')
-        print(t3-t1)
-        print("loop took:")
-        print(t3-t2)
-        cv2.imwrite("originN.png", im_rgb)
-        params = im_rgb
+        self.get_logger().info('time before loop')
+        self.get_logger().info(t2-t1)
+        self.get_logger().info('time after loop')
+        self.get_logger().info(t3-t1)
+        self.get_logger().info("loop took:")
+        self.get_logger().info(t3-t2)
+        # This might not work.
+        cv2.imwrite("pothole"+str(t1)+".png", im_rgb_withMarker)
 
-
+        morph=im_rgb
         #*************************************************************
 
         detector = cv2.SimpleBlobDetector_create(params)
