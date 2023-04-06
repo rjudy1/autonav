@@ -256,7 +256,7 @@ class TransformPublisher(Node):
         follow_dist = self.get_parameter('/ObstacleDetectDistance').value
 
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
-             follow_dist *= 3/4                                                     # may need to param to detect further out but follow just as close
+             follow_dist *= 5/6   # changed from 3/4 with follow dist of 1.1        # may need to param to detect further out but follow just as close
 
         # scan within the FOV in front and detect if there is an obstacle
         half_FOV = self.get_parameter("/ObstacleFOV").value / 2
