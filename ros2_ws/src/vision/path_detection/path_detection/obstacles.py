@@ -20,6 +20,11 @@ from std_msgs.msg import Int32
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
+import cv2
+from PIL import ImageOps
+from PIL import Image as im
+import time
+from cv_bridge import CvBridge
 @dataclass
 class Circle:
     xcenter: float
@@ -46,8 +51,13 @@ class TransformPublisher(Node):
         self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
 
+        self.get_logger().info('START***************************************')
+
+
         # Subscribe to the camera color image and unaltered laser scan
-        # self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
+        self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
+
+        self.get_logger().info('DONE***************************************')
         self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
 
         # Subscribe to state updates for the robot
@@ -248,7 +258,61 @@ class TransformPublisher(Node):
         params.minInertiaRatio = .45
         params.maxInertiaRatio = 1
         params.filterByColor = False
+        #*************************************************************
+        t1 = time.time()
+        kernel = np.ones((5,5),np.uint8)
+        ksize = (5,5)
 
+        # Convert the image to grayscale
+        img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Invert the image (black becomes white, white becomes black)
+        img_inv = np.array(ImageOps.invert(im.fromarray(img_gray)))
+
+        # Color the non-black spots more white
+        factor = 1.5  # Change this factor to adjust the degree of whitening
+        img_white = ImageOps.autocontrast(im.fromarray(img_inv), cutoff=0, ignore=255).point(lambda i: i * factor)
+        numpydata = np.array(img_white)
+
+        # removing other componets
+        (thresh, blackAndWhiteImage) = cv2.threshold(numpydata, 127, 255, cv2.THRESH_BINARY)
+
+        # HSV filtering
+        dilation = cv2.dilate(blackAndWhiteImage, kernel, iterations=2)
+        erosion = cv2.erode(dilation, kernel, iterations=2)
+        closing = cv2.morphologyEx(erosion, cv2.MORPH_CLOSE, kernel)
+
+        # Apply HoughCircles to detect circles
+        circles = cv2.HoughCircles(closing, cv2.HOUGH_GRADIENT_ALT, 1, 1, param1=100, param2=0.1, minRadius=100, maxRadius=0)
+        color = (0, 255, 0)
+        markerType = cv2.MARKER_CROSS
+        markerSize = 20
+        thickness = 10
+
+        im_rgb = cv2.cvtColor(closing, cv2.COLOR_BGR2RGB)
+        im_rgb_withMarker=im_rgb
+        t2=time.time()
+        # Draw detected circles on the original image
+        if circles is not None:
+            circles = np.round(circles[0, :]).astype("int")
+            i =0
+            for (x, y, r) in circles:
+                cv2.circle(im_rgb, (x, y), r, (0, 0, 0), 2)
+                #self.get_logger().info((x, y, r))
+                i=i+1
+                cv2.drawMarker(im_rgb_withMarker, (x, y), color, markerType, markerSize, thickness)
+
+        t3=time.time()
+        """
+        self.get_logger().info('time before loop')
+        self.get_logger().info(t2-t1)
+        self.get_logger().info('time after loop')
+        self.get_logger().info(t3-t1)
+        self.get_logger().info("loop took:")
+        self.get_logger().info(t3-t2)
+        """
+        morph = im_rgb_withMarker
+        #*************************************************************
         detector = cv2.SimpleBlobDetector_create(params)
         keypoints = detector.detect(morph)  # find the blobs meeting the parameters
         self.circles = []

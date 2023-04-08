@@ -35,7 +35,7 @@
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
         /LineDetectDistance:        1.05
-        /Debug:                     False
+        /Debug:                     True
 
 
 /obstacles:
@@ -46,7 +46,7 @@
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
         /ObstacleDetectDistance:    1.1  # meters = 3.6089 ft
-        /Debug:                     False
+        /Debug:                     True
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
