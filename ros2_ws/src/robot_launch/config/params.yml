@@ -45,9 +45,9 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.1  #1.1        # meters = 43.307 inches
-        /ObstacleToPlainDistance:   3.1         # meters =  inches
-        /ObstacleNoiseMinDist:      0.3 #0.3         # meters = 11.81 inches
+        /ObstacleDetectDistance:    1.1275  #1.1        # # meters = # inches
+        /ObstacleToPlainDistance:   3.1                # meters =  inches
+        /ObstacleNoiseMinDist:      0.29 #0.3          # # meters = # inches
         /Debug:                     True
 
 # enter waypoints north to south in converted to dd.mmmmmmm form

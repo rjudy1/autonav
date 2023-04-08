@@ -112,6 +112,9 @@ class TransformPublisher(Node):
         # identify and save points for possible legs and barrels
         threshold = 0.08 # was 0.08 # a param - max distance between points to check if it's apart of same obj
         objPoints = []
+        objCorners = []
+        pointMax = 0
+        pointMin = 0
         legsFound = []
         legLRCorners = []
         legMinDist = []
@@ -129,13 +132,10 @@ class TransformPublisher(Node):
             if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
                 scan.ranges[point] = inf                                                                            
             else:
-                # added if statement to account for one barrel - may be wrong
-                # handles if we are still on the same obj
-                #if ((len(barrelsFound) != 0) and (len(legsFound) <= 1)):
-                #    # uses a radial cordinate system
+                # uses a radial cordinate system
                 #objPoints.append((point, scan.ranges[point])) # may be able to get ride of
                 #minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
-                #else :
+
                 # uses a cartesian coordinate system
                 objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
                 minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
@@ -154,6 +154,10 @@ class TransformPublisher(Node):
                         barrelMinDists.append(minDist)
                         minDist = 3
                         objPoints = []
+                else:
+                    # get the first and last point in the scan
+                    pointMax = max(pointMax, objPoints[0][0])
+                    pointMin = max(pointMin, objPoints[0][0])
 
         # need to keep track of which barrel we are on
         barrelCount = len(barrelsFound)
@@ -165,25 +169,37 @@ class TransformPublisher(Node):
         padding = 2
         isBarrel = False
 
-        # replace the points in the scan based off of the corners making a tangential plane to the obj
-        for scanPoint in range(len(scan.ranges)):
-            # if it is a barricade
-            if (0 < legCount < 4): # changed from 3 to 4 # may be able to get of legLRCorners check
-                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and legLRCorners[0] <= scanPoint:
+        # added if to compensate for not catching every single barrel orientation
+        # NEW
+        if ((barrelCount != 0) and (legCount != 0)):
+            #OLD
+            # replace the points in the scan based off of the corners making a tangential plane to the obj
+            for scanPoint in range(len(scan.ranges)):
+                # if it is a barricade
+                if (0 < legCount < 4): # changed from 3 to 4 # may be able to get of legLRCorners check
+                    if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and legLRCorners[0] <= scanPoint:
+                        scan.ranges[scanPoint] = legMinDist
+                    elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= legLRCorners[1]:
+                        scan.ranges[scanPoint] = legMinDist
+                elif (legCount >= 4) and (legLRCorners[0]<= scanPoint <= legLRCorners[1]):
                     scan.ranges[scanPoint] = legMinDist
-                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= legLRCorners[1]:
-                    scan.ranges[scanPoint] = legMinDist
-            elif (legCount >= 4) and (legLRCorners[0]<= scanPoint <= legLRCorners[1]):
-                scan.ranges[scanPoint] = legMinDist
-            # if it is 1+ barrel(s)
-            if barrelLRCorners and (barrelLRCorners[barrel][0] - padding <= scanPoint <= barrelLRCorners[barrel][1] + padding):
-                scan.ranges[scanPoint] = barrelMinDists[barrel]
-                isBarrel = True
-            elif (isBarrel == True) and ((barrel + 1) < barrelCount):
-                barrel = barrel + 1
+                # if it is 1+ barrel(s)
+                if barrelLRCorners and (barrelLRCorners[barrel][0] - padding <= scanPoint <= barrelLRCorners[barrel][1] + padding):
+                    scan.ranges[scanPoint] = barrelMinDists[barrel]
+                    isBarrel = True
+                elif (isBarrel == True) and ((barrel + 1) < barrelCount):
+                    barrel = barrel + 1
+                else:
+                    isBarrel = False
+            # OLD
+            # NEW
             else:
-                isBarrel = False
-
+                self.get_logger().info(f"Didn't find barrel or barricade")
+                for scanPoint in range(len(scan.ranges)):
+                    if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and pointMin - padding <= scanPoint:
+                        scan.ranges[scanPoint] = minDist
+                    elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointMax + padding:
+                        scan.ranges[scanPoint] = minDist
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
     # third portion replaces obstacle in front and time of flight sensors
