@@ -25,7 +25,6 @@ from PIL import ImageOps
 from PIL import Image as im
 import time
 from cv_bridge import CvBridge
-
 @dataclass
 class Circle:
     xcenter: float
@@ -54,11 +53,11 @@ class TransformPublisher(Node):
 
         self.get_logger().info('START***************************************')
 
+
         # Subscribe to the camera color image and unaltered laser scan
         self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
 
         self.get_logger().info('DONE***************************************')
-        
         self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
 
         # Subscribe to state updates for the robot
@@ -175,8 +174,8 @@ class TransformPublisher(Node):
             #                  scan.intensities[i] = 47
             # print(". . . . . . . Made it to Finish . . . . .")
         # FINISH
-        """ 
-        self.lidar_pub.publish(scan) 
+        """
+        self.lidar_pub.publish(scan)
 
         # scan in the range in front of robot to check for obstacles
         msg = String()
@@ -236,16 +235,8 @@ class TransformPublisher(Node):
         image = bridge_image(image, "bgr8")
         # slice edges
         y, x = image.shape[0], image.shape[1]
-        """
-        image = image[int(y * self.get_parameter('/PotholeDetectCropTop').value):
-                      -int(y * self.get_parameter('/PotholeDetectCropBottom').value),
-                      int(x * self.get_parameter('/PotholeDetectCropSide').value):
-                      -int(x * self.get_parameter('/PotholeDetectCropSide').value)]
-        """
-        image = image[int(y * self.get_parameter('/PotholeDetectCropTop').value):
-                      -int(y * self.get_parameter('/PotholeDetectCropBottom').value),
-                      int(x * self.get_parameter('/PotholeDetectCropSide').value):
-                      -int(x * self.get_parameter('/PotholeDetectCropSide').value)]
+        image = image[int(y * self.get_parameter('/LineDetectCropTop').value):-int(y * self.get_parameter('/LineDetectCropBottom').value),
+                int(x * self.get_parameter('/LineDetectCropSide').value):-int(x * self.get_parameter('/LineDetectCropSide').value)]
 
         # Apply HSV Filter
         gray = hsv_filter(image)
@@ -267,8 +258,7 @@ class TransformPublisher(Node):
         params.minInertiaRatio = .45
         params.maxInertiaRatio = 1
         params.filterByColor = False
-<<<<<<< Updated upstream
-        #*******************************************************************************
+        #*************************************************************
         t1 = time.time()
         kernel = np.ones((5,5),np.uint8)
         ksize = (5,5)
@@ -281,23 +271,23 @@ class TransformPublisher(Node):
 
         # Color the non-black spots more white
         factor = 1.5  # Change this factor to adjust the degree of whitening
-        img_white = ImageOps.autocontrast(im.fromarray(img_inv), cutoff=0, ignore=255).point(lambda i: i*factor)
-
+        img_white = ImageOps.autocontrast(im.fromarray(img_inv), cutoff=0, ignore=255).point(lambda i: i * factor)
         numpydata = np.array(img_white)
-        #removing other componets
+
+        # removing other componets
         (thresh, blackAndWhiteImage) = cv2.threshold(numpydata, 127, 255, cv2.THRESH_BINARY)
 
         # HSV filtering
-        dilation = cv2.dilate(blackAndWhiteImage,kernel,iterations = 2)
-        erosion = cv2.erode(dilation,kernel,iterations = 2)
+        dilation = cv2.dilate(blackAndWhiteImage, kernel, iterations=2)
+        erosion = cv2.erode(dilation, kernel, iterations=2)
         closing = cv2.morphologyEx(erosion, cv2.MORPH_CLOSE, kernel)
 
         # Apply HoughCircles to detect circles
         circles = cv2.HoughCircles(closing, cv2.HOUGH_GRADIENT_ALT, 1, 1, param1=100, param2=0.1, minRadius=100, maxRadius=0)
         color = (0, 255, 0)
         markerType = cv2.MARKER_CROSS
-        markerSize = 90
-        thickness = 50
+        markerSize = 20
+        thickness = 10
 
         im_rgb = cv2.cvtColor(closing, cv2.COLOR_BGR2RGB)
         im_rgb_withMarker=im_rgb
@@ -305,11 +295,12 @@ class TransformPublisher(Node):
         # Draw detected circles on the original image
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
+            i =0
             for (x, y, r) in circles:
                 cv2.circle(im_rgb, (x, y), r, (0, 0, 0), 2)
-                #self.get_logger().info(x, y, r)
-                cv2.drawMarker(im_rgb_withMarker, (x, y), color, markerType,
-                               markerSize, thickness)
+                #self.get_logger().info((x, y, r))
+                i=i+1
+                cv2.drawMarker(im_rgb_withMarker, (x, y), color, markerType, markerSize, thickness)
 
         t3=time.time()
         """
@@ -320,29 +311,8 @@ class TransformPublisher(Node):
         self.get_logger().info("loop took:")
         self.get_logger().info(t3-t2)
         """
-        # cv2.imwrite("pothole"+str(t1)+".png", im_rgb_withMarker)
-=======
-
-
-        #***************************************************************
-        self.get_logger().info('*5*********************')
-
-
-
-
-
-
-
-
-
-        self.get_logger().info('*6*********************')
-
+        morph = im_rgb_withMarker
         #*************************************************************
->>>>>>> Stashed changes
-
-        morph=im_rgb_withMarker
-        
-        #*****************************************************************************
         detector = cv2.SimpleBlobDetector_create(params)
         keypoints = detector.detect(morph)  # find the blobs meeting the parameters
         self.circles = []
