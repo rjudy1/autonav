@@ -299,21 +299,23 @@ class TransformPublisher(Node):
             i =0
             for (x, y, r) in circles:
                 cv2.circle(im_rgb, (x, y), r, (0, 0, 0), 2)
-                self.get_logger().info(x, y, r)
+                #self.get_logger().info(x, y, r)
                 i=i+1
                 cv2.drawMarker(im_rgb_withMarker, (x, y), color, markerType, markerSize, thickness)
 
         t3=time.time()
+        """
         self.get_logger().info('time before loop')
         self.get_logger().info(t2-t1)
         self.get_logger().info('time after loop')
         self.get_logger().info(t3-t1)
         self.get_logger().info("loop took:")
         self.get_logger().info(t3-t2)
+        """
         # This might not work.
-        cv2.imwrite("pothole"+str(t1)+".png", im_rgb_withMarker)
+        # cv2.imwrite("pothole"+str(t1)+".png", im_rgb_withMarker)
 
-        morph=im_rgb
+        morph=im_rgb_withMarker
         #*************************************************************
 
         # Convert the image to grayscale
