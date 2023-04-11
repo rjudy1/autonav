@@ -41,7 +41,7 @@
 /obstacles:
     ros__parameters:
         /ObstacleFOV:               0.8754  # radians = 50.1567 degrees
-        /PotholeDetectCropTop:      0.3
+        /PotholeDetectCropTop:      0.0
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
@@ -56,8 +56,8 @@
         ## Practice Coordinates
         /PracticeInitialLat:   0.0
         /PracticeInitialLon:   0.0
-        /PracticeWaypointLat1: 39.4477519 
-        /PracticeWaypointLon1: -83.4877888 
+        /PracticeWaypointLat1: 39.4477519
+        /PracticeWaypointLon1: -83.4877888
         /PracticeWaypointLat2: 39.4477519
         /PracticeWaypointLon2: -83.4877888
         /PracticeWaypointLat3: 39.4477519
@@ -84,7 +84,7 @@
         # found south = 42.4007429-83.1316116
         /WaypointLat4:              42.400749623333336   # south real -- adjusted about a meter south
         /WaypointLon4:              -83.131591085  # going north use = -83.131591085 , south same
-        
+
         /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
