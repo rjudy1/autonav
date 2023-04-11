@@ -78,6 +78,10 @@ class TransformPublisher(Node):
         self.declare_parameter('/LineDetectCropTop', 0.0)
         self.declare_parameter('/LineDetectCropBottom', 0.2)
         self.declare_parameter('/LineDetectCropSide', 0.2)
+
+        self.declare_parameter("/PotholeDetectCropTop", 0.4)
+        self.declare_parameter("/PotholeDetectCropBottom", 0.2)
+        self.declare_parameter("/PotholeDetectCropSide", 0.2)
         self.declare_parameter("/PotholeBufferSize", 5)
 
         self.declare_parameter('/Debug', False)
