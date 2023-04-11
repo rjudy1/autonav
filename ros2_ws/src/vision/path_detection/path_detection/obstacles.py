@@ -242,10 +242,10 @@ class TransformPublisher(Node):
         image = bridge_image(image, "bgr8")
         # slice edges
         y, x = image.shape[0], image.shape[1]
-        image = image[int(y * self.get_parameter('/LineDetectCropTop').value):-int(
-            y * self.get_parameter('/LineDetectCropBottom').value),
-                int(x * self.get_parameter('/LineDetectCropSide').value):-int(
-                    x * self.get_parameter('/LineDetectCropSide').value)]
+        image = image[int(y * self.get_parameter('/PotholeDetectCropTop').value):-int(
+            y * self.get_parameter('/PotholeDetectCropBottom').value),
+                int(x * self.get_parameter('/PotholeDetectCropSide').value):-int(
+                    x * self.get_parameter('/PotholeDetectCropSide').value)]
 
         # Apply HSV Filter
         gray = hsv_filter(image)

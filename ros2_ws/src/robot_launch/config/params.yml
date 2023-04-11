@@ -41,7 +41,7 @@
 /obstacles:
     ros__parameters:
         /ObstacleFOV:               0.8754  # radians = 50.1567 degrees
-        /PotholeDetectCropTop:      0.0
+        /PotholeDetectCropTop:      0.4
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
