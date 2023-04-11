@@ -267,6 +267,7 @@ class TransformPublisher(Node):
         params.minInertiaRatio = .45
         params.maxInertiaRatio = 1
         params.filterByColor = False
+<<<<<<< Updated upstream
         #*******************************************************************************
         t1 = time.time()
         kernel = np.ones((5,5),np.uint8)
@@ -320,6 +321,24 @@ class TransformPublisher(Node):
         self.get_logger().info(t3-t2)
         """
         # cv2.imwrite("pothole"+str(t1)+".png", im_rgb_withMarker)
+=======
+
+
+        #***************************************************************
+        self.get_logger().info('*5*********************')
+
+
+
+
+
+
+
+
+
+        self.get_logger().info('*6*********************')
+
+        #*************************************************************
+>>>>>>> Stashed changes
 
         morph=im_rgb_withMarker
         
