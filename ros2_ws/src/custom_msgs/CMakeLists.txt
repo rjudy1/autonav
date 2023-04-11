@@ -28,6 +28,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/EncoderData.msg"
   "msg/SpeedCmd.msg"
   "msg/LightCmd.msg"
+  "msg/ImuData.msg"
 )
 
 ament_package()

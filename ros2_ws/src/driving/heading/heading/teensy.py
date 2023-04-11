@@ -9,6 +9,7 @@
 
 from custom_msgs.msg import EncoderData
 from custom_msgs.msg import LightCmd
+from custom_msgs.msg import ImuData
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32
@@ -51,6 +52,7 @@ class Teensy(Node):
         #  publish for right and left encoder distances
         self.rate = self.get_parameter('/TeensyUpdateDelay').value
         self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
+        self.imu_pub = self.create_publisher(ImuData, 'imu_data', 10)
         self.timer = self.create_timer(self.rate, self.timer_callback)
         self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 5)
         self.wheel_sub = self.create_subscription(String, "wheel_distance", self.wheel_callback, 10)
@@ -104,7 +106,7 @@ class Teensy(Node):
         elif self.state == STATE.OBJECT_TO_LINE or self.state == STATE.FIND_LINE or \
                 self.state == STATE.LINE_ORIENT or self.state == STATE.ORIENT_TO_GPS or \
                 self.state == STATE.GPS_EXIT or self.state == STATE.ENCODER_BOX_FOLLOW_STRAIGHT or \
-                self.state == STATE.ENCODER_BOX_FOLLOW_TURN:
+                self.state == STATE.ENCODER_BOX_FOLLOW_TURN or self.state == STATE.IMU_HEADING_ACCURACY_TEST:
             self.following_mode = FollowMode.eeTransition
             self.MAX_CHANGE = 2
             self.boost_count = 0
@@ -115,7 +117,6 @@ class Teensy(Node):
         self.left_offset = -int(data[1])
         self.right_offset = -int(data[2])
 
-        # CHECK THIS CODE
         self.serialPort.write("M,89,89,**".encode())
         # self.get_logger().info("WAIT: Enable power to motors")
         # x = input("Hit enter when ready to proceed")
@@ -311,6 +312,40 @@ class Teensy(Node):
                 self.encoder_pub.publish(msg)
             else:
                 self.serialPort.flushInput()
+
+            self.serialPort.write('I,**'.encode('utf-8'))
+            read = self.serialPort.readline().decode('utf-8')
+            data = read.split(',')
+            msg = ImuData()
+            if data[0] == 'ABS' and len(data) == 5 and data[4] == '**\r\n':
+                msg.abs_x = float(data[1])
+                msg.abs_y = float(data[2])
+                msg.abs_z = float(data[3])  
+            else:
+                self.serialPort.flushInput()
+                return     
+            
+            read = self.serialPort.readline().decode('utf-8')
+            data = read.split(',')
+            if data[0] == 'Euler' and len(data) == 5 and data[4] == '**\r\n':
+                msg.euler_x = float(data[1])
+                msg.euler_y = float(data[2])
+                msg.euler_z = float(data[3])  
+            else:
+                self.serialPort.flushInput()
+                return 
+            
+            read = self.serialPort.readline().decode('utf-8')
+            data = read.split(',')
+            if data[0] == 'Quaterion' and len(data) == 6 and data[5] == '**\r\n':
+                msg.quat_w = float(data[1])
+                msg.quat_x = float(data[2])
+                msg.quat_y = float(data[3])  
+                msg.quat_z = float(data[4])  
+            else:
+                self.serialPort.flushInput()
+                return 
+            self.imu_pub.publish(msg)    
         except serial.serialutil.SerialException:
             self.get_logger().info("encoder error in serial port")
         except Exception as ex:

@@ -36,7 +36,8 @@ class SensorMsg:
 class GPS(Node):
     def __init__(self):
         super().__init__("gps")
-        
+
+        self.declare_parameter('/StartState', 0)
         self.declare_parameter('/SensorInput', 0)
         self.declare_parameter('/InputInitialCondition', False)
         self.declare_parameter('/InitialLat', 0.0)
@@ -66,6 +67,7 @@ class GPS(Node):
         self.declare_parameter('/PracticeWaypointLon3', 0.0)
         self.declare_parameter('/PracticeWaypointLat4', 0.0)
         self.declare_parameter('/PracticeWaypointLon4', 0.0)
+
 
         self.DISTANCE_GOAL = self.get_parameter('/GPSFollowGoal').value
         self.line_to_gps = self.get_parameter('/LineToGPSTrans').value
@@ -114,7 +116,7 @@ class GPS(Node):
 
         # Subscribe to state updates for the robot
         self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
-        self.state = STATE.LINE_FOLLOWING
+        self.state = self.get_parameter('/StartState').value
 
         # process GPS data at 2 Hz
         self.timer = self.create_timer(.45, self.process_gps_data)
@@ -132,7 +134,7 @@ class GPS(Node):
             self.past_loc = complex(IC_LAT, IC_LON)
         else:
             self.past_loc = self.take_reading()
-        # self.target_loc.append(self.past_loc)  # set initial position as end goal
+        
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
 
