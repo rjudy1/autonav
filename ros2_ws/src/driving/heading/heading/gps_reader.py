@@ -39,7 +39,7 @@ class GPS(Node):
         
         self.declare_parameter('/SensorInput', 0)
         self.declare_parameter('/InputInitialCondition', False)
-        self.declare_parameter('/UseAlphaBetaGamma', True)
+        self.declare_parameter('/FilterType', 0)
         self.declare_parameter('/Alpha', 0.5)
         self.declare_parameter('/Beta', 0.5)
         self.declare_parameter('/Gamma', 0.5)
@@ -210,7 +210,7 @@ class GPS(Node):
     def process_gps_data(self):
         loc = self.take_reading()  # get the new reading
 
-        if self.get_parameter('/UseAlphaBetaGamma').value:
+        if self.get_parameter('/FilterType').value == 1: # alpha-beta-gamma filter
             # Prediction stage
             self.lat_predict = self.lat_filter + self.lat_dot_filter + self.lat_dot_dot_filter/2
             self.lat_dot_predict = self.lat_dot_filter + self.lat_dot_dot_filter
@@ -253,6 +253,8 @@ class GPS(Node):
             self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
 
             loc = complex(self.lat_filter, self.lon_filter)
+        elif self.get_parameter('/FilterType').value == 2: 
+            self.lat_filter = self.lat_filter + self.alpha_lat*
 
         # Check if we are at the waypoint
         distance = self.check_waypoint(loc)
