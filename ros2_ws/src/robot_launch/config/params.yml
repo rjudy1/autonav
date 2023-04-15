@@ -19,7 +19,7 @@
         /TimerRate:  0.05                       # rate at which to check and do state specified behavior
         /TurnSpeed:  6 #5 #20
         /SlightTurn: 5 #3 #18
-        /ExitAngle:  1.15 #0.1
+        /ExitAngle:  1.15  #1.15 #0.1
         # Encoder Box Following (state 11-12) Parameters
         /EncoderBoxTurnLeft: False              # used to configure the turn direction. False -> turn right
         /EncoderBoxDistance: 0.3                # distance in meters of each side of the encoder's "box"
@@ -45,7 +45,7 @@
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.1275  #1.1        # # meters = # inches
+        /ObstacleDetectDistance:    1.25  #1.1        # # meters = # inches
         /ObstacleToPlainDistance:   3.1                # meters =  inches
         /ObstacleNoiseMinDist:      0.29 #0.3          # # meters = # inches
         /Debug:                     True

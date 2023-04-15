@@ -108,12 +108,12 @@ class TransformPublisher(Node):
 
     # new def to squash bad values and to detect and paint a plane on each barricade/barrel
     def lidar_ObjToPlane(self, scan):
-        
+
         # identify and save points for possible legs and barrels
         threshold = 0.08 # was 0.08 # a param - max distance between points to check if it's apart of same obj
         objPoints = []
         objCorners = []
-        pointMax = 0
+        pointMax = 155
         pointMin = 0
         legsFound = []
         legLRCorners = []
@@ -130,7 +130,7 @@ class TransformPublisher(Node):
         for point in range(len(scan.ranges)-2):
             # get rid of noise values that are too close/far
             if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
-                scan.ranges[point] = inf                                                                            
+                scan.ranges[point] = inf
             else:
                 # uses a radial cordinate system
                 #objPoints.append((point, scan.ranges[point])) # may be able to get ride of
@@ -140,6 +140,7 @@ class TransformPublisher(Node):
                 objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
                 minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
                 # handles if we have found a different object
+                """
                 if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
                     # handles legs
                     if 1 < len(objPoints) < 14: #  can param if needed
@@ -155,22 +156,30 @@ class TransformPublisher(Node):
                         minDist = 3
                         objPoints = []
                 else:
-                    # get the first and last point in the scan
-                    pointMax = max(pointMax, objPoints[0][0])
-                    pointMin = max(pointMin, objPoints[0][0])
+                """
+                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT):
+                    pointMin = min(pointMax, objPoints[0][0])
+                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT):
+                    pointMax = max(pointMin, objPoints[0][0])
+                # get the first and last point in the scan
+
+
 
         # need to keep track of which barrel we are on
-        barrelCount = len(barrelsFound)
-        self.get_logger().info(f"Barrels: {barrelCount}, corners: {barrelLRCorners}")
-        legCount = len(legsFound) # assuming only one barricade in view for this function
-        self.get_logger().info(f"Legs: {legCount}, corners: {legLRCorners}")
-        self.get_logger().info(f"Min BarrelDist: {barrelMinDists}, Min LegDist: {legMinDist}")
-        barrel = 0
-        padding = 2
-        isBarrel = False
+        #barrelCount = len(barrelsFound)
+        #self.get_logger().info(f"Barrels: {barrelCount}, corners: {barrelLRCorners}")
+        #legCount = len(legsFound) # assuming only one barricade in view for this function
+        #self.get_logger().info(f"Legs: {legCount}, corners: {legLRCorners}")
+        #self.get_logger().info(f"Min BarrelDist: {barrelMinDists}, Min LegDist: {legMinDist}")
+        #barrel = 0
+        padding = 2 # can param
+        #isBarrel = False
+        self.get_logger().info(f"MinDist: {minDist}")
+        self.get_logger().info(f"P Max: {pointMax}")
+        self.get_logger().info(f"P Min: {pointMin}")
 
         # added if to compensate for not catching every single barrel orientation
-        # NEW
+        """ # NEW
         if ((barrelCount != 0) and (legCount != 0)):
             #OLD
             # replace the points in the scan based off of the corners making a tangential plane to the obj
@@ -200,6 +209,14 @@ class TransformPublisher(Node):
                         scan.ranges[scanPoint] = minDist
                     elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointMax + padding:
                         scan.ranges[scanPoint] = minDist
+            """
+
+        for scanPoint in range(len(scan.ranges)):
+            if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and pointMin - padding <= scanPoint:
+                scan.ranges[scanPoint] = minDist
+            elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointMax + padding:
+                scan.ranges[scanPoint] = minDist
+
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
     # third portion replaces obstacle in front and time of flight sensors
@@ -221,7 +238,7 @@ class TransformPublisher(Node):
         fullScan = int(math.pi/scan.angle_increment)
         try:
             if len(scan.intensities) > 0:
-                i = 0                                                               
+                i = 0
                 while 0 <= i < startOffset:                                             # 0 is where the physical scan starts - don't record scan that are behind
                     i += 1
                     #self.get_logger().info(f"0 -> start off: 0 <= {i} < {startOffset}\n ")
@@ -234,9 +251,9 @@ class TransformPublisher(Node):
                 scan.ranges = new_ranges
                 scan.intensities = new_intensities
             else:                                                                   # same thing above just without intensities
-                i = 0                                                               
+                i = 0
                 while 0 <= i < startOffset:
-                    i += 1                                                          
+                    i += 1
                 while startOffset <= i < fullScan:
                     new_ranges.append(scan.ranges[i - (startOffset + 1)])
                     i += 1
@@ -272,7 +289,7 @@ class TransformPublisher(Node):
         follow_dist = self.get_parameter('/ObstacleDetectDistance').value
 
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
-             follow_dist *= 5/6   # changed from 3/4 with follow dist of 1.1        # may need to param to detect further out but follow just as close
+            follow_dist *= 5/6   # changed from 3/4 with follow dist of 1.1        # may need to param to detect further out but follow just as close
 
         # scan within the FOV in front and detect if there is an obstacle
         half_FOV = self.get_parameter("/ObstacleFOV").value / 2
