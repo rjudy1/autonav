@@ -254,7 +254,8 @@ class GPS(Node):
 
             loc = complex(self.lat_filter, self.lon_filter)
         elif self.get_parameter('/FilterType').value == 2: 
-            self.lat_filter = self.lat_filter + self.alpha_lat*
+            pass
+            # self.lat_filter = self.lat_filter + self.alpha_lat*
 
         # Check if we are at the waypoint
         distance = self.check_waypoint(loc)
