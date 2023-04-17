@@ -137,8 +137,8 @@ class GPS(Node):
         self.state = STATE.LINE_FOLLOWING
 
         # process GPS data at 2 Hz
-        self.timer = self.create_timer(.45, self.process_gps_data)
-        self.T = 0.5
+        self.timer = self.create_timer(.125, self.process_gps_data)
+        self.T = 0.125
 
         self.ser = serial.Serial(self.get_parameter('/Port').value, baudrate=115200)
         self.ser.readline()  # read one junk line to achieve line synchronization
@@ -253,8 +253,11 @@ class GPS(Node):
             self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
 
             loc = complex(self.lat_filter, self.lon_filter)
-        elif self.get_parameter('/FilterType').value == 2: 
-            self.lat_filter = self.lat_filter + self.alpha_lat*
+        elif self.get_parameter('/FilterType').value == 2: # another kind of filter... lol
+            self.lat_filter = self.lat_filter + self.alpha_lat*(loc.real-self.lat_filter)
+            self.lon_filter = self.lon_filter + self.alpha_lon*(loc.imag-self.lon_filter)
+
+            loc = complex(self.lat_filter, self.lon_filter)
 
         # Check if we are at the waypoint
         distance = self.check_waypoint(loc)

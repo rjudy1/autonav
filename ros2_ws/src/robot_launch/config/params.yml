@@ -52,8 +52,8 @@
         /SensorInput:           0     # 0 = GPS, 1 = shaft encoders
         /InputInitialCondition: True # True = use initial condition params, False = use take_reading() to get initial condition
         ## Alpha-Beta-Gamma Filter Parameters
-        /UseAlphaBetaGamma:     False  # True = use ABG filter to filter position measurements, False = use raw measurements
-        /Alpha:                 0.5     # Initial ABG filter parameters
+        /FilterType:            2       # 0 = raw data, 1 = ABG filter, 2 = LPF
+        /Alpha:                 0.1     # Initial ABG filter parameters
         /Beta:                  0.5     #
         /Gamma:                 0.5     #
         /InitialLatDot:         0.0     # Initial velocity in the latitudinal direction in GPS units (DMM)/second
