@@ -24,6 +24,9 @@
         /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
         /EncoderBoxDistance: 0.3   # distance in meters of each side of the encoder's "box"
         /EncoderBoxSpeed:    5.0   #
+        # Pothole state parameter
+        /PotholeSpeed: 8.0
+        /PotholeDistance: 0.3
 
 /rplidar_node:
     ros__parameters:

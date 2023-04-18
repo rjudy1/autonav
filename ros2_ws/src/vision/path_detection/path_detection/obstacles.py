@@ -94,6 +94,7 @@ class TransformPublisher(Node):
         self.history = np.zeros((self.BUFF_SIZE,), dtype=bool)
         self.history_idx = 0
         self.path_clear = True
+        self.pothole_found = False
 
         self.get_logger().info("Waiting for image/lidar topics...")
 
@@ -309,11 +310,10 @@ class TransformPublisher(Node):
         # Draw detected circles on the original image
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
-            i = 0
+            self.pothole_found=True
             for (x, y, r) in circles:
                 cv2.circle(im_rgb, (x, y), r, (0, 0, 0), 2)
                 # self.get_logger().info((x, y, r))
-                i = i + 1
                 cv2.drawMarker(im_rgb_withMarker, (x, y), color, markerType, markerSize, thickness)
 
         t3 = time.time()
