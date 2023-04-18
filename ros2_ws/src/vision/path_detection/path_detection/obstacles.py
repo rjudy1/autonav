@@ -121,13 +121,13 @@ class TransformPublisher(Node):
         barrelsFound = []
         barrelLRCorners = []
         barrelMinDists = []
-        minDist = 3 # can param
+        minDist = 10 # can param
 
         windowMax = self.get_parameter("/ObstacleToPlainDistance").value
         windowMin = self.get_parameter("/ObstacleNoiseMinDist").value
 
         # finds the point clusters in window and determines if it is a leg or barrel
-        for point in range(len(scan.ranges)-2):
+        for point in range(len(scan.ranges)): # changed len() - 2
             # get rid of noise values that are too close/far
             if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
                 scan.ranges[point] = inf
@@ -137,9 +137,12 @@ class TransformPublisher(Node):
                 #minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
 
                 # uses a cartesian coordinate system
-                objPoints.append((point, (scan.ranges[point] * math.sin(point * scan.angle_increment))))
+                objPoints.append(point)
                 minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
                 # handles if we have found a different object
+
+                # NEED TO FIX
+
                 """
                 if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
                     # handles legs
@@ -157,10 +160,12 @@ class TransformPublisher(Node):
                         objPoints = []
                 else:
                 """
-                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT):
-                    pointMin = min(pointMax, objPoints[0][0])
-                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT):
-                    pointMax = max(pointMin, objPoints[0][0])
+                self.get_logger().info(f"Point: {point}, objP: {objPoints[0]}")
+                self.get_logger().info(f"Point: {point}, objP: {objPoints[-1]}")
+                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and (point > objPoints[0]):
+                    pointMin = min(pointMax, point)
+                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and (point < objPoints[-1]):
+                    pointMax = max(pointMin, point)
                 # get the first and last point in the scan
 
 
@@ -210,7 +215,6 @@ class TransformPublisher(Node):
                     elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointMax + padding:
                         scan.ranges[scanPoint] = minDist
             """
-
         for scanPoint in range(len(scan.ranges)):
             if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and pointMin - padding <= scanPoint:
                 scan.ranges[scanPoint] = minDist
