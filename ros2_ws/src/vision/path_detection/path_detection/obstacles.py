@@ -294,10 +294,10 @@ class TransformPublisher(Node):
         # HSV filtering
         dilation = cv2.dilate(blackAndWhiteImage, kernel, iterations=2)
         erosion = cv2.erode(dilation, kernel, iterations=2)
-        closing = cv2.morphologyEx(erosion, cv2.MORPH_CLOSE, kernel)
+        # closing = cv2.morphologyEx(erosion, cv2.MORPH_CLOSE, kernel)
 
         # Apply HoughCircles to detect circles
-        circles = cv2.HoughCircles(closing, cv2.HOUGH_GRADIENT_ALT, 1, 1, param1=100, param2=0.1, minRadius=100,
+        circles = cv2.HoughCircles(erosion, cv2.HOUGH_GRADIENT_ALT, 1, 1, param1=100, param2=0.1, minRadius=100,
                                    maxRadius=0)
         color = (0, 255, 0)
         markerType = cv2.MARKER_CROSS
