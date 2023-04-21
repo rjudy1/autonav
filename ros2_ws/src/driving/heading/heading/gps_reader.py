@@ -191,10 +191,10 @@ class GPS(Node):
 
         if self.state == STATE.GPS_NAVIGATION or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
             #dist_limit = 0.65
-            dist_limit = 0.75
+            dist_limit = 0.8
         else:
             #dist_limit = self.DISTANCE_GOAL
-            dist_limit = 0.75
+            dist_limit = 0.8
 
         if dist_meters <= dist_limit:
             msg = String()
@@ -252,8 +252,8 @@ class GPS(Node):
             self.lon_dot_filter = self.lon_dot_predict + self.beta_lon*lon_measurement_error
             self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
 
-            loc = complex(self.lat_filter, self.lon_filter)\
-        elif self.get_parameter('/FilterType').value == 2: # another kind of filter... lol
+            loc = complex(self.lat_filter, self.lon_filter)
+        elif self.get_parameter('/FilterType').value == 2: # LPF
             self.lat_filter = self.lat_filter + self.alpha_lat*(loc.real-self.lat_filter)
             self.lon_filter = self.lon_filter + self.alpha_lon*(loc.imag-self.lon_filter)
 
@@ -296,11 +296,11 @@ class GPS(Node):
                         lon = float(message[5]) / 100 * (-1 + 2 * int(message[6] == 'E'))
                         self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
                         return complex(lat, lon)
-                    # elif message[0] == "$GNGLL":
-                    #     lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
-                    #     lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
-                    #     # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
-                    #     return complex(lat, lon)
+                    elif message[0] == "$GNGLL":
+                        lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
+                        lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
+                        # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
+                        return complex(lat, lon)
                 except Exception as e:
                     # self.get_logger().warning(f"ERROR IN READING: {e}. Take robot outside")
                     pass
