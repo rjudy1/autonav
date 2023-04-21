@@ -113,8 +113,8 @@ class TransformPublisher(Node):
         threshold = 0.08 # was 0.08 # a param - max distance between points to check if it's apart of same obj
         objPoints = []
         objCorners = []
-        pointMax = 155
-        pointMin = 0
+        pointLeftMax = 0
+        pointRightMax = 0
         legsFound = []
         legLRCorners = []
         legMinDist = []
@@ -160,12 +160,11 @@ class TransformPublisher(Node):
                         objPoints = []
                 else:
                 """
-                self.get_logger().info(f"Point: {point}, objP: {objPoints[0]}")
-                self.get_logger().info(f"Point: {point}, objP: {objPoints[-1]}")
-                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and (point > objPoints[0]):
-                    pointMin = min(pointMax, point)
-                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and (point < objPoints[-1]):
-                    pointMax = max(pointMin, point)
+
+                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and (point <= objPoints[0]):
+                    pointLeftMax = objPoints[-1]
+                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and (point >= objPoints[-1]):
+                    pointRightMax = objPoints[0]
                 # get the first and last point in the scan
 
 
@@ -180,8 +179,10 @@ class TransformPublisher(Node):
         padding = 2 # can param
         #isBarrel = False
         self.get_logger().info(f"MinDist: {minDist}")
-        self.get_logger().info(f"P Max: {pointMax}")
-        self.get_logger().info(f"P Min: {pointMin}")
+        self.get_logger().info(f"PL Max: {pointLeftMax}")
+        self.get_logger().info(f"PR Max: {pointRightMax}")
+        #self.get_logger().info(f"Point: {point}, objP L: {objPoints[0]}")
+        #self.get_logger().info(f"Point: {point}, objP R: {objPoints[-1]}")
 
         # added if to compensate for not catching every single barrel orientation
         """ # NEW
@@ -216,10 +217,11 @@ class TransformPublisher(Node):
                         scan.ranges[scanPoint] = minDist
             """
         for scanPoint in range(len(scan.ranges)):
-            if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and pointMin - padding <= scanPoint:
+            if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and pointLeftMax - padding <= scanPoint:
                 scan.ranges[scanPoint] = minDist
-            elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointMax + padding:
+            elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointRightMax + padding:
                 scan.ranges[scanPoint] = minDist
+
 
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
