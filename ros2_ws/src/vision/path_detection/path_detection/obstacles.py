@@ -96,6 +96,9 @@ class TransformPublisher(Node):
         self.path_clear = True
         self.pothole_found = False
 
+        # Publish events that could change the robot state
+        self.event_pub = self.create_publisher(String, "pothole_events", 10)
+
         self.get_logger().info("Waiting for image/lidar topics...")
 
     def state_callback(self, new_state):
@@ -216,10 +219,17 @@ class TransformPublisher(Node):
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("OBJECT_SEEN")
             self.path_clear = False
+            """
+            elif self.pothole_found:
+                if self.get_parameter('/Debug').value:
+                    self.get_logger().info("POTHOLE_FOUND")
+            """
         elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE and not self.path_clear:
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("PATH_CLEAR")
             self.path_clear = True
+
+
         self.lidar_str_pub.publish(msg)
 
         # publish the wheel distance from the obstacle based on following direction
@@ -297,16 +307,17 @@ class TransformPublisher(Node):
         # closing = cv2.morphologyEx(erosion, cv2.MORPH_CLOSE, kernel)
 
         # Apply HoughCircles to detect circles
-        circles = cv2.HoughCircles(erosion, cv2.HOUGH_GRADIENT_ALT, 1, 1, param1=100, param2=0.1, minRadius=100,
+        circles = cv2.HoughCircles(erosion, cv2.HOUGH_GRADIENT_ALT, 1, 1, param1=100, param2=0.1, minRadius=60,
                                    maxRadius=0)
         color = (0, 255, 0)
         markerType = cv2.MARKER_CROSS
         markerSize = 20
         thickness = 10
 
-        im_rgb = cv2.cvtColor(closing, cv2.COLOR_BGR2RGB)
+        im_rgb = cv2.cvtColor(erosion, cv2.COLOR_BGR2RGB)
         im_rgb_withMarker = im_rgb
-        t2 = time.time()
+        #t2 = time.time()
+
         # Draw detected circles on the original image
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
@@ -327,6 +338,10 @@ class TransformPublisher(Node):
         """
         morph = im_rgb_withMarker
         # *************************************************************
+        """
+        Detection method blobs is used in 2021 to 2022 team.
+        """
+        """
         detector = cv2.SimpleBlobDetector_create(params)
         keypoints = detector.detect(morph)  # find the blobs meeting the parameters
         self.circles = []
@@ -336,8 +351,9 @@ class TransformPublisher(Node):
         if self.get_parameter('/Debug').value:
             blobs = cv2.drawKeypoints(morph, keypoints, np.zeros((1, 1)), (0, 255, 0),
                                       cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-            cv_display(blobs, 'Potholes', self.window_handle)
-
+            #cv_display(blobs, 'Potholes', self.window_handle)
+        """
+        cv_display(morph, 'Potholes', self.window_handle)
     def update_history(self, x):
         self.history[self.history_idx] = x
         self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE

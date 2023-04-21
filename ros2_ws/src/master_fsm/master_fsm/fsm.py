@@ -59,6 +59,7 @@ class MainRobot(Node):
         self.gps_sub = self.create_subscription(String, "gps_events", self.gps_callback, 10)
         self.depth_sub = self.create_subscription(String, "/mod_lidar", self.lidar_callback, 10)
         self.heading_sub = self.create_subscription(HeadingStatus, 'fused_heading', self.heading_callback, 10)
+        self.pothole_sub = self.create_subscription(String, 'pothole_events', self.pothole_callback, 10)
 
         # already declared messages to save a couple lines
         self.state_msg = Int32()
@@ -315,6 +316,16 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.gps_to_object_state()
 
+        elif self.pothole_found:
+             self.pothole_found = False
+             self.obj_seen = False
+             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+             self.state_pub.publish(self.state_msg)
+             self.state = STATE.STATE.POTHOLE_TURN_RIGHT
+             self.pothole_turn_right()
+
+
+
         elif self.path_clear:
              self.path_clear = False
              self.obj_seen = False
@@ -323,13 +334,7 @@ class MainRobot(Node):
              self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
              self.object_avoidance_from_line_state()
         
-        elif self.pothole_found:
-             self.pothole_found = False
-             self.obj_seen = False
-             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
-             self.state_pub.publish(self.state_msg)
-             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
-             self.object_avoidance_from_line_state()
+
             
 
     # Object Avoidance to Line Following Transition State - is gps needed here?
@@ -381,11 +386,10 @@ class MainRobot(Node):
         
         elif self.pothole_found:             
              self.pothole_found = False
-             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
+             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
              self.state_pub.publish(self.state_msg)
-             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
-
-             self.object_avoidance_from_gps_state()
+             self.state = STATE.POTHOLE_TURN_RIGHT
+             self.pothole_turn_right()
 
         elif self.waypoint_found and self.waypoint_count == 4:
             self.waypoint_found = False
@@ -472,14 +476,15 @@ class MainRobot(Node):
     # End of Transition States
 
     # *********************************************************************************************************************
+    """
     def pothole_avoidance_state(self):
-        """"
+      
         ASSUME Left Line Following
         stop->right->straight->left->straight->left->object_avoidance_to_line
-        """
+    
         # heading store.
         self.prev_heading = self.heading
-    """
+   
         self.state = STATE.POTHOLE_TURN_RIGHT
         self.pothole_turn_right()
         
@@ -849,11 +854,26 @@ class MainRobot(Node):
     def imu_callback(self, data):
         self.last_imu_data = data
 
-    def pothole_callback(self,data):
+    def pothole_callback(self,pothole_events):
         """
         data will hold encoder data.
         """
-        
+        self.lock.acquire()
+        try:
+            if pothole_events.data == STATUS.POTHOLE_FOUND:
+                self.get_logger().warning("FOUND POTHOLE!!")
+                # light_msg = LightCmd()
+                # light_msg.type = 'B'
+                # light_msg.on = True
+                # self.lights_pub.publish(light_msg)
+                self.pothole_found = True
+
+            else:
+                pass
+                # self.get_logger().info("UNKNOWN MESSAGE on pothole_events")
+        finally:
+            # Release the lock
+            self.lock.release()
 
     # Callback for the timer
     def timer_callback(self):

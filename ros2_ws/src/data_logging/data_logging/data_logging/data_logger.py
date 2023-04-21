@@ -48,6 +48,9 @@ class Data_Logger(Node):
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
         #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
         self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
+        self.line_sub = self.create_subscription(String, "/pothole_events", self.pothole_callback, 10)
+
+
 
         t = str(round(time.time()))
 
