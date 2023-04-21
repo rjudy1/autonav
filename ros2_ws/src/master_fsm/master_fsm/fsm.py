@@ -59,6 +59,8 @@ class MainRobot(Node):
         self.gps_sub = self.create_subscription(String, "gps_events", self.gps_callback, 10)
         self.depth_sub = self.create_subscription(String, "/mod_lidar", self.lidar_callback, 10)
         self.heading_sub = self.create_subscription(HeadingStatus, 'fused_heading', self.heading_callback, 10)
+
+        # This section is the part I do not understand.
         self.pothole_sub = self.create_subscription(String, 'pothole_events', self.pothole_callback, 10)
 
         # already declared messages to save a couple lines
