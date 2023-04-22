@@ -52,8 +52,8 @@ class Fusion(Node):
     def state_callback(self, new_state):
         self.state = new_state.data
         if self.state == STATE.ORIENT_TO_GPS:
-            self.imu_weight = 1.0
-            self.encoder_weight = 0.0
+            self.imu_weight = 0.0
+            self.encoder_weight = 1.0
         else:
             self.imu_weight = self.get_parameter('/ImuWeight').value
             self.encoder_weight = self.get_parameter('/EncoderWeight').value
@@ -136,15 +136,15 @@ class Fusion(Node):
     def gps_callback(self, gps_msg):
         if self.state == STATE.GPS_NAVIGATION and not -0.01 < gps_msg.current_heading < 0.01:
             self.encoder_weight = self.get_parameter('/EncoderWeight').value
-        elif self.state == STATE.LINE_FOLLOWING and not -0.01 < gps_msg.current_heading < 0.01:
-            self.encoder_weight = 1.0
-        else:
-            self.encoder_weight = 1.0
+        # elif self.state == STATE.LINE_FOLLOWING and not -0.01 < gps_msg.current_heading < 0.01:
+        #     self.encoder_weight = 1.0
+        # else:
+        #     self.encoder_weight = 1.0
         # self.get_logger().info(f"GPS HEADING: {gps_msg}, encoder heading: {self.encoder_curr_heading}")
         self.target_heading = gps_msg.target_heading
 
         if self.distance_from_waypoint < 2:
-            self.imu_weight = 1.0
+            self.imu_weight = 0.9
             self.encoder_weight = 0.0
 
         # calculate weighted current heading
