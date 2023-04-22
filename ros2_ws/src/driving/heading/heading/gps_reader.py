@@ -136,7 +136,7 @@ class GPS(Node):
         self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
         self.state = STATE.LINE_FOLLOWING
 
-        # process GPS data at 2 Hz
+        # process GPS data at 8 Hz
         self.timer = self.create_timer(.125, self.process_gps_data)
         self.T = 0.125
 
@@ -191,10 +191,10 @@ class GPS(Node):
 
         if self.state == STATE.GPS_NAVIGATION or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
             #dist_limit = 0.65
-            dist_limit = 0.75
+            dist_limit = 0.8
         else:
             #dist_limit = self.DISTANCE_GOAL
-            dist_limit = 0.75
+            dist_limit = 0.8
 
         if dist_meters <= dist_limit:
             msg = String()
@@ -253,7 +253,7 @@ class GPS(Node):
             self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
 
             loc = complex(self.lat_filter, self.lon_filter)
-        elif self.get_parameter('/FilterType').value == 2: # another kind of filter... lol
+        elif self.get_parameter('/FilterType').value == 2: # LPF
             self.lat_filter = self.lat_filter + self.alpha_lat*(loc.real-self.lat_filter)
             self.lon_filter = self.lon_filter + self.alpha_lon*(loc.imag-self.lon_filter)
 
