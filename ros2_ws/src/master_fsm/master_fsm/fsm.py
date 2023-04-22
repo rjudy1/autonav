@@ -566,7 +566,7 @@ class MainRobot(Node):
                 self.exit_heading = self.target_heading
             orient_curr = self.heading
             orient_exit = self.exit_heading
-            if min(abs(sub_angles(orient_curr, orient_exit)), abs(sub_angles(orient_exit, orient_curr))) <= math.pi/12:
+            if min(abs(sub_angles(orient_curr, orient_exit)), abs(sub_angles(orient_exit, orient_curr))) <= math.pi/24:
                 self.get_logger().info(f"Heading restored with heading {orient_curr} and goal {orient_exit}")
                 self.heading_restored = True
             elif self.heading_restored:

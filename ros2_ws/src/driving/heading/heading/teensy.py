@@ -72,7 +72,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6) # for line following
         self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
-        self.pid_gps = PIDController(1.8, 0.0, 0.0, 6, -6)  # for during gps navigation
+        self.pid_gps = PIDController(1.3, 0.0, 0.0, 8, -8)  # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -218,8 +218,8 @@ class Teensy(Node):
             delta = self.pid_gps.control(angle_error)
             # GPS sends the error as - for left turns and + for right turns
             adjustment = 0.0
-            if gps_distance <= 2.5:
-                adjustment = 4*(2.5 - gps_distance)
+            # if gps_distance <= 2.5:
+            #     adjustment = 4*(2.5 - gps_distance)
                 # self.get_logger().info(f"adjusted linear by {adjustment}")
 
             linear = round(self.gps_speed - adjustment)
