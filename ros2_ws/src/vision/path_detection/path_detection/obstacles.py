@@ -220,11 +220,6 @@ class TransformPublisher(Node):
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("OBJECT_SEEN")
             self.path_clear = False
-
-        elif self.pothole_found:
-                if self.get_parameter('/Debug').value:
-                    self.get_logger().info("POTHOLE_FOUND")
-
         elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE and not self.path_clear:
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("PATH_CLEAR")
@@ -330,6 +325,14 @@ class TransformPublisher(Node):
                 cv2.circle(im_rgb, (x, y), r, (0, 0, 0), 2)
                 # self.get_logger().info((x, y, r))
                 cv2.drawMarker(im_rgb_withMarker, (x, y), color, markerType, markerSize, thickness)
+        else:
+            self.pothole_found = False
+
+
+
+        if self.pothole_found:
+            if self.get_parameter('/Debug').value:
+                self.get_logger().info("POTHOLE_FOUND")
 
         t3 = time.time()
         """

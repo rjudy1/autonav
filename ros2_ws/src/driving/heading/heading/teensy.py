@@ -52,6 +52,7 @@ class Teensy(Node):
         #  publish for right and left encoder distances
         self.rate = self.get_parameter('/TeensyUpdateDelay').value
         self.encoder_pub = self.create_publisher(EncoderData, 'encoder_data', 10)
+
         self.imu_pub = self.create_publisher(ImuData, 'imu_data', 10)
         self.timer = self.create_timer(self.rate, self.timer_callback)
         self.light_sub = self.create_subscription(LightCmd, "light_events", self.light_callback, 5)
