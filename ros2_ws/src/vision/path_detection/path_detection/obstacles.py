@@ -59,6 +59,7 @@ class TransformPublisher(Node):
 
         # Subscribe to the camera color image and unaltered laser scan
         self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
+        self.image_pub = self.create_publisher(String,"pothole_events",10)
 
         self.get_logger().info('DONE***************************************')
         self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
@@ -219,11 +220,11 @@ class TransformPublisher(Node):
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("OBJECT_SEEN")
             self.path_clear = False
-            """
-            elif self.pothole_found:
+
+        elif self.pothole_found:
                 if self.get_parameter('/Debug').value:
                     self.get_logger().info("POTHOLE_FOUND")
-            """
+
         elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE and not self.path_clear:
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("PATH_CLEAR")
@@ -322,6 +323,9 @@ class TransformPublisher(Node):
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
             self.pothole_found=True
+            msg = String()
+            msg.data = STATUS.POTHOLE_FOUND
+            self.image_pub.publish(msg)
             for (x, y, r) in circles:
                 cv2.circle(im_rgb, (x, y), r, (0, 0, 0), 2)
                 # self.get_logger().info((x, y, r))
