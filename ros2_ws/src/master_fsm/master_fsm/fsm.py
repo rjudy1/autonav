@@ -99,6 +99,15 @@ class MainRobot(Node):
         self.pothole_turn_straight = meters_to_ticks(self.get_parameter('/PotholeDistance').value)
         self.pothole_turn_left_exit = meters_to_ticks(math.pi/4*0.6096*3) #assign this on right. Turn 135
 
+        if self.get_parameter('/EncoderBoxTurnLeft').value:
+            self.encoder_turn_increment_left = 0
+            self.encoder_turn_increment_right = meters_to_ticks(math.pi / 2 * 0.6096)
+        else:
+            self.encoder_turn_increment_left = meters_to_ticks(math.pi / 2 * 0.6096)
+            self.encoder_turn_increment_right = 0
+
+        self.pothole_left_target
+        self.pothole_right target
 
         # Encoder box following setup
         if self.get_parameter("/StartState").value == STATE.ENCODER_BOX_FOLLOW_STRAIGHT:
@@ -520,8 +529,8 @@ class MainRobot(Node):
     def pothole_turn_right(self):
         #self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
             # check left line following of not and check the rotation reached the target or not.
-        if (self.get_parameter('/FollowingDirection').value and self.encoder_right_raw < self.encoder_right_target) or (not self.get_parameter('/FollowingDirection').value and 
-                                                                                                                        self.encoder_left_raw < self.encoder_left_target):
+        if (self.get_parameter('/FollowingDirection').value and self.pothole_turn < self.encoder_right_target) or (not self.get_parameter('/FollowingDirection').value and
+            # pothole_turn                                                       self.encoder_left_raw < self.encoder_left_target):
             # don't do anything...
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{self.get_parameter('/PotholeSpeed').value * (-2 * (self.get_parameter('/FollowingDirection').value) + 1)}"
             self.wheel_pub.publish(self.wheel_msg)
@@ -599,7 +608,7 @@ class MainRobot(Node):
 
     def pothole_turn_exit(self):
         # termination condition for this will be found the line.
-        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
+        # self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
 
         if (self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_right_raw < self.pothole_turn_left_exit) or (not self.get_parameter('/EncoderBoxTurnLeft').value and 
                                                                                                                         self.encoder_left_raw < self.pothole_turn_left_exit):
