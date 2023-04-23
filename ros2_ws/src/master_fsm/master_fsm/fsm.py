@@ -172,6 +172,13 @@ class MainRobot(Node):
             self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
 
             self.line_to_object_state()  # enter the transition state
+            
+        elif self.pothole_found:
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
 
     # Object Avoidance From Line Following State - trying to get back to line
     def object_avoidance_from_line_state(self):
@@ -420,6 +427,14 @@ class MainRobot(Node):
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.line_to_object_state()
+        
+        elif self.pothole_found:
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
 
     # Transition State to Orient to the line direction
     def line_orientation_state(self):
