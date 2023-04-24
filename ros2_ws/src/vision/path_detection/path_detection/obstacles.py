@@ -127,7 +127,7 @@ class TransformPublisher(Node):
         windowMin = self.get_parameter("/ObstacleNoiseMinDist").value
 
         # finds the point clusters in window and determines if it is a leg or barrel
-        for point in range(len(scan.ranges)): # changed len() - 2
+        for point in range(len(scan.ranges) - 2):
             # get rid of noise values that are too close/far
             if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
                 scan.ranges[point] = inf
@@ -137,8 +137,12 @@ class TransformPublisher(Node):
                 #minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
 
                 # uses a cartesian coordinate system
-                objPoints.append(point)
-                minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
+                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (
+                        abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
+                    objPoints.append(point)
+                    minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
+                    pointLeftMax = objPoints[0]
+                    pointRightMax = objPoints[-1]
                 # handles if we have found a different object
 
                 # NEED TO FIX
@@ -161,10 +165,7 @@ class TransformPublisher(Node):
                 else:
                 """
 
-                if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and (point <= objPoints[0]):
-                    pointLeftMax = objPoints[-1]
-                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and (point >= objPoints[-1]):
-                    pointRightMax = objPoints[0]
+                #pointRightMax = objPoints[-1]
                 # get the first and last point in the scan
 
 
@@ -178,9 +179,10 @@ class TransformPublisher(Node):
         #barrel = 0
         padding = 2 # can param
         #isBarrel = False
-        self.get_logger().info(f"MinDist: {minDist}")
-        self.get_logger().info(f"PL Max: {pointLeftMax}")
-        self.get_logger().info(f"PR Max: {pointRightMax}")
+        self.get_logger().info(f"MinDist: {round(minDist, 5)}")
+        self.get_logger().info(f"L Max: {pointLeftMax}")
+        self.get_logger().info(f"ObjP Size: {len(objPoints)}")
+        self.get_logger().info(f"R Max: {pointRightMax}")
         #self.get_logger().info(f"Point: {point}, objP L: {objPoints[0]}")
         #self.get_logger().info(f"Point: {point}, objP R: {objPoints[-1]}")
 
@@ -216,12 +218,16 @@ class TransformPublisher(Node):
                     elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointMax + padding:
                         scan.ranges[scanPoint] = minDist
             """
+        """
         for scanPoint in range(len(scan.ranges)):
             if (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and pointLeftMax - padding <= scanPoint:
                 scan.ranges[scanPoint] = minDist
             elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointRightMax + padding:
                 scan.ranges[scanPoint] = minDist
-
+            else:
+                scan.ranges[scanPoint] = minDist
+                self.get_logger().info(f"ERROR: {scanPoint}")
+        """
 
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
