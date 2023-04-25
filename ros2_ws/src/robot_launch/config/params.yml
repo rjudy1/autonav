@@ -4,7 +4,7 @@
         /RealCourse:         False
         /FollowingDirection: 0          # 1  is right, 0 is left (line following)
         /UseYellow:          False      # True for yellow lines, False for white lines
-        /InitialHeading:     316.0      # robot's absolute initial heading. set before build in degrees.
+        /InitialHeading:     301.0      # robot's absolute initial heading. set before build in degrees.
         /NorthPointFirst:    True
         /GpsExitHeading:     0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
         /CrossRampInGps:     True
@@ -63,14 +63,14 @@
         ## Practice Coordinates
         /PracticeInitialLat:   39.4483377
         /PracticeInitialLon:   -83.4879768
-        /PracticeWaypointLat1: 39.4477732
-        /PracticeWaypointLon1: -83.4878617
-        /PracticeWaypointLat2: 39.4478321
-        /PracticeWaypointLon2: -83.48781989999999
-        /PracticeWaypointLat3: 39.4478863
-        /PracticeWaypointLon3: -83.4878186
-        /PracticeWaypointLat4: 39.4478321
-        /PracticeWaypointLon4: -83.48781989999999
+        /PracticeWaypointLat1: 39.4477883
+        /PracticeWaypointLon1: -83.48786969999999
+        /PracticeWaypointLat2: 39.4478453
+        /PracticeWaypointLon2: -83.4878491
+        /PracticeWaypointLat3: 39.4478831
+        /PracticeWaypointLon3: -83.4878273
+        /PracticeWaypointLat4: 39.4478469
+        /PracticeWaypointLon4: -83.4878496
         ## Real Coordinates
         /InitialLat: 0.0
         /InitialLon: 0.0

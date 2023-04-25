@@ -86,7 +86,7 @@ class Fusion(Node):
     def imu_callback(self, imu_msg):
         try:
             # calculate IMU heading
-            self.imu_curr_heading = imu_msg.euler_x - self.imu_initial_heading + self.get_parameter('/InitialHeading').value
+            self.imu_curr_heading =  (imu_msg.euler_x - self.imu_initial_heading + self.get_parameter('/InitialHeading').value)*math.pi/180
 
             # calculate weighted current heading
             diff = sub_angles(self.curr_heading, self.imu_curr_heading)
