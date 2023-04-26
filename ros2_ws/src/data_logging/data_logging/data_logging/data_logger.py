@@ -145,6 +145,14 @@ class Data_Logger(Node):
 
     # lidar_frame_callback function
     # logs lidar frame data to csv
+    """
+    def pothole_encoder_callback(self, data):
+        # self.get_logger().info(f"left: {data.left}, right: {data.right} ")
+        self.encoder_writer.writerow(np.array([data.left, data.right]))
+    """
+    # lidar_frame_callback function
+    # logs lidar frame data to csv
+
     def lidar_frame_callback(self, data):
         self.lidar_frame_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec, data.angle_increment, data.angle_min, data.angle_max], data.ranges)))
 
