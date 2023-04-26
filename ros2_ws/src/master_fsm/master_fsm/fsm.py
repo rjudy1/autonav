@@ -43,7 +43,7 @@ class MainRobot(Node):
         self.declare_parameter('/EncoderBoxSpeed', 4.0)
 
         # set the speed for pothole
-        self.declare_parameter('/PotholeSpeed', 8.0)
+        self.declare_parameter('/PotholeSpeed', 2.0) #8.0
         self.declare_parameter('/PotholeDistance', 0.3)
         self.declare_parameter('/PotholeTurnLeft', True)
 
@@ -198,6 +198,10 @@ class MainRobot(Node):
             
         elif self.pothole_found:
             self.pothole_found = False
+            self.pothole_left_raw = 0;
+            self.pothole_right_raw = 0;
+            self.pothole_left_target = self.pothole_turn_increment_right
+            self.pothole_right_target = self.pothole_turn_increment_left
             self.state = STATE.POTHOLE_TURN_RIGHT
             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
             self.state_pub.publish(self.state_msg)
@@ -355,7 +359,7 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.gps_to_object_state()
-
+            """
         elif self.pothole_found:
              self.pothole_found = False
              self.obj_seen = False
@@ -363,7 +367,7 @@ class MainRobot(Node):
              self.state_pub.publish(self.state_msg)
              self.state = STATE.STATE.POTHOLE_TURN_RIGHT
              self.pothole_turn_right()
-
+            """
         elif self.path_clear:
              self.path_clear = False
              self.obj_seen = False
@@ -523,10 +527,11 @@ class MainRobot(Node):
     # *********************************************************************************************************************
 
     def pothole_turn_right(self):
+        self.get_logger().info("pothole_turn_right");
         self.get_logger().info(f"turn: now left: {self.pothole_left_raw}, target left: {self.pothole_left_target}\
                                ,now right: {self.pothole_right_raw}, target right: {self.pothole_right_target}")
             # check left line following of not and check the rotation reached the target or not.
-        if (self.get_parameter('/PotholeTurnLeft').value and self.pothole_right_raw < self.epothole_right_target) or \
+        if (self.get_parameter('/PotholeTurnLeft').value and self.pothole_right_raw < self.pothole_right_target) or \
                 (not self.get_parameter('/PotholeTurnLeft').value and self.pothole_left_raw < self.pothole_left_target):
 
             # don't do anything...
@@ -536,8 +541,10 @@ class MainRobot(Node):
         else:
             # time to transition states
             # adjust targets
-            self.pothole_left_target += self.pothole_straight_increment
-            self.pothole_right_target += self.pothole_straight_increment
+            self.pothole_left_raw = 0;
+            self.pothole_right_raw = 0;
+            self.pothole_left_target = self.pothole_straight_increment
+            self.pothole_right_target = self.pothole_straight_increment
             # send an updated command to the motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
             self.wheel_pub.publish(self.wheel_msg)
@@ -546,6 +553,7 @@ class MainRobot(Node):
             self.pothole_straight()
 
     def pothole_straight(self):
+        self.get_logger().info("pothole_straight");
         self.get_logger().info(f"straight: now left: {self.pothole_left_raw}, target left: {self.pothole_left_target}\
                                ,now right: {self.pothole_right_raw}, target right: {self.pothole_right_target}")
         if self.pothole_left_raw < self.pothole_left_target or self.pothole_right_raw < self.pothole_right_target:
@@ -569,24 +577,32 @@ class MainRobot(Node):
         else:
             # time to transition states
             # adjust targets
-            self.pothole_left_target += self.pothole_turn_increment_left
-            self.pothole_right_target += self.pothole_turn_increment_right
+            #self.pothole_left_target += self.pothole_turn_increment_left
+            #self.pothole_right_target += self.pothole_turn_increment_right
             # send updated command to motors
             # FIXME
+            self.pothole_left_raw = 0;
+            self.pothole_right_raw = 0;
             # why is this so long?
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{self.get_parameter('/PotholeSpeed').value*(-2*(self.get_parameter('/PotholeTurnLeft').value)+1)}"
-            self.wheel_pub.publish(self.wheel_msg)
             # change state
             self.get_logger().info('caller is ' + inspect.stack()[1][3])
             # self.get_logger().info(inspect.stack()[1][3])
             if inspect.stack()[1][3] == 'pothole_turn_right':
+                self.pothole_left_target = self.pothole_turn_increment_left
+                self.pothole_right_target = self.pothole_turn_increment_right
                 self.state = STATE.POTHOLE_TURN_LEFT
                 self.pothole_turn_left()
             else:
+                self.pothole_left_target = self.pothole_turn_left_exit
+                self.pothole_right_target = self.pothole_turn_right_exit
                 self.state = STATE.POTHOLE_EXIT
                 self.pothole_exit()
 
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                        {self.get_parameter('/PotholeSpeed').value * (-2 * (self.get_parameter('/PotholeTurnLeft').value) + 1)}"
+            self.wheel_pub.publish(self.wheel_msg)
     def pothole_turn_left(self):
+        self.get_logger().info("pothole_turn_left");
         self.get_logger().info(f"turn: now left: {self.pothole_left_raw}, target left: {self.pothole_left_target}\
                                ,now right: {self.pothole_right_raw}, target right: {self.pothole_right_target}")
 
@@ -600,8 +616,10 @@ class MainRobot(Node):
         else:
             # time to transition states
             # adjust targets
-            self.pothole_left_target += self.pothole_straight_increment
-            self.pothole_right_target += self.pothole_straight_increment
+            self.pothole_left_raw = 0;
+            self.pothole_right_raw = 0;
+            self.pothole_left_target = self.pothole_straight_increment
+            self.pothole_right_target = self.pothole_straight_increment
             # send an updated command to the motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
             self.wheel_pub.publish(self.wheel_msg)
@@ -610,6 +628,7 @@ class MainRobot(Node):
             self.pothole_straight()
 
     def pothole_exit(self):
+        self.get_logger().info("pothole_exit");
         # termination condition for this will be found the line.
         self.get_logger().info(f"turn: now left: {self.pothole_left_raw}, target left: {self.pothole_left_target},\
                                now right: {self.pothole_right_raw}, target right: {self.pothole_right_target}")
@@ -625,8 +644,10 @@ class MainRobot(Node):
             # adjust targets
             self.get_logger().info("POTHOLE EXIT")
             self.pothole_found = False
-            self.pothole_left_target += self.pothole_straight_increment
-            self.pothole_right_target += self.pothole_straight_increment
+            self.pothole_left_raw = 0;
+            self.pothole_right_raw = 0;
+            self.pothole_left_target = self.pothole_straight_increment
+            self.pothole_right_target = self.pothole_straight_increment
             # send an updated command to the motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
             self.wheel_pub.publish(self.wheel_msg)
@@ -745,7 +766,7 @@ class MainRobot(Node):
         elif self.state == STATE.POTHOLE_TURN_LEFT:
             self.pothole_turn_left()
         elif self.state == STATE.POTHOLE_EXIT:
-            self.pothole_turn_left_exit()
+            self.pothole_exit()
         else:
             self.get_logger().info("Error: Invalid State")
 
