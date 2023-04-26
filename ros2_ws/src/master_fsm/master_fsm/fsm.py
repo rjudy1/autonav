@@ -93,10 +93,9 @@ class MainRobot(Node):
         self.waypoint_count = 0
 
         # Pothole
-        self.pothole_straight_increment = meters_to_ticks(self.get_parameter('/PotholeDistance').value)
-
-        # This section is the part I do not understand.
         self.pothole_sub = self.create_subscription(String, 'pothole_events', self.pothole_callback, 10)
+
+        self.pothole_straight_increment = meters_to_ticks(self.get_parameter('/PotholeDistance').value)    
 
         if self.get_parameter('/PotholeTurnLeft').value:
             self.pothole_turn_increment_left = 0
@@ -111,8 +110,8 @@ class MainRobot(Node):
             self.pothole_turn_left_exit = meters_to_ticks(math.pi / 4 * 0.6096 * 3)  # assign this on right. Turn 135
             self.pothole_turn_right_exit = 0  # assign this on right. Turn 135
 
-        self.pothole_left_target = self.pothole_turn_increment_left
-        self.pothole_right_target = self.pothole_turn_increment_right
+        self.pothole_left_target = self.pothole_straight_increment
+        self.pothole_right_target = self.pothole_straight_increment
 
         # init the encoder data storage
         self.pothole_left = 0.0
@@ -645,7 +644,8 @@ class MainRobot(Node):
 
     # Debug / Testing States
     def encoder_box_follow_straight_state(self):
-        self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
+        self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right:\
+                                {self.encoder_right_raw}, target right: {self.encoder_right_target}")
         if self.encoder_left_raw < self.encoder_left_target or self.encoder_right_raw < self.encoder_right_target:
             # test to make sure we're adjusting if we're not going straight
             delta_left = self.encoder_left_target - self.encoder_left_raw
@@ -670,18 +670,22 @@ class MainRobot(Node):
             self.encoder_left_target += self.encoder_turn_increment_left
             self.encoder_right_target += self.encoder_turn_increment_right
             # send updated command to motors
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.get_parameter('/EncoderBoxTurnLeft').value)+1)}"
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
+                {self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.get_parameter('/EncoderBoxTurnLeft').value)+1)}"
             self.wheel_pub.publish(self.wheel_msg)
             # change state
             self.state = STATE.ENCODER_BOX_FOLLOW_TURN
             self.encoder_box_follow_turn_state()
 
     def encoder_box_follow_turn_state(self):
-        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
+        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},\
+                               now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
 
-        if (self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_right_raw < self.encoder_right_target) or (not self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_left_raw < self.encoder_left_target):
+        if (self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_right_raw < self.encoder_right_target) or \
+            (not self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_left_raw < self.encoder_left_target):
             # don't do anything...
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
+                {self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
             self.wheel_pub.publish(self.wheel_msg)
         else:
             # time to transition states
@@ -696,7 +700,8 @@ class MainRobot(Node):
             self.encoder_box_follow_straight_state()
 
     def imu_heading_accuracy_test_state(self):
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
+            {self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
         self.wheel_pub.publish(self.wheel_msg)
 
         self.get_logger().info(f"x: {self.last_imu_data.euler_x}, y: {self.last_imu_data.euler_y}, z: {self.last_imu_data.euler_z}")
