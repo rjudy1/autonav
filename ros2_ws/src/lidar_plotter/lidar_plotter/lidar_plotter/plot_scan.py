@@ -49,15 +49,14 @@ class Plot_Scan(Node):
         points_x = np.flip(points_x)
         #self.get_logger().info(f"dist_y: {dist_y}")
 
-        #windowMax = self.get_parameter('/ObstacleToPlainDistance').value
-        #windowMin = self.get_parameter('/ObstacleNoiseMinDist').value
-
         # plot only the useful data in a certain window
+        """
         for i in range(len(dist_y)):
             # only look in the window that we care about
-            if (dist_y[i] > 2) or (dist_y[i] < 0.2): #(i < 4) or (i > (len(dist_y) - 4)) or
-                dist_y[i] = 3 # changed from 0 to 3
+            if (dist_y[i] > 2.9) or (dist_y[i] < 0.25):
+                dist_y[i] = inf # changed from 0 to 3
         # plotting points as a scatter plot
+        """
         plt.scatter(points_x, dist_y, label= "points", color= "black", marker= ".", s=30)
 
         # axiis, title, display
