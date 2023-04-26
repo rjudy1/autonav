@@ -66,6 +66,8 @@ class Plot_Scan(Node):
         # if you want distance in ft but also change the comment above
         #plt.ylabel('Distances (ft)')
         plt.title('Lidar laster_frame scan')
+        plt.xlim(0,150)
+        plt.ylim(0,3)
         plt.show()
         # you can also press ctl C to close the program else it will keep popping up
         plt.close()

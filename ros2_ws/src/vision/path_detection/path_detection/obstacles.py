@@ -137,16 +137,9 @@ class TransformPublisher(Node):
                 #minDist = min(minDist, scan.ranges[point]) # may be able to get ride of
 
                 # uses a cartesian coordinate system
-                if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (
-                        abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
-                    objPoints.append(point)
-                    minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
-                    pointLeftMax = objPoints[0]
-                    pointRightMax = objPoints[-1]
-                # handles if we have found a different object
-
+                objPoints.append((point, scan.ranges[point]))
+                minDist = min(minDist, (scan.ranges[point] * math.sin(point * scan.angle_increment)))
                 # NEED TO FIX
-
                 """
                 if ((abs(scan.ranges[point] - scan.ranges[point + 1]) > threshold) and (abs(scan.ranges[point] - scan.ranges[point + 2]) > threshold)):
                     # handles legs
@@ -164,12 +157,6 @@ class TransformPublisher(Node):
                         objPoints = []
                 else:
                 """
-
-                #pointRightMax = objPoints[-1]
-                # get the first and last point in the scan
-
-
-
         # need to keep track of which barrel we are on
         #barrelCount = len(barrelsFound)
         #self.get_logger().info(f"Barrels: {barrelCount}, corners: {barrelLRCorners}")
