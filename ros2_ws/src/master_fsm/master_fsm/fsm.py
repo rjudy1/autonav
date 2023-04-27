@@ -119,7 +119,7 @@ class MainRobot(Node):
         self.pothole_left = 0.0
         self.pothole_right = 0.0
         self.pothole_left_raw = 0
-        self.pothole_right_raw = 0EncoderBoxDistance
+        self.pothole_right_raw = 0
         self.pothole_straight_threshold = 20
         self.pothole_encoder_sub = self.create_subscription(EncoderData, "encoder_data",\
                                                     self.pothole_encoder_callback, 10)
@@ -675,11 +675,12 @@ class MainRobot(Node):
         else:
             # time to transition states
             # adjust targets
+            self.get_logger().info("straight done")
             self.encoder_left_target += self.encoder_turn_increment_left
             self.encoder_right_target += self.encoder_turn_increment_right
             # send updated command to motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
-                {self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.get_parameter('/EncoderBoxTurnLeft').value)+1)}"
+                {self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.changeTurn)+1)}"
             self.wheel_pub.publish(self.wheel_msg)
             # change state
             self.state = STATE.ENCODER_BOX_FOLLOW_TURN
@@ -693,7 +694,7 @@ class MainRobot(Node):
             (not self.changeTurn and self.encoder_left_raw < self.encoder_left_target):
             # don't do anything...
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
-                {self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
+                {self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.changeTurn) + 1)}"
             self.wheel_pub.publish(self.wheel_msg)
         else:
             # time to transition states
@@ -704,6 +705,10 @@ class MainRobot(Node):
                 changeTurn = True
                 self.encoder_turn_increment_left = 0
                 self.encoder_turn_increment_right = meters_to_ticks(math.pi / 2 * 0.6096)
+               # self.encoder_left_target=0
+               # self.encoder_left_raw=0
+               # self.encoder_right_target=0
+               # self.encoder_right_raw=0
 
             self.encoder_left_target += self.encoder_straight_increment
             self.encoder_right_target += self.encoder_straight_increment
