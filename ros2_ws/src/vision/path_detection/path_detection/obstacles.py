@@ -166,10 +166,7 @@ class TransformPublisher(Node):
         #barrel = 0
         padding = 2 # can param
         #isBarrel = False
-        self.get_logger().info(f"MinDist: {round(minDist, 5)}")
-        self.get_logger().info(f"Min: {objPoints[0]}")
-        self.get_logger().info(f"ObjP Size: {len(objPoints)}")
-        self.get_logger().info(f"Max: {objPoints[-1]}")
+
         #self.get_logger().info(f"Point: {point}, objP L: {objPoints[0]}")
         #self.get_logger().info(f"Point: {point}, objP R: {objPoints[-1]}")
 
@@ -205,13 +202,19 @@ class TransformPublisher(Node):
                     elif (self.get_parameter('/FollowingDirection').value == DIRECTION.RIGHT) and scanPoint <= pointMax + padding:
                         scan.ranges[scanPoint] = minDist
             """
-
-        for scanPoint in range(len(scan.ranges)):
-            if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
-                if not (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and scanPoint <= objPoints[-1]:
-                    scan.ranges[scanPoint] = minDist
-                elif (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and scanPoint >= objPoints[0]:
-                    scan.ranges[scanPoint] = minDist
+        if len(objPoints) != 0:
+            for scanPoint in range(len(scan.ranges)):
+                if (scan.ranges[point] > windowMax) or (scan.ranges[point] < windowMin):
+                    if not (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and scanPoint <= objPoints[-1]:
+                        scan.ranges[scanPoint] = minDist
+                    elif (self.get_parameter('/FollowingDirection').value == DIRECTION.LEFT) and scanPoint >= objPoints[0]:
+                        scan.ranges[scanPoint] = minDist
+            self.get_logger().info(f"MinDist: {round(minDist, 5)}")
+            self.get_logger().info(f"Min: {objPoints[0]}")
+            self.get_logger().info(f"ObjP Size: {len(objPoints)}")
+            self.get_logger().info(f"Max: {objPoints[-1]}")
+        else:
+            return
 
     # first portion nullifies all data behind the scanner after adjusting min and max to be 0
     # second portion adds potholes based on image data
