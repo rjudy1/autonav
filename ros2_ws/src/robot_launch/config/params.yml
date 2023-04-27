@@ -22,11 +22,11 @@
         /ExitAngle:  0.1
         # Encoder Box Following (state 11-12) Parameters
         /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
-        /EncoderBoxDistance: 0.3   # distance in meters of each side of the encoder's "box"
+        /EncoderBoxDistance: 0.2 # 0.5   # distance in meters of each side of the encoder's "box"
         /EncoderBoxSpeed:    5.0   #
         # Pothole state parameter
-        /PotholeSpeed: 8.0
-        /PotholeDistance: 0.3
+        /PotholeSpeed: 4.0
+        /PotholeDistance: 0.5
         /PotholeTurnLeft: False
 
 /rplidar_node:
@@ -100,7 +100,7 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .05
         /SideObjectDist:            0.425 # 0.85
-        /LineSpeed:                 14.0
+        /LineSpeed:                 4.0 #14.0
         /ObjectSpeed:               8.0
         /GpsSpeed:                  11.0
         /BoostIncrease:             1 #9
