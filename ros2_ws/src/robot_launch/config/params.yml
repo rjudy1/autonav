@@ -8,9 +8,9 @@
         /NorthPointFirst:    True
         /GpsExitHeading:     0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
         /CrossRampInGps:     True
-        /RepeatGps:          True       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
+        /RepeatGps:          False       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
         /LineDist:           0.2        # Distance in meters to follow the line from
-        /StartState:         3          #3 GPS #0 Line
+        /StartState:         0          #3 GPS #0 Line
 
 /fsm:
     ros__parameters:
