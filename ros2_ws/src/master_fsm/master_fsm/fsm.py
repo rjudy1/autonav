@@ -20,6 +20,7 @@ from std_msgs.msg import String
 from custom_msgs.msg import HeadingStatus
 from custom_msgs.msg import LightCmd
 from custom_msgs.msg import EncoderData
+from custom_msgs.msg import ImuData
 
 
 class MainRobot(Node):
@@ -35,6 +36,10 @@ class MainRobot(Node):
         self.declare_parameter('/GpsExitHeading', 0.0)
         self.declare_parameter('/CrossRampInGps', True)
         self.declare_parameter('/RepeatGps', False)
+        # get the encoder parameters
+        self.declare_parameter('/EncoderBoxTurnLeft', True)
+        self.declare_parameter('/EncoderBoxDistance', 0.3)
+        self.declare_parameter('/EncoderBoxSpeed', 4.0)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -82,11 +87,6 @@ class MainRobot(Node):
 
         # Encoder box following setup
         if self.get_parameter("/StartState").value == STATE.ENCODER_BOX_FOLLOW_STRAIGHT:
-            # get the encoder parameters
-            self.declare_parameter('/EncoderBoxTurnLeft', True)
-            self.declare_parameter('/EncoderBoxDistance', 0.3)
-            self.declare_parameter('/EncoderBoxSpeed', 4.0)
-
             # subscribe to the encoder data
             self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.encoder_callback, 10)
             
@@ -108,6 +108,10 @@ class MainRobot(Node):
             self.encoder_right_raw = 0
 
             self.encoder_straight_threshold = 20
+
+        if self.get_parameter('/StartState').value == STATE.IMU_HEADING_ACCURACY_TEST:
+            self.imu_sub = self.create_subscription(ImuData, "imu_data", self.imu_callback, 10)
+            self.last_imu_data = ImuData()
 
         # Make a timer object for calling the change state periodically
         self.timer = self.create_timer(self.get_parameter('/TimerRate').value, self.timer_callback)
@@ -363,9 +367,7 @@ class MainRobot(Node):
 
     # Transition State to find the line after GPS Navigation
     def find_line_state(self):
-        # self.get_logger().info("Find Line Transition State")
         # Just keep going until we find the line
-
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN},{(-1+2*int(self.follow_dir))*self.SLIGHT_TURN*1/3}"
         self.wheel_pub.publish(self.wheel_msg)
 
@@ -386,8 +388,6 @@ class MainRobot(Node):
 
     # Transition State to Orient to the line direction
     def line_orientation_state(self):
-        # self.get_logger().info("Line Orientation Transition State")
-
         # directly controls the motors
         # Just keep turning until we are parallel with the line
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
@@ -493,7 +493,23 @@ class MainRobot(Node):
             # change state
             self.state = STATE.ENCODER_BOX_FOLLOW_STRAIGHT
             self.encoder_box_follow_straight_state()
-        pass
+
+    def imu_heading_accuracy_test_state(self):
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
+        self.wheel_pub.publish(self.wheel_msg)
+
+        self.get_logger().info(f"x: {self.last_imu_data.euler_x}, y: {self.last_imu_data.euler_y}, z: {self.last_imu_data.euler_z}")
+
+        if self.last_imu_data.euler_x < 181.0 and self.last_imu_data.euler_x > 179.0:
+            light_msg = LightCmd()
+            light_msg.type = 'B'
+            light_msg.on = True
+            self.lights_pub.publish(light_msg)
+            time.sleep(.10)
+            light_msg.on = False
+            self.lights_pub.publish(light_msg)
+
+
 
     # This function is essentially a big state machine handling transitions
     # between a number of different states in the system.
@@ -525,6 +541,8 @@ class MainRobot(Node):
             self.encoder_box_follow_straight_state()
         elif self.state == STATE.ENCODER_BOX_FOLLOW_TURN:
             self.encoder_box_follow_turn_state()
+        elif self.state == STATE.IMU_HEADING_ACCURACY_TEST:
+            self.imu_heading_accuracy_test_state()
         else:
             self.get_logger().info("Error: Invalid State")
 
@@ -665,6 +683,9 @@ class MainRobot(Node):
         self.encoder_right = data.right
         self.encoder_left_raw = data.left_raw
         self.encoder_right_raw = data.right_raw
+
+    def imu_callback(self, data):
+        self.last_imu_data = data
 
     # Callback for the timer
     def timer_callback(self):
