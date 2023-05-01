@@ -40,8 +40,18 @@ class GPS(Node):
         self.declare_parameter('/StartState', 0)
         self.declare_parameter('/SensorInput', 0)
         self.declare_parameter('/InputInitialCondition', False)
+        self.declare_parameter('/FilterType', 0)
+        self.declare_parameter('/Alpha', 0.5)
+        self.declare_parameter('/Beta', 0.5)
+        self.declare_parameter('/Gamma', 0.5)
         self.declare_parameter('/InitialLat', 0.0)
         self.declare_parameter('/InitialLon', 0.0)
+        self.declare_parameter('/InitialLatDot', 0.0)
+        self.declare_parameter('/InitialLonDot', 0.0)
+        self.declare_parameter('/InitialLatDotDot', 0.0)
+        self.declare_parameter('/InitialLonDotDot', 0.0)
+        self.declare_parameter('/PracticeInitialLat', 0.0)
+        self.declare_parameter('/PracticeInitialLon', 0.0)
         self.declare_parameter('/WaypointLat1', 0.0)
         self.declare_parameter('/WaypointLon1', 0.0)
         self.declare_parameter('/WaypointLat2', 0.0)
@@ -57,8 +67,6 @@ class GPS(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/NorthPointFirst', False)
         self.declare_parameter('/RealCourse', False)
-        self.declare_parameter('/PracticeInitialLat', 0.0)
-        self.declare_parameter('/PracticeInitialLon', 0.0)
         self.declare_parameter('/PracticeWaypointLat1', 0.0)
         self.declare_parameter('/PracticeWaypointLon1', 0.0)
         self.declare_parameter('/PracticeWaypointLat2', 0.0)
@@ -106,6 +114,18 @@ class GPS(Node):
             self.target_loc.append(complex(WP_LAT3, WP_LON3))
             self.target_loc.append(complex(WP_LAT4, WP_LON4))
 
+        self.lat_dot_filter = self.get_parameter('/InitialLatDot').value
+        self.lon_dot_filter = self.get_parameter('/InitialLonDot').value
+        self.lat_dot_dot_filter = self.get_parameter('/InitialLatDotDot').value
+        self.lon_dot_dot_filter = self.get_parameter('/InitialLonDotDot').value
+        self.alpha_lat = self.get_parameter('/Alpha').value
+        self.alpha_lon = self.get_parameter('/Alpha').value
+        self.beta_lat = self.get_parameter('/Beta').value
+        self.beta_lon = self.get_parameter('/Beta').value
+        self.gamma_lat = self.get_parameter('/Gamma').value
+        self.gamma_lon = self.get_parameter('/Gamma').value
+        
+
         # flip if
         if not self.get_parameter('/NorthPointFirst').value:
             self.target_loc.reverse()
@@ -118,8 +138,9 @@ class GPS(Node):
         self.state_sub = self.create_subscription(Int32, "state_topic", self.state_callback, 10)
         self.state = self.get_parameter('/StartState').value
 
-        # process GPS data at 2 Hz
-        self.timer = self.create_timer(.45, self.process_gps_data)
+        # process GPS data at 8 Hz
+        self.timer = self.create_timer(.125, self.process_gps_data)
+        self.T = 0.125
 
         self.ser = serial.Serial(self.get_parameter('/Port').value, baudrate=115200)
         self.ser.readline()  # read one junk line to achieve line synchronization
@@ -134,6 +155,9 @@ class GPS(Node):
             self.past_loc = complex(IC_LAT, IC_LON)
         else:
             self.past_loc = self.take_reading()
+        # self.target_loc.append(self.past_loc)  # set initial position as end goal
+        self.lat_filter = self.past_loc.real
+        self.lon_filter = self.past_loc.imag
         
         self.moving_avg = np.zeros((5,), dtype=np.float32)
         self.moving_avg_idx = 0
@@ -170,10 +194,10 @@ class GPS(Node):
 
         if self.state == STATE.GPS_NAVIGATION or self.state == STATE.OBJECT_AVOIDANCE_FROM_GPS:
             #dist_limit = 0.65
-            dist_limit = 0.75
+            dist_limit = 0.8
         else:
             #dist_limit = self.DISTANCE_GOAL
-            dist_limit = 0.75
+            dist_limit = 0.8
 
         if dist_meters <= dist_limit:
             msg = String()
@@ -182,21 +206,65 @@ class GPS(Node):
             self.gps_event_pub.publish(msg)
             self.get_logger().info(f"WAYPOINT FOUND - SWITCH POINTS to {self.target_loc[self.waypoint_itr]}")
 
-            # if self.waypoint_itr >= len(self.target_loc):
-            #     msg = String()
-            #     msg.data = STATUS.WAYPOINTS_DONE
-            #     self.gps_event_pub.publish(msg)
-            #     self.get_logger().warning("FINISHED GPS")
         return dist_meters
 
     # this function takes a measurement and calculates all of the necessary
     # information from the location to send to the motor controller
     def process_gps_data(self):
         loc = self.take_reading()  # get the new reading
+
+        if self.get_parameter('/FilterType').value == 1: # alpha-beta-gamma filter
+            # Prediction stage
+            self.lat_predict = self.lat_filter + self.lat_dot_filter + self.lat_dot_dot_filter/2
+            self.lat_dot_predict = self.lat_dot_filter + self.lat_dot_dot_filter
+            self.lat_dot_dot_predict = self.lat_dot_dot_filter
+
+            self.lon_predict = self.lon_filter + self.lon_dot_filter + self.lon_dot_dot_filter/2
+            self.lon_dot_predict = self.lon_dot_filter + self.lon_dot_dot_filter
+            self.lon_dot_dot_predict = self.lon_dot_dot_filter
+
+            # Update stage
+            lat_measurement_error = loc.real - self.lat_predict
+            lon_measurement_error = loc.imag - self.lon_predict
+
+            self.lat_filter = self.lat_predict + self.alpha_lat*lat_measurement_error
+            self.lat_dot_filter = self.lat_dot_predict + self.beta_lat*lat_measurement_error
+            self.lat_dot_dot_filter = self.lat_dot_dot_predict + self.gamma_lat*lat_measurement_error
+
+            self.lon_filter = self.lon_predict + self.alpha_lon*lon_measurement_error
+            self.lon_dot_filter = self.lon_dot_predict + self.beta_lon*lon_measurement_error
+            self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
+            
+            # adjust filter parameters and update again
+            self.alpha_lat = self.optimize_abg(self.alpha_lat, lat_measurement_error, self.lat_filter-self.lat_predict)
+            self.beta_lat = self.optimize_abg(self.beta_lat, lat_measurement_error, self.lat_dot_filter-self.lat_dot_predict)
+            self.gamma_lat = self.optimize_abg(self.gamma_lat, lat_measurement_error, self.lat_dot_dot_filter-self.lat_dot_dot_predict)
+            self.alpha_lon = self.optimize_abg(self.alpha_lon, lon_measurement_error, self.lon_filter-self.lon_predict)
+            self.beta_lon = self.optimize_abg(self.beta_lon, lon_measurement_error, self.lon_dot_filter-self.lon_dot_predict)
+            self.gamma_lon = self.optimize_abg(self.gamma_lon, lon_measurement_error, self.lon_dot_dot_filter-self.lon_dot_dot_predict)
+            
+            if self.get_parameter('/Debug').value:
+                self.get_logger().info(f'alpha_lat: {self.alpha_lat}, beta_lat: {self.beta_lat}, gamma_lat: {self.gamma_lat}')
+                self.get_logger().info(f'alpha_lon: {self.alpha_lon}, beta_lon: {self.beta_lon}, gamma_lon: {self.gamma_lon}')
+
+            self.lat_filter = self.lat_predict + self.alpha_lat*lat_measurement_error
+            self.lat_dot_filter = self.lat_dot_predict + self.beta_lat*lat_measurement_error
+            self.lat_dot_dot_filter = self.lat_dot_dot_predict + self.gamma_lat*lat_measurement_error
+
+            self.lon_filter = self.lon_predict + self.alpha_lon*lon_measurement_error
+            self.lon_dot_filter = self.lon_dot_predict + self.beta_lon*lon_measurement_error
+            self.lon_dot_dot_filter = self.lon_dot_dot_predict + self.gamma_lon*lon_measurement_error
+
+            loc = complex(self.lat_filter, self.lon_filter)
+        elif self.get_parameter('/FilterType').value == 2: # LPF
+            self.lat_filter = self.lat_filter + self.alpha_lat*(loc.real-self.lat_filter)
+            self.lon_filter = self.lon_filter + self.alpha_lon*(loc.imag-self.lon_filter)
+
+            loc = complex(self.lat_filter, self.lon_filter)\
+
         # Check if we are at the waypoint
         distance = self.check_waypoint(loc)
         if self.get_parameter('/Debug').value:
-            # pass
             self.get_logger().info(f"loc {loc}\n")
                                    # f"Desired location: {self.target_loc[self.waypoint_itr]}")
 
@@ -231,11 +299,11 @@ class GPS(Node):
                         lon = float(message[5]) / 100 * (-1 + 2 * int(message[6] == 'E'))
                         self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
                         return complex(lat, lon)
-                    # elif message[0] == "$GNGLL":
-                    #     lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
-                    #     lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
-                    #     # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
-                    #     return complex(lat, lon)
+                    elif message[0] == "$GNGLL":
+                        lat = float(message[1]) / 100 * (-1 + 2 * int(message[2] == 'N'))
+                        lon = float(message[3]) / 100 * (-1 + 2 * int(message[4] == 'E'))
+                        # self.get_logger().warning(f"FOUND GNRMC FIX {lat}, {lon}")
+                        return complex(lat, lon)
                 except Exception as e:
                     # self.get_logger().warning(f"ERROR IN READING: {e}. Take robot outside")
                     pass
@@ -252,6 +320,16 @@ class GPS(Node):
         # call "log_gps(GNGGA_string)" each time new GPS data is received
         # nmealist = nmeastring.split(',')
         self.writer.writerow(np.concatenate(([time.time()],nmeastring)))
+
+    # m_err : "measurement error" - difference between measurement and prediction
+    # p_e_err : "prediction-estimation error" - difference between 
+    def optimize_abg(self, abg_param, m_err, p_e_err):
+        learning_rate = 0.1
+
+        err = m_err ** 2
+        gradient_abg = 2*err*p_e_err
+        return abg_param - learning_rate * gradient_abg
+        
 
     def __del__(self):
         # self.get_logger().info("Deleting GPS Node")

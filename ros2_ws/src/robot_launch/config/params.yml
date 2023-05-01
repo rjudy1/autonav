@@ -4,15 +4,13 @@
         /RealCourse:         False
         /FollowingDirection: 0          # 1  is right, 0 is left (line following)
         /UseYellow:          False      # True for yellow lines, False for white lines
-        /InitialHeading:     162.0      # robot's absolute initial heading. set before build in degrees.
+        /InitialHeading:     316.0      # robot's absolute initial heading. set before build in degrees.
         /NorthPointFirst:    True
         /GpsExitHeading:     0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
         /CrossRampInGps:     True
-        /RepeatGps:          True       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
+        /RepeatGps:          False       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
         /LineDist:           0.2        # Distance in meters to follow the line from
         /StartState:         0          #3 GPS #0 Line
-#        /EncoderWeight:             .75
-
 
 /fsm:
     ros__parameters:
@@ -51,19 +49,28 @@
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
     ros__parameters:
-        /SensorInput:           0    # 0 = GPS, 1 = shaft encoders
+        /SensorInput:           0     # 0 = GPS, 1 = shaft encoders
         /InputInitialCondition: False # True = use initial condition params, False = use take_reading() to get initial condition
+        ## Alpha-Beta-Gamma Filter Parameters
+        /FilterType:            0       # 0 = raw data, 1 = ABG filter, 2 = LPF
+        /Alpha:                 0.1     # Initial ABG filter parameters
+        /Beta:                  0.5     #
+        /Gamma:                 0.5     #
+        /InitialLatDot:         0.0     # Initial velocity in the latitudinal direction in GPS units (DMM)/second
+        /InitialLatDotDot:      0.0     # Initial acceleration in the latitudinal direction in GPS units (DMM)/second^2
+        /InitialLonDot:         0.0     # Initial velocity in the longitudinal direction in GPS units (DMM)/second
+        /InitialLonDotDot:      0.0     # Initial acceleration in the longitudinal direction in GPS units (DMM)/second^2
         ## Practice Coordinates
-        /PracticeInitialLat:   0.0
-        /PracticeInitialLon:   0.0
-        /PracticeWaypointLat1: 39.4477519 
-        /PracticeWaypointLon1: -83.4877888 
-        /PracticeWaypointLat2: 39.4477519
-        /PracticeWaypointLon2: -83.4877888
-        /PracticeWaypointLat3: 39.4477519
-        /PracticeWaypointLon3: -83.4877888
-        /PracticeWaypointLat4: 39.4477519
-        /PracticeWaypointLon4: -83.4877888
+        /PracticeInitialLat:   39.4483377
+        /PracticeInitialLon:   -83.4879768
+        /PracticeWaypointLat1: 39.4477732
+        /PracticeWaypointLon1: -83.4878617
+        /PracticeWaypointLat2: 39.4478321
+        /PracticeWaypointLon2: -83.48781989999999
+        /PracticeWaypointLat3: 39.4478863
+        /PracticeWaypointLon3: -83.4878186
+        /PracticeWaypointLat4: 39.4478321
+        /PracticeWaypointLon4: -83.48781989999999
         ## Real Coordinates
         /InitialLat: 0.0
         /InitialLon: 0.0
@@ -84,11 +91,11 @@
         # found south = 42.4007429-83.1316116
         /WaypointLat4:              42.400749623333336   # south real -- adjusted about a meter south
         /WaypointLon4:              -83.131591085  # going north use = -83.131591085 , south same
-        
+        ## Other parameters
         /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
-        /Debug:                     False
+        /Debug:                     True
 
 /teensy:
     ros__parameters:
@@ -106,5 +113,8 @@
 
 /fusion:
     ros__parameters:
-        /ExitAngle:                 0.4  # radians = 22.9183 degrees
+        /ExitAngle:                 0.4  # +/- angle range we need to achieve to leave obstacle avoidance and return to GPS mode. radians = 22.9183 degrees
+        ## Heading Weights -- note that GPS weight is 1 - EncoderWeight - ImuWeight
+        /EncoderWeight:             0.2
+        /ImuWeight:                 0.5
         /Debug:                     False

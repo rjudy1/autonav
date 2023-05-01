@@ -35,6 +35,7 @@ class MainRobot(Node):
         self.declare_parameter('/ExitAngle', math.pi/8)
         self.declare_parameter('/GpsExitHeading', 0.0)
         self.declare_parameter('/CrossRampInGps', True)
+        self.declare_parameter('/RepeatGps', False)
         # get the encoder parameters
         self.declare_parameter('/EncoderBoxTurnLeft', True)
         self.declare_parameter('/EncoderBoxDistance', 0.3)
@@ -127,7 +128,7 @@ class MainRobot(Node):
         self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
-            if self.get_parameter('/RepeatGps'):
+            if self.get_parameter('/RepeatGps').value:
                 self.waypoint_count = (self.waypoint_count + 1) % 4
             else:
                 self.waypoint_count += 1
@@ -162,7 +163,7 @@ class MainRobot(Node):
         # self.get_logger().info("Object Avoidance From Line Following State")
         # Check for another object in front of the robot
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
-            if self.get_parameter('/RepeatGps'):
+            if self.get_parameter('/RepeatGps').value:
                 self.waypoint_count = (self.waypoint_count + 1) % 4
             else:
                 self.waypoint_count += 1
@@ -236,7 +237,7 @@ class MainRobot(Node):
         # self.lights_pub.publish(light_msg)
 
         if self.waypoint_found:
-            if self.get_parameter('/RepeatGps'):
+            if self.get_parameter('/RepeatGps').value:
                 self.waypoint_count = (self.waypoint_count + 1) % 4
             else:
                 self.waypoint_count += 1
@@ -291,7 +292,7 @@ class MainRobot(Node):
                               f"{(-1 + 2*int(self.follow_dir==DIRECTION.LEFT)) * self.TURN_SPEED}")
 
         if self.waypoint_found:
-            if self.get_parameter('/RepeatGps'):
+            if self.get_parameter('/RepeatGps').value:
                 self.waypoint_count = (self.waypoint_count + 1) % 4
             else:
                 self.waypoint_count += 1
@@ -401,7 +402,7 @@ class MainRobot(Node):
             self.line_following_state()
 
     def orient_to_gps_state(self):
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{10},{18*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{3},{6*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.heading_restored:
@@ -545,7 +546,7 @@ class MainRobot(Node):
         else:
             self.get_logger().info("Error: Invalid State")
 
-        self.get_logger().info(f"fsm: current state is {self.state}")
+        # self.get_logger().info(f"fsm: current state is {self.state}")
 
     # End of State Machine
 
@@ -583,7 +584,7 @@ class MainRobot(Node):
                 self.exit_heading = self.target_heading
             orient_curr = self.heading
             orient_exit = self.exit_heading
-            if min(abs(sub_angles(orient_curr, orient_exit)), abs(sub_angles(orient_exit, orient_curr))) <= math.pi/12:
+            if min(abs(sub_angles(orient_curr, orient_exit)), abs(sub_angles(orient_exit, orient_curr))) <= math.pi/24:
                 self.get_logger().info(f"Heading restored with heading {orient_curr} and goal {orient_exit}")
                 self.heading_restored = True
             elif self.heading_restored:
