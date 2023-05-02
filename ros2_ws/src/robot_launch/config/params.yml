@@ -27,7 +27,7 @@
         # Pothole state parameter
         /PotholeSpeed: 4.0
         /PotholeDistance: 0.5
-        /PotholeTurnLeft: False
+        /PotholeTurnLeft: False # If you are left line following set False
 
 /rplidar_node:
     ros__parameters:
