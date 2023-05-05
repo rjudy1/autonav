@@ -26,8 +26,8 @@
         /EncoderBoxSpeed:    5.0   #
         # Pothole state parameter
         /PotholeSpeed: 4.0 #8.0
-        /PotholeDistance: 0.3
-        /PotholeDistanceEx: 0.6
+        /PotholeDistance: 0.1
+        /PotholeDistanceEx: 1
         /PotholeTurnLeft: False # If you are left line following set False
 
 /rplidar_node:
