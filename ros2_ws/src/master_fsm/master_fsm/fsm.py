@@ -230,14 +230,16 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_TO_OBJECT
             self.line_to_object_state()  # enter the transition state
-            """
+            
         elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
             self.state = STATE.POTHOLE_TURN_RIGHT
             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
             self.state_pub.publish(self.state_msg)
             self.pothole_turn_right()
-            """
+
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
             #light_msg = LightCmd()
@@ -263,6 +265,15 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
             self.gps_to_object_state()  # enter the transition state
+
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
 
         elif self.heading_restored:  # Otherwise see if have a clear path to the waypoint
             self.heading_restored = False
@@ -329,6 +340,14 @@ class MainRobot(Node):
             self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
 
     # End of Major States
 
@@ -360,15 +379,16 @@ class MainRobot(Node):
             self.state_msg.data = STATE.GPS_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.gps_to_object_state()
-            """
+
         elif self.pothole_found:
-             self.pothole_found = False
-             self.obj_seen = False
-             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
-             self.state_pub.publish(self.state_msg)
-             self.state = STATE.STATE.POTHOLE_TURN_RIGHT
-             self.pothole_turn_right()
-            """
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
         elif self.path_clear:
              self.path_clear = False
              self.obj_seen = False
@@ -409,14 +429,16 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
 
             self.line_to_object_state()  # enter the transition state
-            """
+
         elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
             self.state = STATE.POTHOLE_TURN_RIGHT
             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
             self.state_pub.publish(self.state_msg)
             self.pothole_turn_right()
-            """
+
     # GPS Navigation to Object Avoidance Transition State
     def gps_to_object_state(self):
         # self.get_logger().info("GPS to Object Transition State")
@@ -460,14 +482,15 @@ class MainRobot(Node):
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.line_to_object_state()
-            """
+
         elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
             self.state = STATE.POTHOLE_TURN_RIGHT
             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
             self.state_pub.publish(self.state_msg)
             self.pothole_turn_right()
-            """
 
     # Transition State to Orient to the line direction
     def line_orientation_state(self):
@@ -506,6 +529,15 @@ class MainRobot(Node):
             # self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
     def gps_exit_state(self):
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{8},{15*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
@@ -523,6 +555,16 @@ class MainRobot(Node):
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.line_to_object_state()
+        
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
     # End of Transition States
 
     # *********************************************************************************************************************
