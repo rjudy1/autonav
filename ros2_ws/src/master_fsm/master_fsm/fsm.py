@@ -583,8 +583,8 @@ class MainRobot(Node):
         else:
             # time to transition states
             # adjust targets
-            self.pothole_left_target += self.pothole_straight_increment
-            self.pothole_right_target += self.pothole_straight_increment
+            self.pothole_left_target = self.pothole_straight_increment + self.encoder_left_raw
+            self.pothole_right_target = self.pothole_straight_increment + self.encoder_right_raw
             # send an updated command to the motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
             self.wheel_pub.publish(self.wheel_msg)
@@ -622,16 +622,16 @@ class MainRobot(Node):
             # change state
 
             if not self.exitTrue:
-                self.pothole_left_target += self.pothole_turn_increment_right
-                self.pothole_right_target += self.pothole_turn_increment_left
+                self.pothole_left_target = self.pothole_turn_increment_right + self.encoder_left_raw
+                self.pothole_right_target = self.pothole_turn_increment_left + self.encoder_right_raw
                 self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
                             {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/PotholeTurnLeft').value) + 1)}"
                 self.wheel_pub.publish(self.wheel_msg)
                 self.state = STATE.POTHOLE_TURN_LEFT
                 self.pothole_turn_left()
             else:
-                self.pothole_left_target += self.pothole_turn_right_exit
-                self.pothole_right_target += self.pothole_turn_left_exit
+                self.pothole_left_target = self.pothole_turn_right_exit + self.encoder_left_raw
+                self.pothole_right_target += self.pothole_turn_left_exit + self.encoder_right_raw
                 self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
                             {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/PotholeTurnLeft').value) + 1)}"
                 self.wheel_pub.publish(self.wheel_msg)
@@ -653,8 +653,8 @@ class MainRobot(Node):
         else:
             # time to transition states
             # adjust targets
-            self.pothole_left_target += self.pothole_straight_incrementEx
-            self.pothole_right_target += self.pothole_straight_incrementEx
+            self.pothole_left_target = self.pothole_straight_incrementEx + self.pothole_left_raw
+            self.pothole_right_target = self.pothole_straight_incrementEx + self.encoder_right_raw
             # send an updated command to the motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
             self.wheel_pub.publish(self.wheel_msg)
@@ -680,8 +680,8 @@ class MainRobot(Node):
             # time to transition states
             # adjust targets
             self.pothole_found = False
-            self.pothole_left_target += self.pothole_straight_increment
-            self.pothole_right_target += self.pothole_straight_increment
+            self.pothole_left_target = self.pothole_straight_increment + self.pothole_left_raw
+            self.pothole_right_target = self.pothole_straight_increment + self.pothole_right_raw
             # send an updated command to the motors
             self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
             self.state_msg.data = STATE.POTHOLE_TO_LINE
