@@ -601,23 +601,40 @@ class MainRobot(Node):
             # test to make sure we're adjusting if we'er not going straight
             delta_left = self.pothole_left_target - self.encoder_left_raw
             delta_right = self.pothole_right_target - self.encoder_right_raw
-            
-            if (delta_right < delta_left - self.pothole_straight_threshold):
-                # we're too far right
-                # decrease right wheel speed -> turn right slightly
-                self.get_logger().info("A")
-                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{1}"
-                self.wheel_pub.publish(self.wheel_msg)
-            elif (delta_left < delta_right - self.pothole_straight_threshold):
-                # we're too far left
-                # decrease left wheel speed -> turn left slightly
-                self.get_logger().info("B");
-                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{-1}"
-                self.wheel_pub.publish(self.wheel_msg)
+            if exitTrue:
+                if (delta_right < delta_left - self.pothole_straight_threshold):
+                    # we're too far right
+                    # decrease right wheel speed -> turn right slightly
+                    self.get_logger().info("A")
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{not self.get_parameter('/PotholeSpeed').value},{1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                elif (delta_left < delta_right - self.pothole_straight_threshold):
+                    # we're too far left
+                    # decrease left wheel speed -> turn left slightly
+                    self.get_logger().info("B");
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{not self.get_parameter('/PotholeSpeed').value},{-1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                else:
+                    self.get_logger().info("C");
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{not self.get_parameter('/PotholeSpeed').value},{0}"
+                    self.wheel_pub.publish(self.wheel_msg)
             else:
-                self.get_logger().info("C");
-                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
-                self.wheel_pub.publish(self.wheel_msg)
+                if (delta_right < delta_left - self.pothole_straight_threshold):
+                        # we're too far right
+                    # decrease right wheel speed -> turn right slightly
+                    self.get_logger().info("A")
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                elif (delta_left < delta_right - self.pothole_straight_threshold):
+                    # we're too far left
+                    # decrease left wheel speed -> turn left slightly
+                    self.get_logger().info("B");
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{-1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                else:
+                    self.get_logger().info("C");
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
+                    self.wheel_pub.publish(self.wheel_msg)
         else:
             # time to transition states
             # send updated command to motors
