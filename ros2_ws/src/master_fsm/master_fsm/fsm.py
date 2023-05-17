@@ -122,7 +122,7 @@ class MainRobot(Node):
         self.pothole_right = 0.0
         self.pothole_left_raw = 0
         self.pothole_right_raw = 0
-        self.pothole_straight_threshold = 20
+        self.pothole_straight_threshold = 5 #20
         self.exitTrue = False
         # Encoder box following setup
         # subscribe to the encoder data
@@ -606,13 +606,17 @@ class MainRobot(Node):
                     # we're too far right
                     # decrease right wheel speed -> turn right slightly
                     self.get_logger().info("Ae")
-                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{ self.get_parameter('/PotholeSpeed').value},{1}"
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{ self.get_parameter('/PotholeSpeed').value},{1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/FollowingDirection').value) + 1)}"
                     self.wheel_pub.publish(self.wheel_msg)
                 elif (delta_left < delta_right - self.pothole_straight_threshold):
                     # we're too far left
                     # decrease left wheel speed -> turn left slightly
                     self.get_logger().info("Be");
-                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{ self.get_parameter('/PotholeSpeed').value},{-1}"
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{ self.get_parameter('/PotholeSpeed').value},{-1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (self.get_parameter('/FollowingDirection').value) + 1)}"
                     self.wheel_pub.publish(self.wheel_msg)
                 else:
                     self.get_logger().info("Ce");
@@ -623,13 +627,17 @@ class MainRobot(Node):
                         # we're too far right
                     # decrease right wheel speed -> turn right slightly
                     self.get_logger().info("A")
-                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{1}"
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/FollowingDirection').value) + 1)}"
                     self.wheel_pub.publish(self.wheel_msg)
                 elif (delta_left < delta_right - self.pothole_straight_threshold):
                     # we're too far left
                     # decrease left wheel speed -> turn left slightly
                     self.get_logger().info("B");
-                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{-1}"
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{-1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (self.get_parameter('/FollowingDirection').value) + 1)}"
                     self.wheel_pub.publish(self.wheel_msg)
                 else:
                     self.get_logger().info("C");
