@@ -22,6 +22,8 @@ from custom_msgs.msg import LightCmd
 from custom_msgs.msg import EncoderData
 from custom_msgs.msg import ImuData
 
+import inspect
+# inspect.stack()[1][3]
 
 class MainRobot(Node):
     def __init__(self):
@@ -37,9 +39,15 @@ class MainRobot(Node):
         self.declare_parameter('/CrossRampInGps', True)
         self.declare_parameter('/RepeatGps', False)
         # get the encoder parameters
-        self.declare_parameter('/EncoderBoxTurnLeft', True)
-        self.declare_parameter('/EncoderBoxDistance', 0.3)
+        self.declare_parameter('/EncoderBoxTurnLeft', False)
+        self.declare_parameter('/EncoderBoxDistance', 0.2)
         self.declare_parameter('/EncoderBoxSpeed', 4.0)
+
+        # set the speed for pothole
+        self.declare_parameter('/PotholeSpeed', 5.0) #8.0
+        self.declare_parameter('/PotholeDistance', 0.2)
+        self.declare_parameter('/PotholeDistanceEx', 1.2)
+        self.declare_parameter('/PotholeTurnLeft', False)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -72,6 +80,7 @@ class MainRobot(Node):
         self.waypoint_found = False
         self.heading_restored = False
         self.path_clear = False
+        self.pothole_found = False
         self.follow_dir = self.get_parameter('/FollowingDirection').value
         self.TURN_SPEED = self.get_parameter('/TurnSpeed').value
         self.SLIGHT_TURN = self.get_parameter('/SlightTurn').value
@@ -85,29 +94,59 @@ class MainRobot(Node):
         self.gps_exit_heading = self.get_parameter('/GpsExitHeading').value
         self.waypoint_count = 0
 
+        self.changeTurn = False
+
+        # Pothole
+        self.pothole_sub = self.create_subscription(String, 'pothole_events', self.pothole_callback, 10)
+
+        self.pothole_straight_increment = meters_to_ticks(self.get_parameter('/PotholeDistance').value)
+        self.pothole_straight_incrementEx = meters_to_ticks(self.get_parameter('/PotholeDistanceEx').value)
+
+        if self.get_parameter('/PotholeTurnLeft').value:
+            self.pothole_turn_increment_left = 0
+            self.pothole_turn_increment_right = meters_to_ticks(math.pi / 2 * 0.6096)
+
+            self.pothole_turn_left_exit = 0  # assign this on right. Turn 135
+            self.pothole_turn_right_exit =  meters_to_ticks((math.pi / 2 * 0.6096)/2)  # assign this on right. Turn 135
+        else:
+            self.pothole_turn_increment_left = meters_to_ticks(math.pi / 2 * 0.6096) #90
+            self.pothole_turn_increment_right = 0
+
+            self.pothole_turn_left_exit = meters_to_ticks((math.pi / 2 * 0.6096)/2) #45 # assign this on right. Turn 135
+            self.pothole_turn_right_exit = 0  # assign this on right. Turn 135
+
+        self.pothole_left_target = 0
+        self.pothole_right_target =0
+
+        # init the encoder data storage
+        self.pothole_left = 0.0
+        self.pothole_right = 0.0
+        self.pothole_left_raw = 0
+        self.pothole_right_raw = 0
+        self.pothole_straight_threshold = 10 #20
+        self.exitTrue = False
         # Encoder box following setup
-        if self.get_parameter("/StartState").value == STATE.ENCODER_BOX_FOLLOW_STRAIGHT:
-            # subscribe to the encoder data
-            self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.encoder_callback, 10)
-            
-            # initialize our variables
-            self.encoder_straight_increment = meters_to_ticks(self.get_parameter('/EncoderBoxDistance').value)
-            if self.get_parameter('/EncoderBoxTurnLeft').value:
-                self.encoder_turn_increment_left = 0
-                self.encoder_turn_increment_right = meters_to_ticks(math.pi/2*0.6096)
-            else:
-                self.encoder_turn_increment_left = meters_to_ticks(math.pi/2*0.6096)
-                self.encoder_turn_increment_right = 0
-            self.encoder_left_target = self.encoder_straight_increment
-            self.encoder_right_target = self.encoder_straight_increment
+        # subscribe to the encoder data
+        self.encoder_sub = self.create_subscription(EncoderData, "encoder_data", self.encoder_callback, 10)
 
-            # init the encoder data storage
-            self.encoder_left = 0.0
-            self.encoder_right = 0.0
-            self.encoder_left_raw = 0
-            self.encoder_right_raw = 0
+        # initialize our variables
+        self.encoder_straight_increment = meters_to_ticks(self.get_parameter('/EncoderBoxDistance').value)
+        if self.get_parameter('/EncoderBoxTurnLeft').value:
+            self.encoder_turn_increment_left = 0
+            self.encoder_turn_increment_right = meters_to_ticks(math.pi/2*0.6096)
+        else:
+            self.encoder_turn_increment_left = meters_to_ticks(math.pi/2*0.6096)
+            self.encoder_turn_increment_right = 0
+        self.encoder_left_target = self.encoder_straight_increment
+        self.encoder_right_target = self.encoder_straight_increment
 
-            self.encoder_straight_threshold = 20
+        # init the encoder data storage
+        self.encoder_left = 0.0
+        self.encoder_right = 0.0
+        self.encoder_left_raw = 0
+        self.encoder_right_raw = 0
+
+        self.encoder_straight_threshold = 20
 
         if self.get_parameter('/StartState').value == STATE.IMU_HEADING_ACCURACY_TEST:
             self.imu_sub = self.create_subscription(ImuData, "imu_data", self.imu_callback, 10)
@@ -157,6 +196,18 @@ class MainRobot(Node):
             self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
 
             self.line_to_object_state()  # enter the transition state
+            
+        elif self.pothole_found:
+            self.prev_heading = self.heading
+            self.exit_heading = self.target_heading
+            self.pothole_left_target = self.pothole_turn_increment_left + self.encoder_left_raw
+            self.pothole_right_target = self.pothole_turn_increment_right + self.encoder_right_raw
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
 
     # Object Avoidance From Line Following State - trying to get back to line
     def object_avoidance_from_line_state(self):
@@ -181,6 +232,16 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_TO_OBJECT
             self.line_to_object_state()  # enter the transition state
+            
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
             #light_msg = LightCmd()
@@ -206,6 +267,15 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.state = STATE.GPS_TO_OBJECT
             self.gps_to_object_state()  # enter the transition state
+
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
 
         elif self.heading_restored:  # Otherwise see if have a clear path to the waypoint
             self.heading_restored = False
@@ -272,6 +342,15 @@ class MainRobot(Node):
             self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
     # End of Major States
 
     # Beginning of Transition States
@@ -303,13 +382,25 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.gps_to_object_state()
 
-        elif self.path_clear:
-            self.path_clear = False
-            self.obj_seen = False
-            self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
             self.state_pub.publish(self.state_msg)
-            self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
-            self.object_avoidance_from_line_state()
+            self.pothole_turn_right()
+
+        elif self.path_clear:
+             self.path_clear = False
+             self.obj_seen = False
+             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
+             self.state_pub.publish(self.state_msg)
+             self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
+             self.object_avoidance_from_line_state()
+        
+
+            
 
     # Object Avoidance to Line Following Transition State - is gps needed here?
     def object_to_line_state(self):
@@ -341,6 +432,14 @@ class MainRobot(Node):
 
             self.line_to_object_state()  # enter the transition state
 
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
 
     # GPS Navigation to Object Avoidance Transition State
     def gps_to_object_state(self):
@@ -386,6 +485,15 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.line_to_object_state()
 
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
     # Transition State to Orient to the line direction
     def line_orientation_state(self):
         # directly controls the motors
@@ -423,6 +531,15 @@ class MainRobot(Node):
             # self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
     def gps_exit_state(self):
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{8},{15*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
         self.wheel_pub.publish(self.wheel_msg)
@@ -440,11 +557,225 @@ class MainRobot(Node):
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
             self.line_to_object_state()
+        
+        elif self.pothole_found:
+            self.pothole_left_target += self.pothole_turn_increment_left
+            self.pothole_right_target += self.pothole_turn_increment_right
+            self.pothole_found = False
+            self.state = STATE.POTHOLE_TURN_RIGHT
+            self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
+            self.state_pub.publish(self.state_msg)
+            self.pothole_turn_right()
+
     # End of Transition States
+
+    # *********************************************************************************************************************
+
+    def pothole_turn_right(self):
+        self.get_logger().info("pothole_turn_right");
+        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
+                               ,now right: {self.encoder_right_raw}, target right: {self.pothole_right_target}")
+            # check left line following of not and check the rotation reached the target or not.
+        if (self.get_parameter('/PotholeTurnLeft').value and self.encoder_right_raw < self.pothole_right_target) or \
+                (not self.get_parameter('/PotholeTurnLeft').value and self.encoder_left_raw < self.pothole_left_target):
+            # don't do anything...
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (self.get_parameter('/FollowingDirection').value) + 1)}"
+            self.wheel_pub.publish(self.wheel_msg)
+        else:
+            # time to transition states
+            # adjust targets
+            self.pothole_left_target = self.pothole_straight_increment + self.encoder_left_raw
+            self.pothole_right_target = self.pothole_straight_increment + self.encoder_right_raw
+            # send an updated command to the motors
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
+            self.wheel_pub.publish(self.wheel_msg)
+            # change state
+            self.state = STATE.POTHOLE_STRAIGHT
+            self.exitTrue = False
+            self.pothole_straight()
+
+    def pothole_straight(self):
+        self.get_logger().info("pothole_straight");
+        self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
+                               ,now right: {self.encoder_right_raw}, target right: {self.pothole_right_target}")
+        if self.encoder_left_raw < self.pothole_left_target or self.encoder_right_raw < self.pothole_right_target:
+            # test to make sure we're adjusting if we'er not going straight
+            delta_left = self.pothole_left_target - self.encoder_left_raw
+            delta_right = self.pothole_right_target - self.encoder_right_raw
+            if self.exitTrue:
+                if (delta_right < delta_left - self.pothole_straight_threshold):
+                    # we're too far right
+                    # decrease right wheel speed -> turn right slightly
+                    self.get_logger().info("Ae")
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{ self.get_parameter('/PotholeSpeed').value},{1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (self.get_parameter('/FollowingDirection').value) + 1)-1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                elif (delta_left < delta_right - self.pothole_straight_threshold):
+                    # we're too far left
+                    # decrease left wheel speed -> turn left slightly
+                    self.get_logger().info("Be");
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{ self.get_parameter('/PotholeSpeed').value},{-1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/FollowingDirection').value) + 1)+1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                else:
+                    self.get_logger().info("Ce");
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{ self.get_parameter('/PotholeSpeed').value},{0}"
+                    self.wheel_pub.publish(self.wheel_msg)
+            else:
+                if (delta_right < delta_left - self.pothole_straight_threshold):
+                        # we're too far right
+                    # decrease right wheel speed -> turn right slightly
+                    self.get_logger().info("A")
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (self.get_parameter('/FollowingDirection').value) + 1)-1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                elif (delta_left < delta_right - self.pothole_straight_threshold):
+                    # we're too far left
+                    # decrease left wheel speed -> turn left slightly
+                    self.get_logger().info("B");
+                    # self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{-1}"
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/FollowingDirection').value) + 1)+1}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                else:
+                    self.get_logger().info("C");
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
+                    self.wheel_pub.publish(self.wheel_msg)
+        else:
+            # time to transition states
+            # send updated command to motors
+            # why is this so long?
+            # change state
+
+            if not self.exitTrue:
+                self.get_logger().info(f"Increment is  { self.pothole_turn_increment_left}");
+                self.pothole_left_target = self.pothole_turn_increment_right + self.encoder_left_raw
+                self.pothole_right_target = self.pothole_turn_increment_left + self.encoder_right_raw - 100
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                            {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/PotholeTurnLeft').value) + 1)}"
+                self.wheel_pub.publish(self.wheel_msg)
+                self.state = STATE.POTHOLE_TURN_LEFT
+                self.pothole_turn_left()
+            else:
+                self.pothole_left_target = self.pothole_turn_right_exit + self.encoder_left_raw
+                self.pothole_right_target = self.pothole_turn_left_exit + self.encoder_right_raw
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                            {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/PotholeTurnLeft').value) + 1)}"
+                self.wheel_pub.publish(self.wheel_msg)
+                self.state = STATE.POTHOLE_EXIT
+                self.pothole_exit()
+
+    def pothole_turn_left(self):
+        self.get_logger().info("pothole_turn_left");
+        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
+                               ,now right: {self.encoder_right_raw}, target right: {self.pothole_right_target}")
+
+        if (not self.get_parameter('/PotholeTurnLeft').value and self.encoder_right_raw < self.pothole_right_target) \
+                                                         or (self.get_parameter('/PotholeTurnLeft').value and \
+                                                         self.encoder_left_raw < self.pothole_left_target):
+            # don't do anything...
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/FollowingDirection').value) + 1)}"
+            self.wheel_pub.publish(self.wheel_msg)
+        else:
+            # time to transition states
+            # adjust targets
+            self.pothole_left_target = self.pothole_straight_incrementEx + self.encoder_left_raw
+            self.pothole_right_target = self.pothole_straight_incrementEx + self.encoder_right_raw
+            # send an updated command to the motors
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
+            self.wheel_pub.publish(self.wheel_msg)
+            # change state
+            self.exitTrue = True
+            self.state = STATE.POTHOLE_STRAIGHT
+            self.pothole_straight()
+
+    def pothole_exit(self):
+
+        self.get_logger().info("pothole_exit");
+        # termination condition for this will be found the line.
+        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target},\
+                               now right: {self.encoder_right_raw}, target right: {self.pothole_right_target}")
+
+        if (not self.get_parameter('/PotholeTurnLeft').value and self.encoder_right_raw < self.pothole_right_target) \
+                                                         or (self.get_parameter('/PotholeTurnLeft').value and \
+                                                         self.encoder_left_raw < self.pothole_left_target):
+            # don't do anything...
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                    {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/FollowingDirection').value) + 1)}"
+            self.wheel_pub.publish(self.wheel_msg)
+        else:
+            # time to transition states
+            # adjust targets
+            self.pothole_found = False
+            self.exitTrue = False
+            self.pothole_left_target = self.pothole_straight_incrementEx + self.pothole_left_raw
+            self.pothole_right_target = self.pothole_straight_incrementEx + self.pothole_right_raw
+            # send an updated command to the motors
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
+            self.state_msg.data = STATE.POTHOLE_TO_LINE
+            self.state_pub.publish(self.state_msg)
+            self.state = STATE.POTHOLE_TO_LINE
+            self.pothole_to_line()
+
+        """
+        if self.found_line and self.heading_restored:  # and self.look_for_line
+            #light_msg = LightCmd()
+            #light_msg.type = 'B'
+            #light_msg.on = True
+            #self.lights_pub.publish(light_msg)
+            self.look_for_line = False
+            self.found_line = False
+            self.heading_restored = False
+            self.state_msg.data = STATE.OBJECT_TO_LINE
+            self.state_pub.publish(self.state_msg)
+            self.state = STATE.OBJECT_TO_LINE
+            self.object_to_line_state()  # enter the transition state
+
+        """
+    def pothole_to_line(self):
+        self.get_logger().info("pothole_to_line");
+        self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
+                               ,now right: {self.encoder_right_raw}, target right: {self.pothole_right_target}")
+        if self.encoder_left_raw < self.pothole_left_target or self.encoder_right_raw < self.pothole_right_target:
+            # test to make sure we're adjusting if we'er not going straight
+            delta_left = self.pothole_left_target - self.encoder_left_raw
+            delta_right = self.pothole_right_target - self.encoder_right_raw
+            
+            if (delta_right < delta_left - self.pothole_straight_threshold):
+                # we're too far right
+                # decrease right wheel speed -> turn right slightly
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{1}"
+                self.wheel_pub.publish(self.wheel_msg)
+            elif (delta_left < delta_right - self.pothole_straight_threshold):
+                # we're too far left
+                # decrease left wheel speed -> turn left slightly
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{-1}"
+                self.wheel_pub.publish(self.wheel_msg)
+            else:
+                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},{0}"
+                self.wheel_pub.publish(self.wheel_msg)
+        else:
+            # time to transition states
+            # adjust targets
+            self.get_logger().info("POTHOLE EXIT")
+            self.pothole_found = False
+            self.state_msg.data = STATE.LINE_FOLLOWING
+            self.state_pub.publish(self.state_msg)
+            self.state = STATE.LINE_FOLLOWING
+            self.line_following_state()
+
+
+    # *********************************************************************************************************************
 
     # Debug / Testing States
     def encoder_box_follow_straight_state(self):
-        self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
+        self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right:\
+                                {self.encoder_right_raw}, target right: {self.encoder_right_target}")
         if self.encoder_left_raw < self.encoder_left_target or self.encoder_right_raw < self.encoder_right_target:
             # test to make sure we're adjusting if we're not going straight
             delta_left = self.encoder_left_target - self.encoder_left_raw
@@ -466,25 +797,41 @@ class MainRobot(Node):
         else:
             # time to transition states
             # adjust targets
+            self.get_logger().info("straight done")
             self.encoder_left_target += self.encoder_turn_increment_left
             self.encoder_right_target += self.encoder_turn_increment_right
             # send updated command to motors
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.get_parameter('/EncoderBoxTurnLeft').value)+1)}"
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
+                {self.get_parameter('/EncoderBoxSpeed').value*(-2*(self.changeTurn)+1)}"
             self.wheel_pub.publish(self.wheel_msg)
             # change state
             self.state = STATE.ENCODER_BOX_FOLLOW_TURN
             self.encoder_box_follow_turn_state()
 
     def encoder_box_follow_turn_state(self):
-        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
+        self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.encoder_left_target},\
+                               now right: {self.encoder_right_raw}, target right: {self.encoder_right_target}")
 
-        if (self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_right_raw < self.encoder_right_target) or (not self.get_parameter('/EncoderBoxTurnLeft').value and self.encoder_left_raw < self.encoder_left_target):
+        if (self.changeTurn and self.encoder_right_raw < self.encoder_right_target) or \
+            (not self.changeTurn and self.encoder_left_raw < self.encoder_left_target):
             # don't do anything...
-            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
+            self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
+                {self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.changeTurn) + 1)}"
             self.wheel_pub.publish(self.wheel_msg)
         else:
             # time to transition states
             # adjust targets
+
+            if self.changeTurn == False:
+                self.get_logger().info("Change turn")
+                changeTurn = True
+                self.encoder_turn_increment_left = 0
+                self.encoder_turn_increment_right = meters_to_ticks(math.pi / 2 * 0.6096)
+               # self.encoder_left_target=0
+               # self.encoder_left_raw=0
+               # self.encoder_right_target=0
+               # self.encoder_right_raw=0
+
             self.encoder_left_target += self.encoder_straight_increment
             self.encoder_right_target += self.encoder_straight_increment
             # send an updated command to the motors
@@ -494,8 +841,10 @@ class MainRobot(Node):
             self.state = STATE.ENCODER_BOX_FOLLOW_STRAIGHT
             self.encoder_box_follow_straight_state()
 
+
     def imu_heading_accuracy_test_state(self):
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},{self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/EncoderBoxSpeed').value},\
+            {self.get_parameter('/EncoderBoxSpeed').value * (-2 * (self.get_parameter('/EncoderBoxTurnLeft').value) + 1)}"
         self.wheel_pub.publish(self.wheel_msg)
 
         self.get_logger().info(f"x: {self.last_imu_data.euler_x}, y: {self.last_imu_data.euler_y}, z: {self.last_imu_data.euler_z}")
@@ -508,8 +857,6 @@ class MainRobot(Node):
             time.sleep(.10)
             light_msg.on = False
             self.lights_pub.publish(light_msg)
-
-
 
     # This function is essentially a big state machine handling transitions
     # between a number of different states in the system.
@@ -543,6 +890,16 @@ class MainRobot(Node):
             self.encoder_box_follow_turn_state()
         elif self.state == STATE.IMU_HEADING_ACCURACY_TEST:
             self.imu_heading_accuracy_test_state()
+        elif self.state == STATE.POTHOLE_TURN_RIGHT:
+            self.pothole_turn_right()
+        elif self.state == STATE.POTHOLE_STRAIGHT:
+            self.pothole_straight()
+        elif self.state == STATE.POTHOLE_TURN_LEFT:
+            self.pothole_turn_left()
+        elif self.state == STATE.POTHOLE_EXIT:
+            self.pothole_exit()
+        elif self.state == STATE.POTHOLE_TO_LINE:
+            self.pothole_to_line()
         else:
             self.get_logger().info("Error: Invalid State")
 
@@ -687,6 +1044,18 @@ class MainRobot(Node):
     def imu_callback(self, data):
         self.last_imu_data = data
 
+    def pothole_callback(self,pothole_events):
+        self.lock.acquire()
+        try:
+            if pothole_events.data == STATUS.POTHOLE_FOUND:
+                self.pothole_found = True
+            else:
+                pass
+                self.get_logger().info("UNKNOWN MESSAGE on pothole_events")
+        finally:
+            # Release the lock
+            self.lock.release()
+
     # Callback for the timer
     def timer_callback(self):
         # self.get_logger().info("Timer Callback")
@@ -699,7 +1068,6 @@ class MainRobot(Node):
         finally:
             # Release the lock
             self.lock.release()
-
 
 def main(args=None):
     rclpy.init()
@@ -714,7 +1082,6 @@ def main(args=None):
         rclpy.spin(main)
     except KeyboardInterrupt:
         print("Shutting down")
-
 
 if __name__ == "__main__":
     main(sys.argv)

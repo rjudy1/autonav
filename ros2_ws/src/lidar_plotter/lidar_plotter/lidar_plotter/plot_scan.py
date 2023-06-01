@@ -50,12 +50,16 @@ class Plot_Scan(Node):
         #self.get_logger().info(f"dist_y: {dist_y}")
 
         # plot only the useful data in a certain window
+        """
         for i in range(len(dist_y)):
+            # only look in the window that we care about
+            if (dist_y[i] > 2.9) or (dist_y[i] < 0.25):
+                dist_y[i] = inf # changed from 0 to 3
             # clip the edges and get rid of noise values that are too close/far
-            if (i < 18) or (i > (len(dist_y) - 18)) or (dist_y[i] > 2) or (dist_y[i] < 0.2):
-                dist_y[i] = 0
-
+            # if (i < 18) or (i > (len(dist_y) - 18)) or (dist_y[i] > 2) or (dist_y[i] < 0.2):
+            #     dist_y[i] = 0
         # plotting points as a scatter plot
+        """
         plt.scatter(points_x, dist_y, label= "points", color= "black", marker= ".", s=30)
 
         # axiis, title, display
@@ -64,6 +68,8 @@ class Plot_Scan(Node):
         # if you want distance in ft
         #plt.ylabel('Distances (ft)')
         plt.title('Lidar laster_frame scan')
+        plt.xlim(0,150)
+        plt.ylim(0,3)
         plt.show()
         # you can also press ctl C to close the program else it will
         # keep popping up

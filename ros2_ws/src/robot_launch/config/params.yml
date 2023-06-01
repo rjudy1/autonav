@@ -14,14 +14,21 @@
 
 /fsm:
     ros__parameters:
-        /TimerRate:  0.05  # rate at which to check and do state specified behavior
-        /TurnSpeed:  5 #20
-        /SlightTurn: 3 #18
-        /ExitAngle:  0.1
+    
+        /TimerRate:  0.05                       # rate at which to check and do state specified behavior
+        /TurnSpeed:  6 #5 #20
+        /SlightTurn: 5 #3 #18
+        /ExitAngle:  0.9 #1.15  #1.15 #0.1
+        /ExitAngle:  1.15  #1.15 #0.1
         # Encoder Box Following (state 11-12) Parameters
         /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
-        /EncoderBoxDistance: 0.3   # distance in meters of each side of the encoder's "box"
+        /EncoderBoxDistance: 0.2 # 0.5   # distance in meters of each side of the encoder's "box"
         /EncoderBoxSpeed:    5.0   #
+        # Pothole state parameter
+        /PotholeSpeed: 5.0 #8.0
+        /PotholeDistance: 0.2
+        /PotholeDistanceEx: 1.2
+        /PotholeTurnLeft: False # If you are left line following set False
 
 /rplidar_node:
     ros__parameters:
@@ -33,18 +40,20 @@
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
         /LineDetectDistance:        1.05
-        /Debug:                     False
+        /Debug:                     True
 
 
 /obstacles:
     ros__parameters:
         /ObstacleFOV:               0.8754  # radians = 50.1567 degrees
-        /PotholeDetectCropTop:      0.0
+        /PotholeDetectCropTop:      0.4
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.1  # meters = 3.6089 ft
-        /Debug:                     False
+        /ObstacleDetectDistance:    1.1  #1.1        # # meters = # inches
+        /ObstacleToPlainDistance:   2.0                # meters =  inches
+        /ObstacleNoiseMinDist:      0.3 #0.3          # # meters = # inches
+        /Debug:                     True
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
@@ -103,7 +112,7 @@
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .05
         /SideObjectDist:            0.425 # 0.85
-        /LineSpeed:                 14.0
+        /LineSpeed:                 4.0 #14.0
         /ObjectSpeed:               8.0
         /GpsSpeed:                  11.0
         /BoostIncrease:             1 #9
