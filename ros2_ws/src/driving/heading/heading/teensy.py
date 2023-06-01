@@ -73,7 +73,7 @@ class Teensy(Node):
 
         self.pid_line = PIDController(-0.025, 0.0, 0.0, 6, -6) # for line following
         self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
-        self.pid_gps = PIDController(2.0, 0, 0.0, 6, -6)  # for during gps navigation
+        self.pid_gps = PIDController(1.3, 0.0, 0.0, 8, -8)  # for during gps navigation
 
         # encoder parameters
         self.unitChange = 1  # assuming passed in meters, need mm
@@ -112,11 +112,15 @@ class Teensy(Node):
             self.MAX_CHANGE = 2
             self.boost_count = 0
 
+        # get initial offset for shaft encoder data
         self.serialPort.write('Q,**'.encode('utf-8'))
         read = self.serialPort.readline().decode('utf-8')
         data = read.split(',')
         self.left_offset = -int(data[1])
         self.right_offset = -int(data[2])
+
+        # publish initial IMU data before we start moving so we have an initial heading value
+        self.get_imu_data()
 
         self.serialPort.write("M,89,89,**".encode())
         # self.get_logger().info("WAIT: Enable power to motors")
@@ -215,9 +219,9 @@ class Teensy(Node):
             delta = self.pid_gps.control(angle_error)
             # GPS sends the error as - for left turns and + for right turns
             adjustment = 0.0
-            if gps_distance <= 2.5:
-                adjustment = 4*(2.5 - gps_distance)
-                self.get_logger().info(f"adjusted linear by {adjustment}")
+            # if gps_distance <= 2.5:
+            #     adjustment = 4*(2.5 - gps_distance)
+                # self.get_logger().info(f"adjusted linear by {adjustment}")
 
             linear = round(self.gps_speed - adjustment)
             angular = round(delta)
@@ -228,7 +232,7 @@ class Teensy(Node):
             if self.boost_count > self.gps_boost_count_threshold and message_valid:
                 linear += self.speed_boost
 
-            self.get_logger().info(f"setting speeds: ({linear, angular})")
+            # self.get_logger().info(f"setting speeds: ({linear, angular})")
 
         else:
             message_valid = False
@@ -251,45 +255,30 @@ class Teensy(Node):
             # self.get_logger().info(f"handling {x}")
 
             self.send_speed(linear+89, angular+89)
-            self.get_logger().info(f"setting speeds: ({linear, angular})")
+            # self.get_logger().info(f"setting speeds: ({linear, angular})")
 
         self.curr_linear = linear
         self.curr_angular = angular
 
     def send_speed(self, linear, angular):
-        # Get the lock before proceeding
         msg = f"M,{linear},{angular},**"
         self.serialPort.write(msg.encode())
         sleep(.02)
 
     def light_callback(self, msg):
-        # Get the lock before proceeding
-        # self.lock.acquire()
-        # cmd = ''
         if msg.type == 'G' or msg.type == 'Y' or msg.type == 'B':
             cmd = f"{msg.type},{int(msg.on)},**"
-            # try:
             self.serialPort.write(cmd.encode('utf-8'))
-            # except serial.serialutil.SerialException:
-            #     self.get_logger().warning("Serial Exception occurred")
-            #     sleep(0.5)
-            # except Exception as ex:
-            #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            #     message = template.format(type(ex).__name__, ex.args)
-            #     self.get_logger().warning(message)
-            #     sleep(0.5)
-            #     self.close()
         else:
             self.get_logger().info(f"Message type {msg.type} invalid")
-        # self.lock.release()
 
     def timer_callback(self):
-        # self.lock.acquire()
         try:
             self.serialPort.write('Q,**'.encode('utf-8'))
             read = self.serialPort.readline().decode('utf-8')
             data = read.split(',')
             if data[0] == 'E' and len(data) == 4 and data[3] == '**\r\n':
+                # if the teensy returned valid data, save it
                 # find ticks since last change
                 left_ticks = int(data[1]) - self.past_left_ticks
                 right_ticks = int(data[2]) - self.past_right_ticks
@@ -312,48 +301,66 @@ class Teensy(Node):
                 msg.right_raw = -int(data[2]) - self.right_offset
                 self.encoder_pub.publish(msg)
             else:
+                # if the teensy returned invalid data, abort
                 self.serialPort.flushInput()
 
-            self.serialPort.write('I,**'.encode('utf-8'))
-            read = self.serialPort.readline().decode('utf-8')
-            data = read.split(',')
-            msg = ImuData()
-            if data[0] == 'ABS' and len(data) == 5 and data[4] == '**\r\n':
-                msg.abs_x = float(data[1])
-                msg.abs_y = float(data[2])
-                msg.abs_z = float(data[3])  
-            else:
-                self.serialPort.flushInput()
-                return     
-            
-            read = self.serialPort.readline().decode('utf-8')
-            data = read.split(',')
-            if data[0] == 'Euler' and len(data) == 5 and data[4] == '**\r\n':
-                msg.euler_x = float(data[1])
-                msg.euler_y = float(data[2])
-                msg.euler_z = float(data[3])  
-            else:
-                self.serialPort.flushInput()
-                return 
-            
-            read = self.serialPort.readline().decode('utf-8')
-            data = read.split(',')
-            if data[0] == 'Quaterion' and len(data) == 6 and data[5] == '**\r\n':
-                msg.quat_w = float(data[1])
-                msg.quat_x = float(data[2])
-                msg.quat_y = float(data[3])  
-                msg.quat_z = float(data[4])  
-            else:
-                self.serialPort.flushInput()
-                return 
-            self.imu_pub.publish(msg)    
+            self.get_imu_data()
+
         except serial.serialutil.SerialException:
             self.get_logger().info("encoder error in serial port")
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             self.get_logger().warning(message)
-        # self.lock.release()
+
+# function to call to get and publish an IMU data message, since we do it in more than one place
+    def get_imu_data(self):
+        # write command to Teensy to send IMU data
+        self.serialPort.write('I,**'.encode('utf-8'))
+
+        # get absolute orientation data
+        read = self.serialPort.readline().decode('utf-8')
+        data = read.split(',')
+        msg = ImuData()
+        if data[0] == 'ABS' and len(data) == 5 and data[4] == '**\r\n':
+            # if the teensy returned valid data, save it
+            msg.abs_x = float(data[1])
+            msg.abs_y = float(data[2])
+            msg.abs_z = float(data[3])
+        else:
+            # if the teensy returned invalid data, abort
+            self.serialPort.flushInput()
+            return
+
+        # get euler angles
+        read = self.serialPort.readline().decode('utf-8')
+        data = read.split(',')
+        if data[0] == 'Euler' and len(data) == 5 and data[4] == '**\r\n':
+            # if the teensy returned valid data, save it
+            msg.euler_x = float(data[1])
+            msg.euler_y = float(data[2])
+            msg.euler_z = float(data[3])
+        else:
+            # if the teensy returned invalid data, abort
+            self.serialPort.flushInput()
+            return
+
+        # get quaternions
+        read = self.serialPort.readline().decode('utf-8')
+        data = read.split(',')
+        if data[0] == 'Quaterion' and len(data) == 6 and data[5] == '**\r\n':
+            # if the teensy returned valid data, save it
+            msg.quat_w = float(data[1])
+            msg.quat_x = float(data[2])
+            msg.quat_y = float(data[3])
+            msg.quat_z = float(data[4])
+        else:
+            # if the teensy returned invalid data, abort
+            self.serialPort.flushInput()
+            return
+
+        # publish IMU data message
+        self.imu_pub.publish(msg)
 
 
 def main(args=None):
