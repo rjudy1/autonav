@@ -349,7 +349,7 @@ class TransformPublisher(Node):
         Detection method blobs is used in 2021 to 2022 team.
         """
         """
-        detector = cv2.SimpleBlobDetector_create(params)
+        detector = cv2.SimpleBlobDetector_create(params) 
         keypoints = detector.detect(morph)  # find the blobs meeting the parameters
         self.circles = []
         for hole in keypoints:
