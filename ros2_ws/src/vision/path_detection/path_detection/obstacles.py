@@ -338,7 +338,6 @@ class TransformPublisher(Node):
                 self.get_logger().info("PATH_CLEAR")
             self.path_clear = True
 
-
         self.lidar_str_pub.publish(msg)
 
         # publish the wheel distance from the obstacle based on following direction
