@@ -328,21 +328,11 @@ class TransformPublisher(Node):
         else:
             self.pothole_found = False
 
-
-
         if self.pothole_found:
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("POTHOLE_FOUND")
 
         t3 = time.time()
-        """
-        self.get_logger().info('time before loop')
-        self.get_logger().info(t2-t1)
-        self.get_logger().info('time after loop')
-        self.get_logger().info(t3-t1)
-        self.get_logger().info("loop took:")
-        self.get_logger().info(t3-t2)
-        """
         morph = im_rgb_withMarker
         # *************************************************************
         """
