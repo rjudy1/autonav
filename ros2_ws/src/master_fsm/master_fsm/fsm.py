@@ -48,6 +48,7 @@ class MainRobot(Node):
         self.declare_parameter('/PotholeDistance', 0.2)
         self.declare_parameter('/PotholeDistanceEx', 1.2)
         self.declare_parameter('/PotholeTurnLeft', False)
+        self.declare_parameter('/PotholeEnable', True)
 
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
@@ -197,7 +198,7 @@ class MainRobot(Node):
 
             self.line_to_object_state()  # enter the transition state
             
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.prev_heading = self.heading
             self.exit_heading = self.target_heading
             self.pothole_left_target = self.pothole_turn_increment_left + self.encoder_left_raw
@@ -233,7 +234,7 @@ class MainRobot(Node):
             self.state = STATE.LINE_TO_OBJECT
             self.line_to_object_state()  # enter the transition state
             
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -268,7 +269,7 @@ class MainRobot(Node):
             self.state = STATE.GPS_TO_OBJECT
             self.gps_to_object_state()  # enter the transition state
 
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -342,7 +343,7 @@ class MainRobot(Node):
             self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -382,7 +383,7 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.gps_to_object_state()
 
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -432,7 +433,7 @@ class MainRobot(Node):
 
             self.line_to_object_state()  # enter the transition state
 
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -485,7 +486,7 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.line_to_object_state()
 
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -531,7 +532,7 @@ class MainRobot(Node):
             # self.get_logger().info(f"Current heading: {self.prev_heading}, exit heading: {self.exit_heading}")
             self.gps_to_object_state()
 
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -558,7 +559,7 @@ class MainRobot(Node):
             self.state_pub.publish(self.state_msg)
             self.line_to_object_state()
         
-        elif self.pothole_found:
+        elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False

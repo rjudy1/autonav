@@ -29,6 +29,7 @@
         /PotholeDistance: 0.2
         /PotholeDistanceEx: 1.2
         /PotholeTurnLeft: False # If you are left line following set False
+        /PotholeEnable: True # If you want to disable, set to false.
 
 /rplidar_node:
     ros__parameters:
