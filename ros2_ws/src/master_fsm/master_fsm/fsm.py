@@ -191,6 +191,16 @@ class MainRobot(Node):
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
 
+            # light_msg = LightCmd()
+            # light_msg.type = 'B'
+            # light_msg.on = True
+            # self.lights_pub.publish(light_msg)
+            # time.sleep(.10)
+            # light_msg = LightCmd()
+            # light_msg.type = 'B'
+            # light_msg.on = False
+            # self.lights_pub.publish(light_msg)
+
             self.prev_heading = self.heading
             self.exit_heading = sub_angles(self.prev_heading, (1-2*int(self.follow_dir==DIRECTION.RIGHT))*self.exit_angle)
 
@@ -207,11 +217,19 @@ class MainRobot(Node):
             self.state = STATE.POTHOLE_TURN_RIGHT
             self.state_msg.data = STATE.POTHOLE_TURN_RIGHT
             self.state_pub.publish(self.state_msg)
+
             self.pothole_turn_right()
 
 
     # Object Avoidance From Line Following State - trying to get back to line
     def object_avoidance_from_line_state(self):
+        if self.heading_restored:
+            light_msg = LightCmd()
+            light_msg.type = 'G'
+            light_msg.on = True
+            self.lights_pub.publish(light_msg)
+
+
         # self.get_logger().info("Object Avoidance From Line Following State")
         # Check for another object in front of the robot
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
@@ -245,10 +263,18 @@ class MainRobot(Node):
 
 
         elif self.found_line and self.heading_restored:  # and self.look_for_line
-            #light_msg = LightCmd()
-            #light_msg.type = 'B'
-            #light_msg.on = True
-            #self.lights_pub.publish(light_msg)
+            # light_msg = LightCmd()
+            # light_msg.type = 'B'
+            # light_msg.on = True
+            # self.lights_pub.publish(light_msg)
+            # time.sleep(.10)
+            # light_msg.on = False
+            # self.lights_pub.publish(light_msg)
+            light_msg = LightCmd()
+            light_msg.type = 'G'
+            light_msg.on = False
+            self.lights_pub.publish(light_msg)
+
             self.look_for_line = False
             self.found_line = False
             self.heading_restored = False
@@ -394,26 +420,33 @@ class MainRobot(Node):
 
         elif self.path_clear:
              self.path_clear = False
+             light_msg = LightCmd()
+             light_msg.type = 'G'
+             light_msg.on = False
+             self.lights_pub.publish(light_msg)
              self.obj_seen = False
              self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
              self.state_pub.publish(self.state_msg)
              self.state = STATE.OBJECT_AVOIDANCE_FROM_LINE
              self.object_avoidance_from_line_state()
+
+
         
 
             
 
     # Object Avoidance to Line Following Transition State - is gps needed here?
     def object_to_line_state(self):
+
         # self.get_logger().info("Object to Line Transition State")
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round((1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}"
+                            f"{round(2/3*(1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}"
         self.wheel_pub.publish(self.wheel_msg)
         self.get_logger().info("In object to line state publishing:")
         self.get_logger().info(f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                                    f"{round((1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}")
+                                    f"{round(2/3*(1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}")
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
@@ -421,6 +454,17 @@ class MainRobot(Node):
             self.state_msg.data = STATE.LINE_FOLLOWING
             self.state_pub.publish(self.state_msg)
             self.state = STATE.LINE_FOLLOWING
+
+
+            # light_msg = LightCmd()
+            # light_msg.type = 'B'
+            # light_msg.on = True
+            # self.lights_pub.publish(light_msg)
+            # time.sleep(.10)
+            # light_msg = LightCmd()
+            # light_msg.type = 'B'
+            # light_msg.on = False
+            # self.lights_pub.publish(light_msg)
             self.line_following_state()
 
         elif self.obj_seen:  # object sighted - switch to obstacle avoidance
@@ -452,6 +496,10 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
         if self.path_clear:
             self.path_clear = False
+            light_msg = LightCmd()
+            light_msg.type = 'G'
+            light_msg.on = False
+            self.lights_pub.publish(light_msg)
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_GPS
             self.state_pub.publish(self.state_msg)
             self.state = STATE.OBJECT_AVOIDANCE_FROM_GPS
@@ -515,6 +563,10 @@ class MainRobot(Node):
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.heading_restored:
+            light_msg = LightCmd()
+            light_msg.type = 'G'
+            light_msg.on = False
+            self.lights_pub.publish(light_msg)
             self.heading_restored = False
             self.state = STATE.GPS_NAVIGATION
             self.state_msg.data = STATE.GPS_NAVIGATION
@@ -969,9 +1021,9 @@ class MainRobot(Node):
             elif line_event.data == STATUS.ALIGNED \
                     and (self.state == STATE.OBJECT_TO_LINE or self.state==STATE.LINE_ORIENT):
                 self.aligned = True
-                light_msg = LightCmd()
-                light_msg.type = 'G'
-                light_msg.on = True
+                # light_msg = LightCmd()
+                # light_msg.type = 'G'
+                # light_msg.on = True
                 self.get_logger().warning("ALIGNED TO LINE!!")
             else:
                 pass
@@ -1026,6 +1078,10 @@ class MainRobot(Node):
 
             elif lidar_event.data == STATUS.PATH_CLEAR and self.state in self.transition_set:
                 self.path_clear = True
+                light_msg = LightCmd()
+                light_msg.type = 'G'
+                light_msg.on = True
+                self.lights_pub.publish(light_msg)
                 self.obj_seen = False
                 light_msg = LightCmd()
                 light_msg.type = 'Y'

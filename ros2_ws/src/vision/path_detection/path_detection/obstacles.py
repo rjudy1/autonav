@@ -19,6 +19,7 @@ from utils.utils import *
 from std_msgs.msg import Int32
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
+from custom_msgs.msg import LightCmd
 
 import cv2
 from PIL import ImageOps
@@ -54,6 +55,7 @@ class TransformPublisher(Node):
         self.lidar_pub = self.create_publisher(LaserScan, '/laser_frame', 10)
         self.lidar_str_pub = self.create_publisher(String, '/mod_lidar', 10)
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
+        self.lights_pub = self.create_publisher(LightCmd, "light_events", 10)
 
         self.get_logger().info('START***************************************')
 
@@ -311,7 +313,7 @@ class TransformPublisher(Node):
         follow_dist = self.get_parameter('/ObstacleDetectDistance').value
 
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
-            follow_dist *= 5/6   # changed from 3/4 with follow dist of 1.1        # may need to param to detect further out but follow just as close
+            follow_dist *= 3/4   # changed from 3/4 with follow dist of 1.1        # may need to param to detect further out but follow just as close
 
         # scan within the FOV in front and detect if there is an obstacle
         half_FOV = self.get_parameter('/ObstacleFOV').value / 2
@@ -326,17 +328,28 @@ class TransformPublisher(Node):
         # didn't see anything in front of the robot
         if msg.data == STATUS.PATH_CLEAR:
             self.update_history(0)
+            # light_msg = LightCmd()
+            # light_msg.type = 'G'
+            # light_msg.on = True
+            # self.lights_pub.publish(light_msg)
+
         else:
             self.update_history(1)
+            # light_msg = LightCmd()
+            # light_msg.type = 'G'
+            # light_msg.on = False
+            # self.lights_pub.publish(light_msg)
 
         if np.count_nonzero(self.history) >= 0.6 * self.BUFF_SIZE:
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("OBJECT_SEEN")
             self.path_clear = False
+            msg.data = STATUS.OBJECT_SEEN
         elif np.count_nonzero(self.history) <= (1 - .6) * self.BUFF_SIZE and not self.path_clear:
             if self.get_parameter('/Debug').value:
                 self.get_logger().info("PATH_CLEAR")
             self.path_clear = True
+            msg.data = STATUS.PATH_CLEAR
 
         self.lidar_str_pub.publish(msg)
 
@@ -462,7 +475,7 @@ class TransformPublisher(Node):
                                       cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
             #cv_display(blobs, 'Potholes', self.window_handle)
         """
-        cv_display(morph, 'Potholes', self.window_handle)
+        # cv_display(morph, 'Potholes', self.window_handle)
     def update_history(self, x):
         self.history[self.history_idx] = x
         self.history_idx = (self.history_idx + 1) % self.BUFF_SIZE

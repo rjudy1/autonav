@@ -34,7 +34,7 @@ class Data_Logger(Node):
         #self.x_sub = self.create_subscription(datatype,      "/camera/extrinsics/depth_to_color", self.callback, 10)
         #self.x_sub = self.create_subscription(datatype,      "/camera/imu",                       self.callback, 10)
         #self.encoder_sub       = self.create_subscription(EncoderData,   "/encoder_data",                     self.encoder_callback,       10)
-        #self.fused_heading_sub = self.create_subscription(HeadingStatus, "/fused_heading",                    self.fused_heading_callback, 10)
+        self.fused_heading_sub = self.create_subscription(HeadingStatus, "/fused_heading",                    self.fused_heading_callback, 10)
         #self.gps_events_sub    = self.create_subscription(String,        "/gps_events",                       self.gps_events_callback,    10)
         #self.gps_heading_sub   = self.create_subscription(HeadingStatus, "/gps_heading",                      self.gps_heading_callback,   10)
         #self.lidar_frame_sub   = self.create_subscription(LaserScan,     "/laser_frame",                      self.lidar_frame_callback, 10)
@@ -48,7 +48,7 @@ class Data_Logger(Node):
         #self.x_sub = self.create_subscription(datatype,      "/tf_static",                        self.callback, 10)
         #self.wheel_sub        = self.create_subscription(String,        "/wheel_distance",                   self.wheel_callback, 10)
         self.imu_sub = self.create_subscription(ImuData,  "/imu_data", self.imu_callback, 10)
-        self.line_sub = self.create_subscription(String, "/pothole_events", self.pothole_callback, 10)
+        # self.line_sub = self.create_subscription(String, "/pothole_events", self.pothole_callback, 10)
 
 
 
@@ -155,6 +155,10 @@ class Data_Logger(Node):
 
     def lidar_frame_callback(self, data):
         self.lidar_frame_writer.writerow(np.concatenate(([data.header.stamp.sec, data.header.stamp.nanosec, data.angle_increment, data.angle_min, data.angle_max], data.ranges)))
+
+    def fused_heading_callback(self, data):
+        self.fused_heading_writer.writerow(([time.time(), data.current_heading]))
+
 
     # lidar_scan_callback function
     # logs lidar /scan data to csv

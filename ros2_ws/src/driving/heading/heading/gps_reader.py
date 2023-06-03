@@ -197,7 +197,7 @@ class GPS(Node):
             dist_limit = 0.8
         else:
             #dist_limit = self.DISTANCE_GOAL
-            dist_limit = 0.8
+            dist_limit = 1.0 # expanded from 0.8 to better see gps point from line following
 
         if dist_meters <= dist_limit:
             msg = String()

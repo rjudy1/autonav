@@ -1,15 +1,16 @@
 # ros2 bag record -o bags/run06062200950 /camera/color/image_raw /gps_heading /scan /rosout
 /**:
     ros__parameters:
-        /RealCourse:         False
+        /RealCourse:         True
         /FollowingDirection: 0          # 1  is right, 0 is left (line following)
         /UseYellow:          False      # True for yellow lines, False for white lines
-        /InitialHeading:     127.0      # robot's absolute initial heading. set before build in degrees.
-        /NorthPointFirst:    True
+        # going north = 20, going south 200
+        /InitialHeading:     20.0      # robot's absolute initial heading. set before build in degrees.
+        /NorthPointFirst:    Ture
         /GpsExitHeading:     0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
         /CrossRampInGps:     True
         /RepeatGps:          False       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
-        /LineDist:           0.2        # Distance in meters to follow the line from
+        /LineDist:           0.15        # Distance in meters to follow the line from
         /StartState:         0          #3 GPS #0 Line
 
 /fsm:
@@ -17,9 +18,8 @@
     
         /TimerRate:  0.05                       # rate at which to check and do state specified behavior
         /TurnSpeed:  6 #5 #20
-        /SlightTurn: 5 #3 #18
-        /ExitAngle:  0.9 #1.15  #1.15 #0.1
-        /ExitAngle:  1.15  #1.15 #0.1
+        /SlightTurn: 6 #3 #18
+        /ExitAngle:  0.698  #1.15 #0.1
         # Encoder Box Following (state 11-12) Parameters
         /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
         /EncoderBoxDistance: 0.2 # 0.5   # distance in meters of each side of the encoder's "box"
@@ -29,7 +29,7 @@
         /PotholeDistance: 0.2
         /PotholeDistanceEx: 1.2
         /PotholeTurnLeft: False # If you are left line following set False
-        /PotholeEnable: True # If you want to disable, set to false.
+        /PotholeEnable: False # If you want to disable, set to false.
 
 /rplidar_node:
     ros__parameters:
@@ -71,14 +71,14 @@
         /InitialLonDot:         0.0     # Initial velocity in the longitudinal direction in GPS units (DMM)/second
         /InitialLonDotDot:      0.0     # Initial acceleration in the longitudinal direction in GPS units (DMM)/second^2
         ## Practice Coordinates
-        /PracticeInitialLat:   39.4483377
-        /PracticeInitialLon:   -83.4879768
-        /PracticeWaypointLat1: 39.4477732
-        /PracticeWaypointLon1: -83.4878617
-        /PracticeWaypointLat2: 39.4478321
-        /PracticeWaypointLon2: -83.48781989999999
-        /PracticeWaypointLat3: 39.4478863
-        /PracticeWaypointLon3: -83.4878186
+        /PracticeInitialLat:   39.4483377 # invalid
+        /PracticeInitialLon:   -83.4879768 # invalid
+        /PracticeWaypointLat1: 42.40092709166667
+        /PracticeWaypointLon1: -83.13107524
+        /PracticeWaypointLat2: 42.40085157666667
+        /PracticeWaypointLon2: -83.13106738666667
+        /PracticeWaypointLat3: 42.400776035
+        /PracticeWaypointLon3: -83.1310595933333
         /PracticeWaypointLat4: 39.4478321
         /PracticeWaypointLon4: -83.48781989999999
         ## Real Coordinates
@@ -112,8 +112,8 @@
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
         /TeensyUpdateDelay:         .05
-        /SideObjectDist:            0.425 # 0.85
-        /LineSpeed:                 14.0
+        /SideObjectDist:            0.3 # 0.85
+        /LineSpeed:                 11.0
         /ObjectSpeed:               8.0
         /GpsSpeed:                  11.0
         /BoostIncrease:             1 #9
@@ -125,6 +125,6 @@
     ros__parameters:
         /ExitAngle:                 0.4  # +/- angle range we need to achieve to leave obstacle avoidance and return to GPS mode. radians = 22.9183 degrees
         ## Heading Weights -- note that GPS weight is 1 - EncoderWeight - ImuWeight
-        /EncoderWeight:             0.2
+        /EncoderWeight:             0.3
         /ImuWeight:                 0.5
         /Debug:                     False
