@@ -183,14 +183,14 @@ class MainRobot(Node):
                 self.waypoint_count += 1
             self.waypoint_found = False
             self.exit_heading = self.target_heading
-            # self.state = STATE.ORIENT_TO_GPS
-            # self.state_msg.data = STATE.ORIENT_TO_GPS
-            # self.state_pub.publish(self.state_msg)
-            # self.orient_to_gps_state()
-            self.state = STATE.GPS_NAVIGATION
-            self.state_msg.data = STATE.GPS_NAVIGATION
+            self.state = STATE.ORIENT_TO_GPS
+            self.state_msg.data = STATE.ORIENT_TO_GPS
             self.state_pub.publish(self.state_msg)
-            self.gps_navigation_state()
+            self.orient_to_gps_state()
+            # self.state = STATE.GPS_NAVIGATION
+            # self.state_msg.data = STATE.GPS_NAVIGATION
+            # self.state_pub.publish(self.state_msg)
+            # self.gps_navigation_state()
 
         elif self.obj_seen:  # object sighted - switch to obstacle avoidance
             # We check for an object second because if we have already hit the
@@ -446,16 +446,24 @@ class MainRobot(Node):
 
     # Object Avoidance to Line Following Transition State - is gps needed here?
     def object_to_line_state(self):
-
+        light_msg = LightCmd()
+        light_msg.type = 'B'
+        light_msg.on = True
+        self.lights_pub.publish(light_msg)
+        time.sleep(.10)
+        light_msg = LightCmd()
+        light_msg.type = 'B'
+        light_msg.on = False
+        self.lights_pub.publish(light_msg)
         # self.get_logger().info("Object to Line Transition State")
 
         # Gradual Turn
         self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                            f"{round(2/3*(1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}"
+                            f"{round(0.8*(1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}"
         self.wheel_pub.publish(self.wheel_msg)
         self.get_logger().info("In object to line state publishing:")
         self.get_logger().info(f"{CODE.TRANSITION_CODE},{self.SLIGHT_TURN}," \
-                                    f"{round(2/3*(1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}")
+                                    f"{round(0.8*(1-2*int(self.follow_dir==DIRECTION.RIGHT)) * (self.SLIGHT_TURN))}")
 
         # Just keep turning until we are parallel with the line
         if self.aligned:
@@ -568,7 +576,7 @@ class MainRobot(Node):
             self.line_following_state()
 
     def orient_to_gps_state(self):
-        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{3},{6*(-1+2*int(self.follow_dir==DIRECTION.RIGHT))}"
+        self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{3},{6*(-1+2*int(self.follow_dir==DIRECTION.LEFT))}"
         self.wheel_pub.publish(self.wheel_msg)
 
         if self.heading_restored:

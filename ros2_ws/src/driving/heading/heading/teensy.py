@@ -71,8 +71,8 @@ class Teensy(Node):
         self.line_boost_margin = self.get_parameter('/LineBoostMargin').value
         self.gps_boost_margin = self.get_parameter('/GPSBoostMargin').value
 
-        self.pid_line = PIDController(-0.030, 0.0, 0.0, 6, -6) # for line following
-        self.pid_obj = PIDController(1.5, 0.0, 0.0, 8, -8)   # for object avoidance
+        self.pid_line = PIDController(-0.050, 0.0, 0.0, 6, -6) # for line following
+        self.pid_obj = PIDController(3.3, 0.0, 0.0, 8, -8)   # for object avoidance - was 1.5
         self.pid_gps = PIDController(1.3, 0.0, 0.0, 8, -8)  # for during gps navigation
 
         # encoder parameters
@@ -255,7 +255,10 @@ class Teensy(Node):
             # self.get_logger().info(f"handling {x}")
 
             self.send_speed(linear+89, angular+89)
-            # self.get_logger().info(f"setting speeds: ({linear, angular})")
+            self.get_logger().info(f"setting speeds: ({linear, angular})")
+            sleep(.02)
+            self.send_speed(linear + 89, angular + 89)
+
 
         self.curr_linear = linear
         self.curr_angular = angular
