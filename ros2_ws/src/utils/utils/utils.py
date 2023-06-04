@@ -25,7 +25,15 @@ class STATE:
     LINE_ORIENT = 8
     ORIENT_TO_GPS = 9
     GPS_EXIT = 10
-
+    ENCODER_BOX_FOLLOW_STRAIGHT = 11
+    ENCODER_BOX_FOLLOW_TURN = 12
+    IMU_HEADING_ACCURACY_TEST = 13
+    POTHOLE_TURN_RIGHT = 14
+    POTHOLE_STRAIGHT = 15
+    POTHOLE_TURN_LEFT = 16
+    POTHOLE_EXIT = 17
+    POTHOLE_TO_LINE = 18
+    
 
 
 class DIRECTION:
@@ -50,6 +58,7 @@ class STATUS:
     FOUND_LINE = "FOUND_LINE"
     ALIGNED = "ALIGNED"
     WAYPOINTS_DONE = "WAYPOINTS_DONE"
+    POTHOLE_FOUND = "POTHOLE_FOUND"
 
 
 # Messages that change the wheel controller's state
@@ -132,3 +141,13 @@ def degrees_to_radians(degrees):
     if degrees > 180:
         heading -= math.pi * 2
     return heading
+
+TICKS_PER_METER = 1400
+
+def ticks_to_meters(ticks):
+    meters = ticks/TICKS_PER_METER
+    return meters
+
+def meters_to_ticks(meters):
+    ticks = meters*TICKS_PER_METER
+    return ticks

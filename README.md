@@ -1,5 +1,5 @@
-# Cedarville University AutoNav Competition Robot 2022
-This repository contains the code used for the Cedarville AutoNav 2022 robot. The robot is run through ROS2 nodes and takes a behavioral approach through a state machine.
+# Cedarville University AutoNav Competition Robot 2023
+This repository contains the code used for the Cedarville AutoNav 2023 robot. The robot is run through ROS2 nodes and takes a behavioral approach through a state machine.
 
 ## Quick Start
 1. Set the GPS waypoint locations in the yaml. These will assume to be first an exit point from lines, then an entrance, and repeat.
@@ -23,6 +23,7 @@ This repository contains the code used for the Cedarville AutoNav 2022 robot. Th
 - /NorthPointFirst:           set depending on direction going in course
 - /GpsExitHeading:            comment shows what value to set based on going north south, this will have to be tweaked at location for return to line
 - /CrossRampInGps:            True for cross in GPS or False for line following - line following untested
+- /RepeatGps:                 False for real course, True to stay in GPS mode and repeat the waypoints indefinitely - used for testing/debug
 - /LineDist:                  distance in meters to follow from line
 
 ## Packages and Nodes
@@ -103,6 +104,8 @@ The RealSense camera is run through a provided package. It reports on the `/came
 The RPLIDAR also is controlled through a provided package. It spins and publishes the LIDAR scans. You may have to set the port with the parameters:
 - `serial_port` which is by default `/dev/ttyUSB0`
 
+### Data Logger
+The data_logger node can subscribe to any topic and save the data to a CSV. To run the data_logger node, run `./log_data.sh`. Right now choosing which topics to subscribe to happens by editing the node itself. Potential future work would be to create a section in the parameters file to have a cleaner topic selection interface.
 
 ## Helpful Tools/Tips
 - If wanting to use ROS1 versions of packages or rosbags see the helpful ros1 to ros2 bridge at [https://github.com/ros2/ros1_bridge](RosBridge)
@@ -124,5 +127,6 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - can't see white line in hallway with white walls - drove directly at wall and pinned to wall
 - slippage on ramp of encoder given heading - direct suicide off ramp attempt
 - following obstacles too closely - tail spun and hit us
+- connecting the controller (which requires the joystick to be in the 6:00 position) without the e-stop on - fully engaging the motors and punching a hole through the wall
 
 ## [Complete Video](https://drive.google.com/file/d/1BnwrCk68dNjJJOYNAAvbYWItyapaKm5W/view?usp=sharing)
