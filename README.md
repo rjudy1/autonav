@@ -116,7 +116,7 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - Add rubber shielding around corners
 - Shift payload to sit between the wheels so jolts don't tip it
 - Get more batteries and a better interchangeablity so can charge cycle and test cycle at same time
-- The heading package is technically more of the driving package as it controls the motors too.
+- The heading package is technically more of the driving package as it controls the motors too. (Only one node has access to the Teensy)
 - See quick start for ways to start the nodes
 
 ## How the Robot Tried to Kill Us and Itself
