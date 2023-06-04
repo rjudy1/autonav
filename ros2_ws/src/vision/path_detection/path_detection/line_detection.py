@@ -46,7 +46,10 @@ class LineDetection():
         y, x = image.shape[0], image.shape[1]
 
         # Slice Edges
-        image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
+        if state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
+            image = image[int(y*.45):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
+        else:
+            image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
 
         # cv_display(image, 'Line Detection Color Image', self.window_handle)
 
