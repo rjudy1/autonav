@@ -107,6 +107,8 @@ class MainRobot(Node):
         self.changeTurn = False
 
         # Pothole
+        self.pothole_returnToGPS = False
+
         self.pothole_sub = self.create_subscription(String, 'pothole_events', self.pothole_callback, 10)
 
         self.pothole_straight_increment = meters_to_ticks(self.get_parameter('/PotholeDistance').value)
@@ -218,6 +220,7 @@ class MainRobot(Node):
             self.line_to_object_state()  # enter the transition state
             
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = False
             self.prev_heading = self.heading
             self.exit_heading = self.target_heading
             self.pothole_left_target = self.pothole_turn_increment_left + self.encoder_left_raw
@@ -262,6 +265,7 @@ class MainRobot(Node):
             self.line_to_object_state()  # enter the transition state
             
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = False
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -305,6 +309,7 @@ class MainRobot(Node):
             self.gps_to_object_state()  # enter the transition state
 
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = True
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -379,6 +384,7 @@ class MainRobot(Node):
             self.gps_to_object_state()
 
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = True
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -419,6 +425,7 @@ class MainRobot(Node):
             self.gps_to_object_state()
 
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = False
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -544,6 +551,7 @@ class MainRobot(Node):
             self.line_to_object_state()
 
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = False
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -594,6 +602,7 @@ class MainRobot(Node):
             self.gps_to_object_state()
 
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = True
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -621,6 +630,7 @@ class MainRobot(Node):
             self.line_to_object_state()
         
         elif self.pothole_found and self.get_parameter('/PotholeEnable').value:
+            self.pothole_returnToGPS = True # This might be false
             self.pothole_left_target += self.pothole_turn_increment_left
             self.pothole_right_target += self.pothole_turn_increment_right
             self.pothole_found = False
@@ -729,21 +739,21 @@ class MainRobot(Node):
                 self.pothole_turn_left()
             else:
                 #LINE FOLLOWING 
-                """
-                self.pothole_left_target = self.pothole_turn_right_exit + self.encoder_left_raw
-                self.pothole_right_target = self.pothole_turn_left_exit + self.encoder_right_raw
-                self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
-                            {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/PotholeTurnLeft').value) + 1)}"
-                self.wheel_pub.publish(self.wheel_msg)
-                self.state = STATE.POTHOLE_EXIT
-                self.pothole_exit()
-                """
-
-                # GPS
-                self.state_msg.data = STATE.GPS_NAVIGATION
-                self.state_pub.publish(self.state_msg)
-                self.state = STATE.GPS_NAVIGATION
-                self.gps_navigation_state()
+                if(not self.pothole_returnToGPS):
+                    self.pothole_left_target = self.pothole_turn_right_exit + self.encoder_left_raw
+                    self.pothole_right_target = self.pothole_turn_left_exit + self.encoder_right_raw
+                    self.wheel_msg.data = f"{CODE.TRANSITION_CODE},{self.get_parameter('/PotholeSpeed').value},\
+                                {self.get_parameter('/PotholeSpeed').value * (-2 * (not self.get_parameter('/PotholeTurnLeft').value) + 1)}"
+                    self.wheel_pub.publish(self.wheel_msg)
+                    self.state = STATE.POTHOLE_EXIT
+                    self.pothole_exit()
+                else:
+                    # GPS
+                    self.pothole_returnToGPS = False
+                    self.state_msg.data = STATE.GPS_NAVIGATION
+                    self.state_pub.publish(self.state_msg)
+                    self.state = STATE.GPS_NAVIGATION
+                    self.gps_navigation_state()
 
     """
     It is the state to turn left. It will be the 3rd state from pothole avoidance.
@@ -819,7 +829,7 @@ class MainRobot(Node):
             self.state = STATE.OBJECT_TO_LINE
             self.object_to_line_state()  # enter the transition state
         """
-        
+
     """
     This state will make the robot forward a bit so it can detect the line.
     """
