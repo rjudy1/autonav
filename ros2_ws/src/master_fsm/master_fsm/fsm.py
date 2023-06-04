@@ -243,7 +243,7 @@ class MainRobot(Node):
         # Check for another object in front of the robot
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
             if self.get_parameter('/RepeatGps').value:
-                self.waypoint_count = (self.waypoint_count + 1) %  self.waypoints_len
+                self.waypoint_count = (self.waypoint_count + 1) % self.waypoints_len
             else:
                 self.waypoint_count += 1
             self.waypoint_found = False
@@ -321,7 +321,7 @@ class MainRobot(Node):
             self.gps_navigation_state()  # enter the gps navigation state
 
         # might need a waypoint found here
-        elif self.waypoint_found and self.waypoint_count ==  self.waypoints_len:
+        elif self.waypoint_found and self.waypoint_count == self.waypoints_len:
             self.waypoint_found = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
