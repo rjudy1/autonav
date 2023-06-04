@@ -72,10 +72,8 @@ class GPS(Node):
         if self.get_parameter('/RealCourse').value:
             WP_LATS = self.get_parameter('/WaypointLats').value
             WP_LONS = self.get_parameter('/WaypointLons').value
-
             IC_LAT  = self.get_parameter('/InitialLat').value
             IC_LON  = self.get_parameter('/InitialLon').value
-
             self.target_loc = [complex(lat, lon) for lat, lon in zip(WP_LATS, WP_LONS)]
 
         else:
@@ -83,6 +81,7 @@ class GPS(Node):
             WP_LONS = self.get_parameter('/PracticeLons').value
             self.target_loc = [complex(lat, lon) for lat, lon in zip(WP_LATS, WP_LONS)]
 
+        self.get_logger().info(f"GPS Node targets: {self.target_loc}")
 
         self.lat_dot_filter = self.get_parameter('/InitialLatDot').value
         self.lon_dot_filter = self.get_parameter('/InitialLonDot').value

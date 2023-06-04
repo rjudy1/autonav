@@ -13,8 +13,8 @@
         /LineDist:           0.15        # Distance in meters to follow the line from
         /StartState:         0          #3 GPS #0 Line
         # latitudes and longitudes of coordinates to use - assumes ramp will occur at middle two
-        /PracticeLats:       [42.40092709166667, 42.40085157666667, 42.400776035, 42.400776035]
-        /PracticeLons:       [-83.13107524, -83.13106738666667, -83.1310595933333, -83.48781989999999]
+        /PracticeLats:       [42.40092709166667, 42.40085157666667, 42.40080157666667, 42.400776035]
+        /PracticeLons:       [-83.13107524, -83.13106738666667, -83.1310595933333, -83.1310595933333]
         /WaypointLats:       [42.40096900, 42.40088038666667, 42.40083898, 43, 42.400749623333336]
         /WaypointLons:       [-83.13160718166666, -83.131620365, -83.131618495, -84, -83.131591085]
 
