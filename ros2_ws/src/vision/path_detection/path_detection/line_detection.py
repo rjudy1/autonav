@@ -6,7 +6,7 @@
 # File: line_detection.py
 # Purpose: controls line detection
 # Author: Modified from 2020-21 autonav team code for ROS2
-# Date Modified: 31 May 2022
+# Date Modified: 4 June 2023
 ################################
 
 import cv2
@@ -17,7 +17,7 @@ from utils.utils import *
 
 
 class LineDetection():
-    def __init__(self, buffersize, bufferfill, croptop, cropbottom, cropside, maxwhite, minslope, linelength, linedistance, debug, use_yellow):
+    def __init__(self, buffersize, bufferfill, croptop, approach_croptop, cropbottom, cropside, maxwhite, minslope, linelength, linedistance, debug, use_yellow):
         # super().__init__('detection')
         self.history_idx = 0
         self.slope = None
@@ -28,6 +28,7 @@ class LineDetection():
         self.BUFF_SIZE = buffersize
         self.BUFF_FILL = bufferfill
         self.CROP_TOP = croptop
+        self.APPROACH_CROP_TOP = approach_croptop
         self.CROP_BOTTOM = cropbottom
         self.CROP_SIDE = cropside
         self.MAX_WHITE = maxwhite
@@ -46,7 +47,10 @@ class LineDetection():
         y, x = image.shape[0], image.shape[1]
 
         # Slice Edges
-        image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
+        if state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
+            image = image[int(y*self.APPROACH_CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
+        else:
+            image = image[int(y*self.CROP_TOP):-int(y*self.CROP_BOTTOM), int(x*self.CROP_SIDE):-int(x*self.CROP_SIDE)]
 
         # cv_display(image, 'Line Detection Color Image', self.window_handle)
 

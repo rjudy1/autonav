@@ -1,24 +1,41 @@
-# 1 on /FollowingDirection is right line following, 0 in state is line following
 # ros2 bag record -o bags/run06062200950 /camera/color/image_raw /gps_heading /scan /rosout
 /**:
     ros__parameters:
-        /RealCourse:                True
-        /FollowingDirection:        0          # 1  is right, 0 is left
-        /UseYellow:                 False
-        /InitialHeading:            187.0       # set before build to degrees!!
-        /NorthPointFirst:           False
-        /GpsExitHeading:            1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
-        /CrossRampInGps:            True
-        /LineDist:                  0.27
-#        /EncoderWeight:             .75
+        /RealCourse:         True
+        /FollowingDirection: 0          # 1  is right, 0 is left (line following)
+        /UseYellow:          False      # True for yellow lines, False for white lines
+        # going north = 20, going south 200
+        /InitialHeading:     200.0      # robot's absolute initial heading. set before build in degrees.
+        /NorthPointFirst:    False
+        /GpsExitHeading:     0.0 #1.020304     # N, R: -2.121286; N, L: 2.3656318; S, R: -0.775958; S, L: 1.020304
+        /CrossRampInGps:     True
+        /RepeatGps:          False       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
+        /LineDist:           0.15        # Distance in meters to follow the line from
+        /StartState:         0          #3 GPS #0 Line
+        # latitudes and longitudes of coordinates to use - assumes ramp will occur at middle two
+        /PracticeLats:       [42.40092709166667, 42.40085157666667, 42.40080157666667, 42.400776035]
+        /PracticeLons:       [-83.13107524, -83.13106738666667, -83.1310595933333, -83.1310595933333]
+        /WaypointLats:       [42.40096900, 42.40088038666667, 42.40083898, 42.400749623333336]
+        /WaypointLons:       [-83.13160718166666, -83.131620365, -83.131618495, -83.131591085]
+
 
 /fsm:
     ros__parameters:
-        /TimerRate:                 0.05  # rate at which to check and do state specified behavior
-        /StartState:                0
-        /TurnSpeed:                 20
-        /SlightTurn:                18
-        /ExitAngle:                 0.3
+    
+        /TimerRate:  0.05                       # rate at which to check and do state specified behavior
+        /TurnSpeed:  6 #5 #20
+        /SlightTurn: 6 #3 #18
+        /ExitAngle:  0.3  #1.15 #0.1
+        # Encoder Box Following (state 11-12) Parameters
+        /EncoderBoxTurnLeft: False # used to configure the turn direction. False -> turn right
+        /EncoderBoxDistance: 0.2 # 0.5   # distance in meters of each side of the encoder's "box"
+        /EncoderBoxSpeed:    5.0   #
+        # Pothole state parameter
+        /PotholeSpeed: 5.0 #8.0
+        /PotholeDistance: 0.2
+        /PotholeDistanceEx: 0.7 # 1.2 FOR LINE FOLLOWING. 0.7 IS FOR GPS
+        /PotholeTurnLeft: False # If you are left line following set False
+        /PotholeEnable: False # If you want to disable, set to false.
 
 /rplidar_node:
     ros__parameters:
@@ -26,62 +43,51 @@
 
 /lines:
     ros__parameters:
-        /LineDetectCropTop:         0.0         # fraction to remove
+        /LineDetectCropTop:         .05         # fraction to remove
+        /LineApproachCropTop:       .45
         /LineDetectCropBottom:      .2
         /LineDetectCropSide:        .2
-        /LineDetectDistance:        1.05
+        /LineDetectDistance:        1.05        # needs cleaned out but avoiding breakage currently
         /Debug:                     True
 
 
 /obstacles:
     ros__parameters:
-        /LIDARTrimMin:              1.31  # radians
-        /LIDARTrimMax:              4.97  # radians
-        /ObstacleFOV:               0.8754  # radians = 50 degrees
-        /PotholeDetectCropTop:      0.0
+        /ObstacleFOV:               0.8754  # radians = 50.1567 degrees
+        /PotholeDetectCropTop:      0.4
         /PotholeDetectCropBottom:   0.2
         /PotholeDetectCropSide:     0.2
         /PotholeBufferSize:         5
-        /ObstacleDetectDistance:    1.1  # meters
-        /Debug:                     False
+        /ObstacleDetectDistance:    0.85  #1.1        # # meters = # inches
+        /ObstacleToPlainDistance:   2.0                # meters =  inches
+        /ObstacleNoiseMinDist:      0.3 #0.3          # # meters = # inches
+        /Debug:                     True
 
 # enter waypoints north to south in converted to dd.mmmmmmm form
 /gps:
     ros__parameters:
+        /SensorInput:           0     # 0 = GPS, 1 = shaft encoders
+        /InputInitialCondition: False # True = use initial condition params, False = use take_reading() to get initial condition
+        ## Alpha-Beta-Gamma Filter Parameters
+        /FilterType:            0       # 0 = raw data, 1 = ABG filter, 2 = LPF
+        /Alpha:                 0.1     # Initial ABG filter parameters
+        /Beta:                  0.5     #
+        /Gamma:                 0.5     #
+        /InitialLatDot:         0.0     # Initial velocity in the latitudinal direction in GPS units (DMM)/second
+        /InitialLatDotDot:      0.0     # Initial acceleration in the latitudinal direction in GPS units (DMM)/second^2
+        /InitialLonDot:         0.0     # Initial velocity in the longitudinal direction in GPS units (DMM)/second
+        /InitialLonDotDot:      0.0     # Initial acceleration in the longitudinal direction in GPS units (DMM)/second^2
+        ## Practice Coordinates
+        /PracticeInitialLat:   39.4483377 # invalid
+        /PracticeInitialLon:   -83.4879768 # invalid
 
-#        /PracticeWaypointLat1:     42.40094919999999   # tent
-#        /PracticeWaypointLon1:     -83.1307195
-        /PracticeWaypointLat1:      42.4009412          # our north practice point
-        /PracticeWaypointLon1:      -83.13108260000001
+        ## Real Coordinates
+        /InitialLat: 0.0
+        /InitialLon: 0.0
 
-        /PracticeWaypointLat2:      42.4008838        # middle north practice
-        /PracticeWaypointLon2:      -83.1310741
-        /PracticeWaypointLat3:      42.4008475        # middle south practice
-        /PracticeWaypointLon3:      -83.131072
+        # array of waypoints to pass through - can have any number - passed from general
 
-#        /PracticeWaypointLat2:      42.400776035        # south practice
-#        /PracticeWaypointLon2:      -83.13108550000001 #42.4009412-83.13108260000001
-        # practice 4 retake = 42.400786-83.13106239999999
-        /PracticeWaypointLat4:      42.4007867          # south point from us
-        /PracticeWaypointLon4:      -83.13106239999999
-
-        # their provided north point = 42.400961833333334 + -83.13160418166666j
-        # our nearest recorded point = 42.400974399999996-83.1315972
-        /WaypointLat1:              42.40096900         # north real -- adjusted about 83 cm north
-        /WaypointLon1:              -83.13160718166666  # going north use = -83.13160418166666, south use = -83.13160718166666
-
-        # actual point on ramp = 42.400875400000004-83.13161829999999 north
-        /WaypointLat2:              42.40088038666667          # center north - shifted north slightly
-        /WaypointLon2:              -83.131620365               # shift west
-
-        # 42.4008482-83.1316123 OUR RECORDED POINT
-        /WaypointLat3:              42.40083898           # center south - shifted south 2 decimeters
-        /WaypointLon3:              -83.131618495
-
-        # their provided south point = 42.400756623333336 + -83.131596585j
-        # found south = 42.4007429-83.1316116
-        /WaypointLat4:              42.400749623333336   # south real -- adjusted about a meter south
-        /WaypointLon4:              -83.131591085  # going north use = -83.131591085 , south same
+        ## Other parameters
         /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
         /Port:                      '/dev/GPS_PORT'
@@ -91,17 +97,20 @@
     ros__parameters:
         /TeensyEncodersPort:        '/dev/TEENSY_PORT'
         /TeensyBaudrate:            115200
-        /TeensyUpdateDelay:         .1
-        /SideObjectDist:            0.85
-        /LineSpeed:                 27.0
-        /ObjectSpeed:               24.0
-        /GpsSpeed:                  27.0
-        /BoostIncrease:             9
+        /TeensyUpdateDelay:         .05
+        /SideObjectDist:            0.15 # 0.85
+        /LineSpeed:                 11.0
+        /ObjectSpeed:               8.0
+        /GpsSpeed:                  11.0
+        /BoostIncrease:             1 #9
         /BoostCountThreshold:       8
         /GPSBoostCountThreshold:    10
-        /LineBoostMargin:           55.0
+        /LineBoostMargin:           10.0 #55.0
 
 /fusion:
     ros__parameters:
-        /ExitAngle:                 0.4  # radians
-        /Debug:                     True
+        /ExitAngle:                 0.4  # +/- angle range we need to achieve to leave obstacle avoidance and return to GPS mode. radians = 22.9183 degrees
+        ## Heading Weights -- note that GPS weight is 1 - EncoderWeight - ImuWeight
+        /EncoderWeight:             0.3
+        /ImuWeight:                 0.5
+        /Debug:                     False

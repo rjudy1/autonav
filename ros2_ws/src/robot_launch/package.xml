@@ -18,6 +18,9 @@
   <exec_depend>rplidar_ros</exec_depend>
   <exec_depend>utils</exec_depend>
   <exec_depend>realsense2_camera</exec_depend>
+  <exec_depend>data_logging</exec_depend>
+  <exec_depend>lidar_plotter</exec_depend>
+
 
   <export>
     <build_type>ament_cmake</build_type>
