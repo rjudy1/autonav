@@ -12,6 +12,12 @@
         /RepeatGps:          False       # False = exit GPS mode after 4 waypoints are found. True = stay in GPS mode
         /LineDist:           0.15        # Distance in meters to follow the line from
         /StartState:         0          #3 GPS #0 Line
+        # latitudes and longitudes of coordinates to use - assumes ramp will occur at middle two
+        /PracticeLats:       [42.40092709166667, 42.40085157666667, 42.40080157666667, 42.400776035]
+        /PracticeLons:       [-83.13107524, -83.13106738666667, -83.1310595933333, -83.1310595933333]
+        /WaypointLats:       [42.40096900, 42.40088038666667, 42.40083898, 43, 42.400749623333336]
+        /WaypointLons:       [-83.13160718166666, -83.131620365, -83.131618495, -84, -83.131591085]
+
 
 /fsm:
     ros__parameters:
@@ -73,34 +79,23 @@
         ## Practice Coordinates
         /PracticeInitialLat:   39.4483377 # invalid
         /PracticeInitialLon:   -83.4879768 # invalid
-        /PracticeWaypointLat1: 42.40092709166667
-        /PracticeWaypointLon1: -83.13107524
-        /PracticeWaypointLat2: 42.40085157666667
-        /PracticeWaypointLon2: -83.13106738666667
-        /PracticeWaypointLat3: 42.400776035
-        /PracticeWaypointLon3: -83.1310595933333
-        /PracticeWaypointLat4: 39.4478321
-        /PracticeWaypointLon4: -83.48781989999999
+
+        # latitudes and longitudes are in overall lats lons
+#        /PracticeWaypointLat1: 42.40092709166667
+#        /PracticeWaypointLon1: -83.13107524
+#        /PracticeWaypointLat2: 42.40085157666667
+#        /PracticeWaypointLon2: -83.13106738666667
+#        /PracticeWaypointLat3: 42.400776035
+#        /PracticeWaypointLon3: -83.1310595933333
+#        /PracticeWaypointLat4: 39.4478321
+#        /PracticeWaypointLon4: -83.48781989999999
+
         ## Real Coordinates
         /InitialLat: 0.0
         /InitialLon: 0.0
-        # their provided north point = 42.400961833333334 + -83.13160418166666j
-        # our nearest recorded point = 42.400974399999996-83.1315972
-        /WaypointLat1:              42.40096900         # north real -- adjusted about 83 cm north
-        /WaypointLon1:              -83.13160718166666  # going north use = -83.13160418166666, south use = -83.13160718166666
 
-        # actual point on ramp = 42.400875400000004-83.13161829999999 north
-        /WaypointLat2:              42.40088038666667          # center north - shifted north slightly
-        /WaypointLon2:              -83.131620365               # shift west
+        # array of waypoints to pass through - can have any number - passed from general
 
-        # 42.4008482-83.1316123 OUR RECORDED POINT
-        /WaypointLat3:              42.40083898           # center south - shifted south 2 decimeters
-        /WaypointLon3:              -83.131618495
-
-        # their provided south point = 42.400756623333336 + -83.131596585j
-        # found south = 42.4007429-83.1316116
-        /WaypointLat4:              42.400749623333336   # south real -- adjusted about a meter south
-        /WaypointLon4:              -83.131591085  # going north use = -83.131591085 , south same
         ## Other parameters
         /GPSFollowGoal:             1.05
         /LineToGPSTrans:            5.0
