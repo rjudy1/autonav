@@ -108,10 +108,21 @@ The RPLIDAR also is controlled through a provided package. It spins and publishe
 - If wanting to use ROS1 versions of packages or rosbags see the helpful ros1 to ros2 bridge at [https://github.com/ros2/ros1_bridge](RosBridge)
 - To change parameters while running see `ros2 param set <node> <parameter> <parameter_value>
 - Some of these parameters may have been moved into the general parameter section.
-- ROSbags have been taken on the actual course and can be found in the bags folder. These contain the camera, lidar, GPS, and other sensor inputs that can be run through modified systems
+- ROSbags have been taken on the actual course and can be found in the bags folder. These contain the camera, lidar, GPS, and other sensor inputs that can be run through modified systems. They may be on a separate drive as they are very large.
 - GPS points on actual course may be slightly off. We did some shifting of the waypoints that would vary by run
 - Units throughout are mostly in meters, exceptions being some of the line node reported data.
-- We strongly recommend redoing the ROS messages for state and motor commands so they are not stupid string messages that were inherited (see /ros2_ws/src/custom_msgs for examples)
-- Buy a new non SmartDriveDuo motor controller.
+- We strongly recommend redoing the ROS messages for state and motor commands so they are not stupid string messages that were inherited
+- Buy a new non SmartDriveDuo motor controller as this one was finnicky and randomly glitched with overcurrent
+- Add rubber shielding around corners
+- Shift payload to sit between the wheels so jolts don't tip it
+- Get more batteries and a better interchangeablity so can charge cycle and test cycle at same time
 - The heading package is technically more of the driving package as it controls the motors too. (Only one node has access to the Teensy)
 - See quick start for ways to start the nodes
+
+## How the Robot Tried to Kill Us and Itself
+- poor manual fine control at low speeds - running us over out the gate
+- can't see white line in hallway with white walls - drove directly at wall and pinned to wall
+- slippage on ramp of encoder given heading - direct suicide off ramp attempt
+- following obstacles too closely - tail spun and hit us
+
+## [Complete Video](https://drive.google.com/file/d/1BnwrCk68dNjJJOYNAAvbYWItyapaKm5W/view?usp=sharing)
