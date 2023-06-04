@@ -57,13 +57,10 @@ class TransformPublisher(Node):
         self.lidar_wheel_distance_pub = self.create_publisher(String, "wheel_distance", 10)
         self.lights_pub = self.create_publisher(LightCmd, "light_events", 10)
 
-        self.get_logger().info('START***************************************')
-
         # Subscribe to the camera color image and unaltered laser scan
         self.image_sub = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, 10)
         self.image_pub = self.create_publisher(String,"pothole_events",10)
-
-        self.get_logger().info('DONE***************************************')
+        self.get_logger().info('Pothole set up')
         self.lidar_sub = self.create_subscription(LaserScan, '/scan', self.lidar_callback, 10)
 
         # Subscribe to state updates for the robot
@@ -71,6 +68,7 @@ class TransformPublisher(Node):
         self.state = STATE.LINE_FOLLOWING
 
         # lidar parameters
+        self.declare_parameter("/UseLidarFlattening", False)         # radians = 165.0575 degrees
         self.declare_parameter("/LIDARTrimMin", 2.8808)         # radians = 165.0575 degrees
         self.declare_parameter("/LIDARTrimMax", 0.2576)         # radians = 14.7 degrees
         self.declare_parameter("/ObstacleFOV", math.pi/6)       #
@@ -120,14 +118,14 @@ class TransformPublisher(Node):
         distances = 0
         count = 0
         for i in range(len(scan.ranges)):
-            if max > i * scan.angle_increment > min and scan.ranges[i] is not None and scan.ranges[i] != math.inf \
+            if max > i * scan.angle_increment > min and scan.ranges[i] is not None and scan.ranges[i] != math.inf\
                     and scan.ranges[i] < max_distance:
-                distances += scan.ranges[i] * math.sin(i * scan.angle_increment)
+                distances += scan.ranges[i] * math.sin(i*scan.angle_increment)
                 count += 1
         try:
             return distances / count
         except ZeroDivisionError:
-            # self.get_logger().info("ZERO DIVISION ERROR")
+            self.get_logger().info("ZERO DIVISION ERROR")
             return max_distance + .75  # parameterize later
 
     # new def to squash bad values and to detect and paint a plane on each barricade/barrel
@@ -249,7 +247,6 @@ class TransformPublisher(Node):
     # 2. Check/detect if there are obstacles/objects in front and in the FOV
     # 3. Publish the wheel distance to the obstacle based off the current line following direction
     def lidar_callback(self, scan):
-
         # self.get_logger().info(f"angle min: {scan.angle_min} \n angle max: {scan.angle_max} \n angle increment: {scan.angle_increment}")
 
         scan.angle_max += math.pi  # change the range from -pi -> pi to 0 -> 2 pi for array indexing
@@ -310,15 +307,10 @@ class TransformPublisher(Node):
         msg = String()
         msg.data = STATUS.PATH_CLEAR
         count1 = 0
-        follow_dist = self.get_parameter('/ObstacleDetectDistance').value
-
         if self.state == STATE.OBJECT_AVOIDANCE_FROM_LINE:
-            follow_dist *= 3/4   # changed from 3/4 with follow dist of 1.1        # may need to param to detect further out but follow just as close
-
-        # scan within the FOV in front and detect if there is an obstacle
-        half_FOV = self.get_parameter('/ObstacleFOV').value / 2
-        right_FOV = (math.pi / 2) - half_FOV
-        left_FOV = (math.pi / 2) + half_FOV
+            follow_dist = self.get_parameter("/ObstacleDetectDistance").value *3/4
+        else:
+            follow_dist = self.get_parameter("/ObstacleDetectDistance").value
         for i in range(len(scan.ranges)):
             if right_FOV < i * scan.angle_increment < left_FOV:
                 if scan.ranges[i] < follow_dist:
