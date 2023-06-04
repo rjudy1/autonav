@@ -33,7 +33,7 @@
         # Pothole state parameter
         /PotholeSpeed: 5.0 #8.0
         /PotholeDistance: 0.2
-        /PotholeDistanceEx: 0.7 # 1.2 FOR LINE FOLLOWING. 0.7 IS FOR GPS
+        /PotholeDistanceEx: 0.5 # 1.2 FOR LINE FOLLOWING. 0.7 IS FOR GPS
         /PotholeTurnLeft: False # If you are left line following set False
         /PotholeEnable: False # If you want to disable, set to false.
 

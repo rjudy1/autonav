@@ -632,7 +632,9 @@ class MainRobot(Node):
     # End of Transition States
 
     # *********************************************************************************************************************
-
+    """
+    This state only handle the first turn when the pothole found.
+    """
     def pothole_turn_right(self):
         self.get_logger().info("pothole_turn_right");
         self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
@@ -656,7 +658,10 @@ class MainRobot(Node):
             self.state = STATE.POTHOLE_STRAIGHT
             self.exitTrue = False
             self.pothole_straight()
-
+    """
+    This state handles the straight movement. The distance differese depends on it is from the right turn or left turn.
+    From right turn, it supposed to be shorter and from left, it is longer.
+    """
     def pothole_straight(self):
         self.get_logger().info("pothole_straight");
         self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
@@ -740,6 +745,9 @@ class MainRobot(Node):
                 self.state = STATE.GPS_NAVIGATION
                 self.gps_navigation_state()
 
+    """
+    It is the state to turn left. It will be the 3rd state from pothole avoidance.
+    """
     def pothole_turn_left(self):
         self.get_logger().info("pothole_turn_left");
         self.get_logger().info(f"turn: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
@@ -765,6 +773,9 @@ class MainRobot(Node):
             self.state = STATE.POTHOLE_STRAIGHT
             self.pothole_straight()
 
+    """
+    This state handles the exit angle. It supposed to be 45 degrees.
+    """
     def pothole_exit(self):
 
         self.get_logger().info("pothole_exit");
@@ -808,6 +819,10 @@ class MainRobot(Node):
             self.state = STATE.OBJECT_TO_LINE
             self.object_to_line_state()  # enter the transition state
         """
+        
+    """
+    This state will make the robot forward a bit so it can detect the line.
+    """
     def pothole_to_line(self):
         self.get_logger().info("pothole_to_line");
         self.get_logger().info(f"straight: now left: {self.encoder_left_raw}, target left: {self.pothole_left_target}\
