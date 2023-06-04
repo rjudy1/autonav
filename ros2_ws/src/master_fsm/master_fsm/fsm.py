@@ -50,6 +50,15 @@ class MainRobot(Node):
         self.declare_parameter('/PotholeTurnLeft', False)
         self.declare_parameter('/PotholeEnable', True)
 
+        # give master access to the number of waypoints and which to use
+        self.declare_parameter('/PracticeLats', [0.0])
+        self.declare_parameter('/WaypointLats', [0.0])
+        self.declare_parameter('/RealCourse', True)
+        if self.get_parameter('/RealCourse').value:
+            self.waypoints_len = len(self.get_parameter('/WaypointLats').value)
+        else:
+            self.waypoints_len = len(self.get_parameter('/PracticeLats').value)
+
         # Make a lock so the callbacks don't create race conditions
         self.lock = threading.Lock()
 
@@ -169,7 +178,7 @@ class MainRobot(Node):
 
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
             if self.get_parameter('/RepeatGps').value:
-                self.waypoint_count = (self.waypoint_count + 1) % 4
+                self.waypoint_count = (self.waypoint_count + 1) % self.waypoints_len
             else:
                 self.waypoint_count += 1
             self.waypoint_found = False
@@ -234,7 +243,7 @@ class MainRobot(Node):
         # Check for another object in front of the robot
         if self.waypoint_found:  # reached gps waypoint - switch to gps navigation
             if self.get_parameter('/RepeatGps').value:
-                self.waypoint_count = (self.waypoint_count + 1) % 4
+                self.waypoint_count = (self.waypoint_count + 1) %  self.waypoints_len
             else:
                 self.waypoint_count += 1
             self.waypoint_found = False
@@ -312,7 +321,7 @@ class MainRobot(Node):
             self.gps_navigation_state()  # enter the gps navigation state
 
         # might need a waypoint found here
-        elif self.waypoint_found and self.waypoint_count == 4:
+        elif self.waypoint_found and self.waypoint_count ==  self.waypoints_len:
             self.waypoint_found = False
             self.state_msg.data = STATE.OBJECT_AVOIDANCE_FROM_LINE
             self.state_pub.publish(self.state_msg)
@@ -335,13 +344,13 @@ class MainRobot(Node):
 
         if self.waypoint_found:
             if self.get_parameter('/RepeatGps').value:
-                self.waypoint_count = (self.waypoint_count + 1) % 4
+                self.waypoint_count = (self.waypoint_count + 1) % self.waypoints_len
             else:
                 self.waypoint_count += 1
             self.waypoint_found = False
             self.get_logger().info("WAYPOINT FOUND IN FSM!!")
 
-            if self.waypoint_count == 4 or not self.get_parameter('/CrossRampInGps').value:
+            if self.waypoint_count == self.waypoints_len or not self.get_parameter('/CrossRampInGps').value:
                 # just take this step if not using nav across ramp
                 self.state_msg.data = STATE.GPS_EXIT
                 self.state_pub.publish(self.state_msg)
@@ -399,7 +408,7 @@ class MainRobot(Node):
 
         if self.waypoint_found:
             if self.get_parameter('/RepeatGps').value:
-                self.waypoint_count = (self.waypoint_count + 1) % 4
+                self.waypoint_count = (self.waypoint_count + 1) % self.waypoints_len
             else:
                 self.waypoint_count += 1
 
@@ -506,7 +515,7 @@ class MainRobot(Node):
 
             self.object_avoidance_from_gps_state()
 
-        elif self.waypoint_found and self.waypoint_count == 4:
+        elif self.waypoint_found and self.waypoint_count == self.waypoints_len:
             self.waypoint_found = False
             self.state_msg.data = STATE.LINE_TO_OBJECT
             self.state_pub.publish(self.state_msg)
@@ -1076,7 +1085,7 @@ class MainRobot(Node):
         # Get the lock before proceeding
         self.lock.acquire()
         try:
-            if lidar_event.data == STATUS.OBJECT_SEEN and not self.waypoint_count == 2:
+            if lidar_event.data == STATUS.OBJECT_SEEN and not self.waypoint_count == self.waypoints_len // 2:
                 self.obj_seen = True
 
                 # # buzz if object seen

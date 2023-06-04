@@ -52,14 +52,6 @@ class GPS(Node):
         self.declare_parameter('/InitialLonDotDot', 0.0)
         self.declare_parameter('/PracticeInitialLat', 0.0)
         self.declare_parameter('/PracticeInitialLon', 0.0)
-        self.declare_parameter('/WaypointLat1', 0.0)
-        self.declare_parameter('/WaypointLon1', 0.0)
-        self.declare_parameter('/WaypointLat2', 0.0)
-        self.declare_parameter('/WaypointLon2', 0.0)
-        self.declare_parameter('/WaypointLat3', 0.0)
-        self.declare_parameter('/WaypointLon3', 0.0)
-        self.declare_parameter('/WaypointLat4', 0.0)
-        self.declare_parameter('/WaypointLon4', 0.0)
         self.declare_parameter('/GPSFollowGoal', 1.0)
         self.declare_parameter('/LineToGPSTrans', 5.0)
         self.declare_parameter('/Port', '/dev/ttyACM0')
@@ -67,14 +59,10 @@ class GPS(Node):
         self.declare_parameter('/FollowingDirection', DIRECTION.RIGHT)
         self.declare_parameter('/NorthPointFirst', False)
         self.declare_parameter('/RealCourse', False)
-        self.declare_parameter('/PracticeWaypointLat1', 0.0)
-        self.declare_parameter('/PracticeWaypointLon1', 0.0)
-        self.declare_parameter('/PracticeWaypointLat2', 0.0)
-        self.declare_parameter('/PracticeWaypointLon2', 0.0)
-        self.declare_parameter('/PracticeWaypointLat3', 0.0)
-        self.declare_parameter('/PracticeWaypointLon3', 0.0)
-        self.declare_parameter('/PracticeWaypointLat4', 0.0)
-        self.declare_parameter('/PracticeWaypointLon4', 0.0)
+        self.declare_parameter('/PracticeLats', [0.0])
+        self.declare_parameter('/PracticeLons', [0.0])
+        self.declare_parameter('/WaypointLats', [0.0])
+        self.declare_parameter('/WaypointLons', [0.0])
 
 
         self.DISTANCE_GOAL = self.get_parameter('/GPSFollowGoal').value
@@ -82,37 +70,19 @@ class GPS(Node):
 
         self.target_loc = []
         if self.get_parameter('/RealCourse').value:
-            WP_LAT1 = self.get_parameter('/WaypointLat1').value
-            WP_LON1 = self.get_parameter('/WaypointLon1').value
-            WP_LAT2 = self.get_parameter('/WaypointLat2').value
-            WP_LON2 = self.get_parameter('/WaypointLon2').value
-            WP_LAT3 = self.get_parameter('/WaypointLat3').value
-            WP_LON3 = self.get_parameter('/WaypointLon3').value
-            WP_LAT4 = self.get_parameter('/WaypointLat4').value
-            WP_LON4 = self.get_parameter('/WaypointLon4').value
+            WP_LATS = self.get_parameter('/WaypointLats')
+            WP_LONS = self.get_parameter('/WaypointLons')
+
             IC_LAT  = self.get_parameter('/InitialLat').value
             IC_LON  = self.get_parameter('/InitialLon').value
 
-            self.target_loc.append(complex(WP_LAT1, WP_LON1))
-            self.target_loc.append(complex(WP_LAT2, WP_LON2))
-            self.target_loc.append(complex(WP_LAT3, WP_LON3))
-            self.target_loc.append(complex(WP_LAT4, WP_LON4))
-        else:
-            WP_LAT1 = self.get_parameter('/PracticeWaypointLat1').value
-            WP_LON1 = self.get_parameter('/PracticeWaypointLon1').value
-            WP_LAT2 = self.get_parameter('/PracticeWaypointLat2').value
-            WP_LON2 = self.get_parameter('/PracticeWaypointLon2').value
-            WP_LAT3 = self.get_parameter('/PracticeWaypointLat3').value
-            WP_LON3 = self.get_parameter('/PracticeWaypointLon3').value
-            WP_LAT4 = self.get_parameter('/PracticeWaypointLat4').value
-            WP_LON4 = self.get_parameter('/PracticeWaypointLon4').value
-            IC_LAT  = self.get_parameter('/PracticeInitialLat').value
-            IC_LON  = self.get_parameter('/PracticeInitialLon').value
+            self.target_loc = [complex(lat, lon) for lat, lon in zip(WP_LATS, WP_LONS)]
 
-            self.target_loc.append(complex(WP_LAT1, WP_LON1))
-            self.target_loc.append(complex(WP_LAT2, WP_LON2))
-            self.target_loc.append(complex(WP_LAT3, WP_LON3))
-            self.target_loc.append(complex(WP_LAT4, WP_LON4))
+        else:
+            WP_LATS = self.get_parameter('/PracticeLats')
+            WP_LONS = self.get_parameter('/PracticeLons')
+            self.target_loc = [complex(lat, lon) for lat, lon in zip(WP_LATS, WP_LONS)]
+
 
         self.lat_dot_filter = self.get_parameter('/InitialLatDot').value
         self.lon_dot_filter = self.get_parameter('/InitialLonDot').value
